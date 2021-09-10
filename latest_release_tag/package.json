@@ -1,0 +1,9 @@
+{
+  "name": "latest_release_tag",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "bluebird-global": "^1.0.1"
+  }
+}

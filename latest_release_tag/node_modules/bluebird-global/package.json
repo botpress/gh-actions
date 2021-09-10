@@ -1,0 +1,22 @@
+{
+  "name": "bluebird-global",
+  "version": "1.0.1",
+  "description": "Patches global.Promise to use bluebird and returns a bluebird instance",
+  "license": "MIT",
+  "repository": "kaatt/bluebird-global",
+  "author": "kaatt",
+  "keywords": [
+    "polyfill",
+    "promise-library",
+    "promise",
+    "performance",
+    "promises",
+    "promises-a",
+    "promises-aplus",
+    "async",
+    "await"
+  ],
+  "peerDependencies": {
+    "bluebird": "*"
+  }
+}
