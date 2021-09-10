@@ -6091,7 +6091,11 @@ var bluebird_global = __nccwpck_require__(249);
 ;// CONCATENATED MODULE: external "path"
 const external_path_namespaceObject = require("path");
 var external_path_default = /*#__PURE__*/__nccwpck_require__.n(external_path_namespaceObject);
+;// CONCATENATED MODULE: external "fs"
+const external_fs_namespaceObject = require("fs");
+var external_fs_default = /*#__PURE__*/__nccwpck_require__.n(external_fs_namespaceObject);
 ;// CONCATENATED MODULE: ./src/index.ts
+
 
 
 
@@ -6110,9 +6114,13 @@ const getLastTags = async () => {
 const run = async () => {
     const lastReleaseTag = await getLastTags();
     const workspace = process.env.GITHUB_WORKSPACE;
-    console.log(workspace);
-    console.log(process.env.INPUT_PATH);
+    console.log('ws', workspace);
+    console.log('path', process.env.INPUT_PATH);
     console.log('e', external_path_default().resolve(process.env.INPUT_PATH || workspace, 'package.json'));
+    console.log(external_fs_default().readdirSync(workspace));
+    console.log(external_fs_default().readdirSync(external_path_default().resolve(workspace, '../')));
+    console.log(external_fs_default().existsSync(external_path_default().resolve(process.env.INPUT_PATH || workspace, 'package.json')));
+    console.log(external_fs_default().existsSync(external_path_default().resolve(process.env.INPUT_PATH || workspace, '../package.json')));
     const packageJson = __nccwpck_require__(875)(external_path_default().resolve(process.env.INPUT_PATH || workspace, 'package.json'));
     const lastVersion = packageJson.version;
     // console.log(semver.coerce(lastVersion))
