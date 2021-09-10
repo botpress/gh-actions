@@ -4,11 +4,14 @@ inputs:
   path:
     description: 'Custom path to package.json'
 outputs:
-  tag:
+  latest_tag:
     description: 'Latest Release Tag'
-  isNewRelease:
+  version:
+    description: 'The version in package.json'
+  changelog:
+    description: 'Contains the changelog since the last release tag'
+  is_new_release:
     description: 'Return true if the last release tag doesnt match the package.json version'
-    default: false
 runs:
   using: 'node12'
   main: 'dist/index.js'
