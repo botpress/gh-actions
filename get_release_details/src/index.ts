@@ -33,7 +33,6 @@ const run = async () => {
   } catch (err) {
     console.error('Cannot process package.json')
   }
-  console.log('build ch')
 
   const changelog = await buildChangelog()
 
