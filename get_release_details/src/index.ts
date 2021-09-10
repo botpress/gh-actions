@@ -1,6 +1,7 @@
 import { exec } from 'child_process'
 import 'bluebird-global'
 import path from 'path'
+import fs from 'fs'
 // import semver from 'semver'
 
 const getLastTags = async () => {
@@ -21,9 +22,14 @@ const run = async () => {
   const lastReleaseTag = await getLastTags()
 
   const workspace = process.env.GITHUB_WORKSPACE
-  console.log(workspace)
-  console.log(process.env.INPUT_PATH)
+  console.log('ws', workspace)
+  console.log('path', process.env.INPUT_PATH)
   console.log('e', path.resolve(process.env.INPUT_PATH || workspace, 'package.json'))
+
+  console.log(fs.readdirSync(workspace))
+  console.log(fs.readdirSync(path.resolve(workspace, '../')))
+  console.log(fs.existsSync(path.resolve(process.env.INPUT_PATH || workspace, 'package.json')))
+  console.log(fs.existsSync(path.resolve(process.env.INPUT_PATH || workspace, '../package.json')))
   const packageJson = require(path.resolve(process.env.INPUT_PATH || workspace, 'package.json'))
   const lastVersion = packageJson.version
 
