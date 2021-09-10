@@ -8,7 +8,6 @@ outputs:
     description: 'Latest Release Tag'
   isNewRelease:
     description: 'Return true if the last release tag doesnt match the package.json version'
-    default: false
 runs:
   using: 'node12'
   main: 'dist/index.js'
