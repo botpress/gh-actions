@@ -1,21 +1,6 @@
 /******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
-/***/ 875:
-/***/ ((module) => {
-
-function webpackEmptyContext(req) {
-	var e = new Error("Cannot find module '" + req + "'");
-	e.code = 'MODULE_NOT_FOUND';
-	throw e;
-}
-webpackEmptyContext.keys = () => ([]);
-webpackEmptyContext.resolve = webpackEmptyContext;
-webpackEmptyContext.id = 875;
-module.exports = webpackEmptyContext;
-
-/***/ }),
-
 /***/ 249:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
@@ -6117,11 +6102,8 @@ const run = async () => {
     console.log('ws', workspace);
     console.log('path', process.env.INPUT_PATH);
     console.log('e', external_path_default().resolve(process.env.INPUT_PATH || workspace, 'package.json'));
-    console.log(external_fs_default().readdirSync(workspace));
-    console.log(external_fs_default().readdirSync(external_path_default().resolve(workspace, '../')));
-    console.log(external_fs_default().existsSync(external_path_default().resolve(process.env.INPUT_PATH || workspace, 'package.json')));
-    console.log(external_fs_default().existsSync(external_path_default().resolve(process.env.INPUT_PATH || workspace, '../package.json')));
-    const packageJson = __nccwpck_require__(875)(external_path_default().resolve(process.env.INPUT_PATH || workspace, 'package.json'));
+    const pkg = external_fs_default().readFileSync(external_path_default().resolve(process.env.INPUT_PATH || workspace, 'package.json'), 'utf-8');
+    const packageJson = JSON.parse(pkg);
     const lastVersion = packageJson.version;
     // console.log(semver.coerce(lastVersion))
     console.log(`::set-output name=tag::${lastReleaseTag}`);

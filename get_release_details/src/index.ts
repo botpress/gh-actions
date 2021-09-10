@@ -25,12 +25,9 @@ const run = async () => {
   console.log('ws', workspace)
   console.log('path', process.env.INPUT_PATH)
   console.log('e', path.resolve(process.env.INPUT_PATH || workspace, 'package.json'))
+  const pkg = fs.readFileSync(path.resolve(process.env.INPUT_PATH || workspace, 'package.json'), 'utf-8')
 
-  console.log(fs.readdirSync(workspace))
-  console.log(fs.readdirSync(path.resolve(workspace, '../')))
-  console.log(fs.existsSync(path.resolve(process.env.INPUT_PATH || workspace, 'package.json')))
-  console.log(fs.existsSync(path.resolve(process.env.INPUT_PATH || workspace, '../package.json')))
-  const packageJson = require(path.resolve(process.env.INPUT_PATH || workspace, 'package.json'))
+  const packageJson = JSON.parse(pkg)
   const lastVersion = packageJson.version
 
   // console.log(semver.coerce(lastVersion))
