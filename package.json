@@ -6,7 +6,8 @@
   "dependencies": {},
   "workspaces": [
     "latest_release_tag",
-    "rename_binaries"
+    "rename_binaries",
+    "build_changelog"
   ],
   "devDependencies": {
     "@vercel/ncc": "^0.31.0",

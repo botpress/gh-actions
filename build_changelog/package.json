@@ -1,0 +1,13 @@
+{
+  "name": "build_changelog",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "build": "yarn run ncc build src/index.ts --target es2019"
+  },
+  "dependencies": {
+    "conventional-changelog": "^3.1.24",
+    "fs-extra": "^10.0.0"
+  }
+}
