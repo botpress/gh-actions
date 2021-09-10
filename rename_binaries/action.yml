@@ -4,7 +4,6 @@ inputs:
   path:
     description: 'Path to binary folder'
     default: './bin'
-
 runs:
   using: 'node12'
-  main: 'index.js'
+  main: 'dist/index.js'

@@ -1,0 +1,14 @@
+name: 'get_release_details'
+description: 'Returns the latest release tag (ignore branches)'
+inputs:
+  path:
+    description: 'Custom path to package.json'
+outputs:
+  tag:
+    description: 'Latest Release Tag'
+  isNewRelease:
+    description: 'Return true if the last release tag doesnt match the package.json version'
+    default: false
+runs:
+  using: 'node12'
+  main: 'dist/index.js'
