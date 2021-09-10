@@ -22,13 +22,14 @@ const run = async () => {
   const { GITHUB_WORKSPACE, INPUT_PATH } = process.env
   const lastReleaseTag = await getLastTags()
 
-  console.log(`::set-output name=tag::${lastReleaseTag}`)
+  console.log(`::set-output name=latest_tag::${lastReleaseTag}`)
 
   try {
     const pkg = fs.readFileSync(path.resolve(INPUT_PATH || GITHUB_WORKSPACE, 'package.json'), 'utf-8')
 
-    const lastVersion = JSON.parse(pkg).version
-    console.log(`::set-output name=is_new_release::${lastReleaseTag !== lastVersion}`)
+    const currentVersion = JSON.parse(pkg).version
+    console.log(`::set-output name=version::${currentVersion}`)
+    console.log(`::set-output name=is_new_release::${lastReleaseTag !== currentVersion}`)
   } catch (err) {
     console.error('Cannot process package.json')
   }

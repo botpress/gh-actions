@@ -4,8 +4,10 @@ inputs:
   path:
     description: 'Custom path to package.json'
 outputs:
-  tag:
+  latest_tag:
     description: 'Latest Release Tag'
+  version:
+    description: 'The version in package.json'
   changelog:
     description: 'Contains the changelog since the last release tag'
   is_new_release:
