@@ -28,8 +28,10 @@ const run = async () => {
     const pkg = fs.readFileSync(path.resolve(INPUT_PATH || GITHUB_WORKSPACE, 'package.json'), 'utf-8')
 
     const currentVersion = JSON.parse(pkg).version
+    const tagWithoutPrefix = lastReleaseTag.replace(/^v/, '')
+
     console.log(`::set-output name=version::${currentVersion}`)
-    console.log(`::set-output name=is_new_release::${lastReleaseTag !== currentVersion}`)
+    console.log(`::set-output name=is_new_release::${tagWithoutPrefix !== currentVersion}`)
   } catch (err) {
     console.error('Cannot process package.json')
   }

@@ -1,8 +1,0 @@
-name: 'build_changelog'
-description: 'Build the changelog since the latest release tag'
-outputs:
-  changelog:
-    description: 'Changelog'
-runs:
-  using: 'node12'
-  main: 'dist/index.js'
