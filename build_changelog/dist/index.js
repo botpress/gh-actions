@@ -54925,7 +54925,7 @@ __nccwpck_require__.r(__webpack_exports__);
 /* harmony import */ var conventional_changelog__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__nccwpck_require__.n(conventional_changelog__WEBPACK_IMPORTED_MODULE_1__);
 
 
-const build = async ({ writeToFile } = { writeToFile: false }) => {
+const build = async () => {
     // see options here: https://github.com/conventional-changelog/conventional-changelog/tree/master/packages
     const changelogOts = {
         preset: 'angular',
@@ -54944,9 +54944,9 @@ const build = async ({ writeToFile } = { writeToFile: false }) => {
     const stream = conventional_changelog__WEBPACK_IMPORTED_MODULE_1___default()(changelogOts, context, gitRawCommitsOpts, commitsParserOpts, changelogWriterOpts);
     stream.on('data', (chunk) => (text += chunk));
     await Promise.fromCallback((cb) => stream.on('end', cb));
-    console.log(text.toString());
-    console.log(`::set-output name=changelog::${text.toString()}`);
-    return text.toString();
+    const singleLineChangelog = text.toString().replace(/\n/g, '%0A').replace(/\r/g, '%0D').replace(/\%/g, '%25');
+    console.log('TXT', singleLineChangelog);
+    console.log(`::set-output name=changelog::${singleLineChangelog}`);
 };
 build();
 

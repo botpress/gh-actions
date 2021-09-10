@@ -1,7 +1,7 @@
 import 'bluebird-global'
 import changelog from 'conventional-changelog'
 
-const build = async ({ writeToFile } = { writeToFile: false }) => {
+const build = async () => {
   // see options here: https://github.com/conventional-changelog/conventional-changelog/tree/master/packages
   const changelogOts = {
     preset: 'angular',
@@ -22,11 +22,10 @@ const build = async ({ writeToFile } = { writeToFile: false }) => {
   stream.on('data', (chunk) => (text += chunk))
   await Promise.fromCallback((cb) => stream.on('end', cb))
 
-  console.log(text.toString())
+  const singleLineChangelog = text.toString().replace(/\n/g, '%0A').replace(/\r/g, '%0D').replace(/\%/g, '%25')
+  console.log('TXT', singleLineChangelog)
 
-  console.log(`::set-output name=changelog::${text.toString()}`)
-
-  return text.toString()
+  console.log(`::set-output name=changelog::${singleLineChangelog}`)
 }
 
 build()
