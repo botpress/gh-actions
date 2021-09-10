@@ -22,7 +22,5 @@ export const buildChangelog = async () => {
   stream.on('data', (chunk) => (text += chunk))
   await Promise.fromCallback((cb) => stream.on('end', cb))
 
-  const singleLineChangelog = text.toString().replace(/\n/g, '%0A').replace(/\r/g, '%0D').replace(/\%/g, '%25')
-
-  console.log(`::set-output name=changelog::${singleLineChangelog}`)
+  return text.toString().replace(/\n/g, '%0A').replace(/\r/g, '%0D').replace(/\%/g, '%25')
 }

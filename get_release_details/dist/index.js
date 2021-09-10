@@ -54956,8 +54956,7 @@ const buildChangelog = async () => {
     const stream = conventional_changelog_default()(changelogOts, context, gitRawCommitsOpts, commitsParserOpts, changelogWriterOpts);
     stream.on('data', (chunk) => (text += chunk));
     await Promise.fromCallback((cb) => stream.on('end', cb));
-    const singleLineChangelog = text.toString().replace(/\n/g, '%0A').replace(/\r/g, '%0D').replace(/\%/g, '%25');
-    console.log(`::set-output name=changelog::${singleLineChangelog}`);
+    return text.toString().replace(/\n/g, '%0A').replace(/\r/g, '%0D').replace(/\%/g, '%25');
 };
 
 ;// CONCATENATED MODULE: ./src/index.ts
@@ -54989,7 +54988,10 @@ const run = async () => {
     catch (err) {
         console.error('Cannot process package.json');
     }
-    await buildChangelog();
+    console.log('build ch');
+    const changelog = await buildChangelog();
+    console.log('done', changelog);
+    console.log(`::set-output name=changelog::${changelog}`);
 };
 run();
 

@@ -32,8 +32,13 @@ const run = async () => {
   } catch (err) {
     console.error('Cannot process package.json')
   }
+  console.log('build ch')
 
-  await buildChangelog()
+  const changelog = await buildChangelog()
+
+  console.log('done', changelog)
+
+  console.log(`::set-output name=changelog::${changelog}`)
 }
 
 run()
