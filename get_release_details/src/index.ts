@@ -36,7 +36,7 @@ const run = async () => {
 
   const changelog = await buildChangelog()
 
-  console.log('done', changelog)
+  console.log('changelog', changelog)
 
   console.log(`::set-output name=changelog::${changelog}`)
 }

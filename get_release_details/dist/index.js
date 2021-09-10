@@ -54990,7 +54990,7 @@ const run = async () => {
         console.error('Cannot process package.json');
     }
     const changelog = await buildChangelog();
-    console.log('done', changelog);
+    console.log('changelog', changelog);
     console.log(`::set-output name=changelog::${changelog}`);
 };
 run();
