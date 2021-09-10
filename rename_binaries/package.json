@@ -1,14 +1,10 @@
 {
-  "name": "latest_release_tag",
+  "name": "rename_binaries",
   "version": "1.0.0",
   "main": "index.js",
   "license": "MIT",
   "scripts": {
     "build": "yarn run ncc build src/index.ts --target es2019"
   },
-  "dependencies": {
-    "@types/node": "^16.9.1",
-    "bluebird": "^3.7.2",
-    "bluebird-global": "^1.0.1"
-  }
+  "dependencies": {}
 }

@@ -5,4 +5,4 @@ outputs:
     description: 'Latest Release Tag'
 runs:
   using: 'node12'
-  main: 'index.js'
+  main: 'dist/index.js'
