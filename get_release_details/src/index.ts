@@ -1,7 +1,7 @@
 import { exec } from 'child_process'
 import 'bluebird-global'
 import path from 'path'
-import semver from 'semver'
+// import semver from 'semver'
 
 const getLastTags = async () => {
   const rawTags: string = await Promise.fromCallback((cb) => exec('git rev-list --tags --max-count=30', cb))
@@ -27,7 +27,7 @@ const run = async () => {
   const packageJson = require(path.resolve(process.env.INPUT_PATH || workspace, 'package.json'))
   const lastVersion = packageJson.version
 
-  console.log(semver.coerce(lastVersion))
+  // console.log(semver.coerce(lastVersion))
 
   console.log(`::set-output name=tag::${lastReleaseTag}`)
   console.log(`::set-output name=isNewRelease::${lastReleaseTag !== lastVersion}`)

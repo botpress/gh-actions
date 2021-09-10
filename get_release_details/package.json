@@ -8,8 +8,7 @@
   },
   "dependencies": {
     "bluebird": "^3.7.2",
-    "bluebird-global": "^1.0.1",
-    "semver": "^7.3.5"
+    "bluebird-global": "^1.0.1"
   },
   "devDependencies": {
     "@types/node": "^16.9.1",
