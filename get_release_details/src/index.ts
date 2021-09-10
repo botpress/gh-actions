@@ -2,7 +2,7 @@ import { exec } from 'child_process'
 import 'bluebird-global'
 import path from 'path'
 import fs from 'fs'
-// import semver from 'semver'
+import { buildChangelog } from './changelog'
 
 const getLastTags = async () => {
   const rawTags: string = await Promise.fromCallback((cb) => exec('git rev-list --tags --max-count=30', cb))
@@ -19,21 +19,21 @@ const getLastTags = async () => {
 }
 
 const run = async () => {
+  const { GITHUB_WORKSPACE, INPUT_PATH } = process.env
   const lastReleaseTag = await getLastTags()
 
-  const workspace = process.env.GITHUB_WORKSPACE
-  console.log('ws', workspace)
-  console.log('path', process.env.INPUT_PATH)
-  console.log('e', path.resolve(process.env.INPUT_PATH || workspace, 'package.json'))
-  const pkg = fs.readFileSync(path.resolve(process.env.INPUT_PATH || workspace, 'package.json'), 'utf-8')
-
-  const packageJson = JSON.parse(pkg)
-  const lastVersion = packageJson.version
-
-  // console.log(semver.coerce(lastVersion))
-
   console.log(`::set-output name=tag::${lastReleaseTag}`)
-  console.log(`::set-output name=isNewRelease::${lastReleaseTag !== lastVersion}`)
+
+  try {
+    const pkg = fs.readFileSync(path.resolve(INPUT_PATH || GITHUB_WORKSPACE, 'package.json'), 'utf-8')
+
+    const lastVersion = JSON.parse(pkg).version
+    console.log(`::set-output name=is_new_release::${lastReleaseTag !== lastVersion}`)
+  } catch (err) {
+    console.error('Cannot process package.json')
+  }
+
+  await buildChangelog()
 }
 
 run()

@@ -6,7 +6,9 @@ inputs:
 outputs:
   tag:
     description: 'Latest Release Tag'
-  isNewRelease:
+  changelog:
+    description: 'Contains the changelog since the last release tag'
+  is_new_release:
     description: 'Return true if the last release tag doesnt match the package.json version'
 runs:
   using: 'node12'
