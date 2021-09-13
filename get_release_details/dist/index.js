@@ -54956,7 +54956,7 @@ const buildChangelog = async () => {
     const stream = conventional_changelog_default()(changelogOts, context, gitRawCommitsOpts, commitsParserOpts, changelogWriterOpts);
     stream.on('data', (chunk) => (text += chunk));
     await Promise.fromCallback((cb) => stream.on('end', cb));
-    return text.toString().replace(/\n/g, '%0A').replace(/\r/g, '%0D').replace(/\%/g, '%25');
+    return text.toString().replace(/\%/g, '%25').replace(/\n/g, '%0A').replace(/\r/g, '%0D');
 };
 
 ;// CONCATENATED MODULE: ./src/index.ts
@@ -54983,14 +54983,14 @@ const run = async () => {
     try {
         const pkg = external_fs_default().readFileSync(external_path_default().resolve(INPUT_PATH || GITHUB_WORKSPACE, 'package.json'), 'utf-8');
         const currentVersion = JSON.parse(pkg).version;
+        const tagWithoutPrefix = lastReleaseTag.replace(/^v/, '');
         console.log(`::set-output name=version::${currentVersion}`);
-        console.log(`::set-output name=is_new_release::${lastReleaseTag !== currentVersion}`);
+        console.log(`::set-output name=is_new_release::${tagWithoutPrefix !== currentVersion}`);
     }
     catch (err) {
         console.error('Cannot process package.json');
     }
     const changelog = await buildChangelog();
-    console.log('changelog', changelog);
     console.log(`::set-output name=changelog::${changelog}`);
 };
 run();
