@@ -6,7 +6,7 @@
   "workspaces": [
     "rename_binaries",
     "get_release_details",
-    "merge_json"
+    "set_ssh_key"
   ],
   "devDependencies": {
     "@types/bluebird-global": "^3.5.13",

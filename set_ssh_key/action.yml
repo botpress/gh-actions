@@ -1,0 +1,11 @@
+name: 'set_ssh_key'
+description: 'Configure SSH for Github'
+inputs:
+  ssh_key:
+    description: 'Key to use'
+    required: true
+  host:
+    description: 'Hostname of the destination'
+runs:
+  using: 'node12'
+  main: 'dist/index.js'
