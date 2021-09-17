@@ -67,7 +67,10 @@ if (!external_fs_default().existsSync(INPUT_PATH)) {
     console.error("Path doesn't exist");
     process.exit(1);
 }
-const branchName = GITHUB_REF.replace('refs/heads/', '').replace(/[\W_]+/g, '_');
+const branchWithoutHead = GITHUB_REF.replace('refs/heads/', '');
+const branchName = branchWithoutHead.replace(/[\W_]+/g, '_');
+console.log(`::set-output name=branch::${branchWithoutHead}`);
+console.log(`::set-output name=branch_sanitized::${branchName}`);
 for (const fileName of external_fs_default().readdirSync(INPUT_PATH)) {
     const [name, _version, platform, arch] = fileName.split('-');
     const newName = `${name}-${branchName}-${platform}-${arch}`;

@@ -8,7 +8,11 @@ if (!fs.existsSync(INPUT_PATH)) {
   process.exit(1)
 }
 
-const branchName = GITHUB_REF.replace('refs/heads/', '').replace(/[\W_]+/g, '_')
+const branchWithoutHead = GITHUB_REF.replace('refs/heads/', '')
+const branchName = branchWithoutHead.replace(/[\W_]+/g, '_')
+
+console.log(`::set-output name=branch::${branchWithoutHead}`)
+console.log(`::set-output name=branch_sanitized::${branchName}`)
 
 for (const fileName of fs.readdirSync(INPUT_PATH)) {
   const [name, _version, platform, arch] = fileName.split('-')
