@@ -1,0 +1,10 @@
+name: 'extract_info'
+description: 'Extract info'
+outputs:
+  branch:
+    description: 'Branch name'
+  branch_sanitized:
+    description: 'Sanitized branch name to use safely in an URL'
+runs:
+  using: 'node12'
+  main: 'dist/index.js'

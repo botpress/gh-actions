@@ -1,10 +1,5 @@
 name: 'rename_binaries'
 description: 'Rename binaries based on the branch name'
-outputs:
-  branch:
-    description: 'Branch name'
-  branch_sanitized:
-    description: 'Sanitized branch name to use safely in an URL'
 inputs:
   path:
     description: 'Path to binary folder'
