@@ -54936,7 +54936,6 @@ var conventional_changelog = __nccwpck_require__(5354);
 var conventional_changelog_default = /*#__PURE__*/__nccwpck_require__.n(conventional_changelog);
 ;// CONCATENATED MODULE: ./src/remove_changelog_duplicated.ts
 const removeDuplicates = (changelog, previousVersion) => {
-    console.debug('removeDuplicates called', changelog, previousVersion);
     const whitelist = ['', '### Bug Fixes', '### Features'];
     const prevVersionMark = previousVersion.endsWith('0') ? `# [${previousVersion}]` : `## [${previousVersion}]`;
     const preVersionIdx = changelog.indexOf(prevVersionMark);
@@ -54946,7 +54945,6 @@ const removeDuplicates = (changelog, previousVersion) => {
         .map((l) => (whitelist.includes(l) || !prevContent.includes(l)) && l)
         .filter((l) => typeof l === 'string')
         .join('\n');
-    console.debug('finalLines', finalLines);
     return finalLines;
 };
 
@@ -54962,13 +54960,11 @@ const fetchChangelogs = () => {
         return external_fs_default().readFileSync(external_path_default().resolve(INPUT_PATH || GITHUB_WORKSPACE, 'CHANGELOG.md'), 'utf-8');
     }
     catch (err) {
-        console.error(err);
         return undefined;
     }
 };
 const buildChangelog = async (previousVersion) => {
     const changelogFileContent = fetchChangelogs();
-    console.debug('changelogFileContent', changelogFileContent);
     if (changelogFileContent) {
         return removeDuplicates(changelogFileContent, previousVersion);
     }
@@ -55013,7 +55009,6 @@ const getLastTag = async () => {
     }
 };
 const run = async () => {
-    console.log('RUN CALLED');
     const { GITHUB_WORKSPACE, INPUT_PATH } = process.env;
     const lastReleaseTag = await getLastTag();
     const previousVersion = lastReleaseTag.replace(/^v/, '');
@@ -55026,6 +55021,7 @@ const run = async () => {
         console.log(`::set-output name=is_new_release::${isNewRelease}`);
         // No need to generate changelogs when it's not a new release
         const changelog = isNewRelease ? await buildChangelog(previousVersion) : '';
+        console.log(changelog);
         console.log(`::set-output name=changelog::${changelog}`);
     }
     catch (err) {

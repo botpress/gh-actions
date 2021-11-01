@@ -9,14 +9,12 @@ const fetchChangelogs = (): string | undefined => {
     const { GITHUB_WORKSPACE, INPUT_PATH } = process.env
     return fs.readFileSync(path.resolve(INPUT_PATH || GITHUB_WORKSPACE, 'CHANGELOG.md'), 'utf-8')
   } catch (err) {
-    console.error(err)
     return undefined
   }
 }
 
 export const buildChangelog = async (previousVersion: string) => {
   const changelogFileContent = fetchChangelogs()
-  console.debug('changelogFileContent', changelogFileContent)
   if (changelogFileContent) {
     return removeDuplicates(changelogFileContent, previousVersion)
   } else {

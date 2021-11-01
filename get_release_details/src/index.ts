@@ -19,7 +19,6 @@ const getLastTag = async (): Promise<string> => {
 }
 
 const run = async () => {
-  console.log('RUN CALLED')
   const { GITHUB_WORKSPACE, INPUT_PATH } = process.env
   const lastReleaseTag = await getLastTag()
   const previousVersion = lastReleaseTag.replace(/^v/, '')
@@ -38,6 +37,7 @@ const run = async () => {
     // No need to generate changelogs when it's not a new release
     const changelog = isNewRelease ? await buildChangelog(previousVersion) : ''
 
+    console.log(changelog)
     console.log(`::set-output name=changelog::${changelog}`)
   } catch (err) {
     console.error('Cannot process package.json', err)
