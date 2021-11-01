@@ -54941,11 +54941,11 @@ const removeDuplicates = (changelog, previousVersion) => {
     const preVersionIdx = changelog.indexOf(prevVersionMark);
     const newLines = changelog.slice(0, preVersionIdx).split('\n');
     const prevContent = changelog.slice(preVersionIdx);
-    const finalLines = newLines
+    const finalNewLines = newLines
         .map((l) => (whitelist.includes(l) || !prevContent.includes(l)) && l)
         .filter((l) => typeof l === 'string')
         .join('\n');
-    return finalLines.toString().replace(/\%/g, '%25').replace(/\n/g, '%0A').replace(/\r/g, '%0D');
+    return finalNewLines;
 };
 
 ;// CONCATENATED MODULE: ./src/changelog.ts
@@ -55021,7 +55021,8 @@ const run = async () => {
         console.log(`::set-output name=is_new_release::${isNewRelease}`);
         // No need to generate changelogs when it's not a new release
         const changelog = isNewRelease ? await buildChangelog(previousVersion) : '';
-        console.log(changelog);
+        console.log('changelog:', changelog);
+        console.log('done');
         console.log(`::set-output name=changelog::${changelog}`);
     }
     catch (err) {
