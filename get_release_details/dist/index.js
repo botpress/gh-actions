@@ -54966,7 +54966,7 @@ const fetchChangelogs = () => {
 const buildChangelog = async (previousVersion) => {
     let text = '';
     const changelogFileContent = fetchChangelogs();
-    if (changelogFileContent) {
+    if (!changelogFileContent) {
         text = removeDuplicates(changelogFileContent, previousVersion);
     }
     else {
