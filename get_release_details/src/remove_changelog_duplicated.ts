@@ -11,5 +11,5 @@ export const removeDuplicates = (changelog: string, previousVersion: string) => 
     .filter((l) => typeof l === 'string')
     .join('\n')
 
-  return finalLines
+  return finalLines.toString().replace(/\%/g, '%25').replace(/\n/g, '%0A').replace(/\r/g, '%0D')
 }
