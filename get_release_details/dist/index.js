@@ -54936,6 +54936,7 @@ var conventional_changelog = __nccwpck_require__(5354);
 var conventional_changelog_default = /*#__PURE__*/__nccwpck_require__.n(conventional_changelog);
 ;// CONCATENATED MODULE: ./src/remove_changelog_duplicated.ts
 const removeDuplicates = (changelog, previousVersion) => {
+    console.debug('removeDuplicates called', changelog, previousVersion);
     const whitelist = ['', '### Bug Fixes', '### Features'];
     const prevVersionMark = previousVersion.endsWith('0') ? `# [${previousVersion}]` : `## [${previousVersion}]`;
     const preVersionIdx = changelog.indexOf(prevVersionMark);
@@ -54945,6 +54946,7 @@ const removeDuplicates = (changelog, previousVersion) => {
         .map((l) => (whitelist.includes(l) || !prevContent.includes(l)) && l)
         .filter((l) => typeof l === 'string')
         .join('\n');
+    console.debug('finalLines', finalLines);
     return finalLines;
 };
 
@@ -54953,16 +54955,20 @@ const removeDuplicates = (changelog, previousVersion) => {
 
 
 
+
 const fetchChangelogs = () => {
     try {
-        return external_fs_default().readFileSync('CHANGELOG.md', 'utf8');
+        const { GITHUB_WORKSPACE, INPUT_PATH } = process.env;
+        return external_fs_default().readFileSync(external_path_default().resolve(INPUT_PATH || GITHUB_WORKSPACE, 'CHANGELOG.md'), 'utf-8');
     }
-    catch {
+    catch (err) {
+        console.error(err);
         return undefined;
     }
 };
 const buildChangelog = async (previousVersion) => {
     const changelogFileContent = fetchChangelogs();
+    console.debug('changelogFileContent', changelogFileContent);
     if (changelogFileContent) {
         return removeDuplicates(changelogFileContent, previousVersion);
     }
@@ -54995,34 +55001,27 @@ const buildChangelog = async (previousVersion) => {
 
 
 
-const getTags = async () => {
+const getLastTag = async () => {
     const rawTags = await Promise.fromCallback((cb) => (0,external_child_process_.exec)('git rev-list --tags --max-count=30', cb));
     const tags = rawTags.trim().split('\n').join(' ');
     const rawRevs = await Promise.fromCallback((cb) => (0,external_child_process_.exec)(`git describe --abbrev=0 --tags ${tags}`, cb));
     const revs = rawRevs.trim().split('\n');
-    const strTags = [];
     for (let i = 0; i < revs.length; i++) {
         if (/^v\d/.test(revs[i])) {
-            strTags.push(revs[i]);
+            return revs[i];
         }
     }
-    return strTags;
 };
 const run = async () => {
-    var _a;
+    console.log('RUN CALLED');
     const { GITHUB_WORKSPACE, INPUT_PATH } = process.env;
-    const tags = await getTags();
-    if (!tags.length) {
-        return;
-    }
-    const lastReleaseTag = tags[0];
-    const lastTagVersion = lastReleaseTag.replace(/^v/, '');
-    const previousVersion = ((_a = tags[1]) === null || _a === void 0 ? void 0 : _a.replace(/^v/, '')) || lastTagVersion;
+    const lastReleaseTag = await getLastTag();
+    const previousVersion = lastReleaseTag.replace(/^v/, '');
     console.log(`::set-output name=latest_tag::${lastReleaseTag}`);
     try {
         const pkg = external_fs_default().readFileSync(external_path_default().resolve(INPUT_PATH || GITHUB_WORKSPACE, 'package.json'), 'utf-8');
         const currentVersion = JSON.parse(pkg).version;
-        const isNewRelease = lastTagVersion !== currentVersion;
+        const isNewRelease = previousVersion !== currentVersion;
         console.log(`::set-output name=version::${currentVersion}`);
         console.log(`::set-output name=is_new_release::${isNewRelease}`);
         // No need to generate changelogs when it's not a new release
@@ -55030,7 +55029,7 @@ const run = async () => {
         console.log(`::set-output name=changelog::${changelog}`);
     }
     catch (err) {
-        console.error('Cannot process package.json');
+        console.error('Cannot process package.json', err);
         throw err;
     }
 };
