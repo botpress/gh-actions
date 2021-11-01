@@ -54966,7 +54966,7 @@ const fetchChangelogs = () => {
 const buildChangelog = async (previousVersion) => {
     let text = '';
     const changelogFileContent = fetchChangelogs();
-    if (!changelogFileContent) {
+    if (changelogFileContent) {
         text = removeDuplicates(changelogFileContent, previousVersion);
     }
     else {
@@ -55021,8 +55021,6 @@ const run = async () => {
         console.log(`::set-output name=is_new_release::${isNewRelease}`);
         // No need to generate changelogs when it's not a new release
         const changelog = isNewRelease ? await buildChangelog(previousVersion) : '';
-        console.log('changelog:', changelog);
-        console.log('done');
         console.log(`::set-output name=changelog::${changelog}`);
     }
     catch (err) {

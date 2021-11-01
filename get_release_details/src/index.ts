@@ -37,8 +37,6 @@ const run = async () => {
     // No need to generate changelogs when it's not a new release
     const changelog = isNewRelease ? await buildChangelog(previousVersion) : ''
 
-    console.log('changelog:', changelog)
-    console.log('done')
     console.log(`::set-output name=changelog::${changelog}`)
   } catch (err) {
     console.error('Cannot process package.json', err)
