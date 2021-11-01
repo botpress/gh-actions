@@ -4,7 +4,7 @@ import path from 'path'
 import fs from 'fs'
 import { buildChangelog } from './changelog'
 
-const getLastTags = async () => {
+const getLastTag = async (): Promise<string> => {
   const rawTags: string = await Promise.fromCallback((cb) => exec('git rev-list --tags --max-count=30', cb))
   const tags = rawTags.trim().split('\n').join(' ')
 
@@ -20,7 +20,8 @@ const getLastTags = async () => {
 
 const run = async () => {
   const { GITHUB_WORKSPACE, INPUT_PATH } = process.env
-  const lastReleaseTag = await getLastTags()
+  const lastReleaseTag = await getLastTag()
+  const previousVersion = lastReleaseTag.replace(/^v/, '')
 
   console.log(`::set-output name=latest_tag::${lastReleaseTag}`)
 
@@ -28,17 +29,19 @@ const run = async () => {
     const pkg = fs.readFileSync(path.resolve(INPUT_PATH || GITHUB_WORKSPACE, 'package.json'), 'utf-8')
 
     const currentVersion = JSON.parse(pkg).version
-    const tagWithoutPrefix = lastReleaseTag.replace(/^v/, '')
+    const isNewRelease = previousVersion !== currentVersion
 
     console.log(`::set-output name=version::${currentVersion}`)
-    console.log(`::set-output name=is_new_release::${tagWithoutPrefix !== currentVersion}`)
+    console.log(`::set-output name=is_new_release::${isNewRelease}`)
+
+    // No need to generate changelogs when it's not a new release
+    const changelog = isNewRelease ? await buildChangelog(previousVersion) : ''
+
+    console.log(`::set-output name=changelog::${changelog}`)
   } catch (err) {
-    console.error('Cannot process package.json')
+    console.error('Cannot process package.json', err)
+    throw err
   }
-
-  const changelog = await buildChangelog()
-
-  console.log(`::set-output name=changelog::${changelog}`)
 }
 
 run()

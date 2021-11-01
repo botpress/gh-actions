@@ -9455,62 +9455,6 @@ module.exports = errorEx;
 
 /***/ }),
 
-/***/ 1368:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-"use strict";
-
-const path = __nccwpck_require__(5622);
-const locatePath = __nccwpck_require__(9716);
-
-module.exports = (filename, opts) => {
-	opts = opts || {};
-
-	const startDir = path.resolve(opts.cwd || '');
-	const root = path.parse(startDir).root;
-
-	const filenames = [].concat(filename);
-
-	return new Promise(resolve => {
-		(function find(dir) {
-			locatePath(filenames, {cwd: dir}).then(file => {
-				if (file) {
-					resolve(path.join(dir, file));
-				} else if (dir === root) {
-					resolve(null);
-				} else {
-					find(path.dirname(dir));
-				}
-			});
-		})(startDir);
-	});
-};
-
-module.exports.sync = (filename, opts) => {
-	opts = opts || {};
-
-	let dir = path.resolve(opts.cwd || '');
-	const root = path.parse(dir).root;
-
-	const filenames = [].concat(filename);
-
-	// eslint-disable-next-line no-constant-condition
-	while (true) {
-		const file = locatePath.sync(filenames, {cwd: dir});
-
-		if (file) {
-			return path.join(dir, file);
-		} else if (dir === root) {
-			return null;
-		}
-
-		dir = path.dirname(dir);
-	}
-};
-
-
-/***/ }),
-
 /***/ 5844:
 /***/ ((module) => {
 
@@ -17052,38 +16996,6 @@ const parse = (data, fp) => parseJson(stripBom(data), path.relative('.', fp));
 
 module.exports = fp => pify(fs.readFile)(fp, 'utf8').then(data => parse(data, fp));
 module.exports.sync = fp => parse(fs.readFileSync(fp, 'utf8'), fp);
-
-
-/***/ }),
-
-/***/ 9716:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-"use strict";
-
-const path = __nccwpck_require__(5622);
-const pathExists = __nccwpck_require__(2872);
-const pLocate = __nccwpck_require__(1813);
-
-module.exports = (iterable, opts) => {
-	opts = Object.assign({
-		cwd: process.cwd()
-	}, opts);
-
-	return pLocate(iterable, el => pathExists(path.resolve(opts.cwd, el)), opts);
-};
-
-module.exports.sync = (iterable, opts) => {
-	opts = Object.assign({
-		cwd: process.cwd()
-	}, opts);
-
-	for (const el of iterable) {
-		if (pathExists.sync(path.resolve(opts.cwd, el))) {
-			return el;
-		}
-	}
-};
 
 
 /***/ }),
@@ -41492,107 +41404,6 @@ function coerce (version) {
 
 /***/ }),
 
-/***/ 9053:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-"use strict";
-
-const pTry = __nccwpck_require__(8069);
-
-module.exports = concurrency => {
-	if (concurrency < 1) {
-		throw new TypeError('Expected `concurrency` to be a number from 1 and up');
-	}
-
-	const queue = [];
-	let activeCount = 0;
-
-	const next = () => {
-		activeCount--;
-
-		if (queue.length > 0) {
-			queue.shift()();
-		}
-	};
-
-	return fn => new Promise((resolve, reject) => {
-		const run = () => {
-			activeCount++;
-
-			pTry(fn).then(
-				val => {
-					resolve(val);
-					next();
-				},
-				err => {
-					reject(err);
-					next();
-				}
-			);
-		};
-
-		if (activeCount < concurrency) {
-			run();
-		} else {
-			queue.push(run);
-		}
-	});
-};
-
-
-/***/ }),
-
-/***/ 1813:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-"use strict";
-
-const pLimit = __nccwpck_require__(9053);
-
-class EndError extends Error {
-	constructor(value) {
-		super();
-		this.value = value;
-	}
-}
-
-// the input can also be a promise, so we `Promise.all()` them both
-const finder = el => Promise.all(el).then(val => val[1] === true && Promise.reject(new EndError(val[0])));
-
-module.exports = (iterable, tester, opts) => {
-	opts = Object.assign({
-		concurrency: Infinity,
-		preserveOrder: true
-	}, opts);
-
-	const limit = pLimit(opts.concurrency);
-
-	// start all the promises concurrently with optional limit
-	const items = Array.from(iterable).map(el => [el, limit(() => Promise.resolve(el).then(tester))]);
-
-	// check the promises either serially or concurrently
-	const checkLimit = pLimit(opts.preserveOrder ? 1 : Infinity);
-
-	return Promise.all(items.map(el => checkLimit(() => finder(el))))
-		.then(() => {})
-		.catch(err => err instanceof EndError ? err.value : Promise.reject(err));
-};
-
-
-/***/ }),
-
-/***/ 8069:
-/***/ ((module) => {
-
-"use strict";
-
-module.exports = cb => new Promise(resolve => {
-	resolve(cb());
-});
-
-
-/***/ }),
-
 /***/ 276:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
@@ -41628,31 +41439,6 @@ module.exports = (input, reviver, filename) => {
 		}
 
 		throw jsonErr;
-	}
-};
-
-
-/***/ }),
-
-/***/ 2872:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-"use strict";
-
-const fs = __nccwpck_require__(5747);
-
-module.exports = fp => new Promise(resolve => {
-	fs.access(fp, err => {
-		resolve(!err);
-	});
-});
-
-module.exports.sync = fp => {
-	try {
-		fs.accessSync(fp);
-		return true;
-	} catch (err) {
-		return false;
 	}
 };
 
@@ -43941,7 +43727,7 @@ return Q;
 
 "use strict";
 
-const findUp = __nccwpck_require__(1368);
+const findUp = __nccwpck_require__(1389);
 const readPkg = __nccwpck_require__(1454);
 
 module.exports = opts => {
@@ -43965,6 +43751,220 @@ module.exports.sync = opts => {
 		pkg: readPkg.sync(fp, opts),
 		path: fp
 	};
+};
+
+
+/***/ }),
+
+/***/ 1389:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
+const path = __nccwpck_require__(5622);
+const locatePath = __nccwpck_require__(4118);
+
+module.exports = (filename, opts) => {
+	opts = opts || {};
+
+	const startDir = path.resolve(opts.cwd || '');
+	const root = path.parse(startDir).root;
+
+	const filenames = [].concat(filename);
+
+	return new Promise(resolve => {
+		(function find(dir) {
+			locatePath(filenames, {cwd: dir}).then(file => {
+				if (file) {
+					resolve(path.join(dir, file));
+				} else if (dir === root) {
+					resolve(null);
+				} else {
+					find(path.dirname(dir));
+				}
+			});
+		})(startDir);
+	});
+};
+
+module.exports.sync = (filename, opts) => {
+	opts = opts || {};
+
+	let dir = path.resolve(opts.cwd || '');
+	const root = path.parse(dir).root;
+
+	const filenames = [].concat(filename);
+
+	// eslint-disable-next-line no-constant-condition
+	while (true) {
+		const file = locatePath.sync(filenames, {cwd: dir});
+
+		if (file) {
+			return path.join(dir, file);
+		} else if (dir === root) {
+			return null;
+		}
+
+		dir = path.dirname(dir);
+	}
+};
+
+
+/***/ }),
+
+/***/ 4118:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
+const path = __nccwpck_require__(5622);
+const pathExists = __nccwpck_require__(6090);
+const pLocate = __nccwpck_require__(6559);
+
+module.exports = (iterable, opts) => {
+	opts = Object.assign({
+		cwd: process.cwd()
+	}, opts);
+
+	return pLocate(iterable, el => pathExists(path.resolve(opts.cwd, el)), opts);
+};
+
+module.exports.sync = (iterable, opts) => {
+	opts = Object.assign({
+		cwd: process.cwd()
+	}, opts);
+
+	for (const el of iterable) {
+		if (pathExists.sync(path.resolve(opts.cwd, el))) {
+			return el;
+		}
+	}
+};
+
+
+/***/ }),
+
+/***/ 3538:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
+const pTry = __nccwpck_require__(8763);
+
+module.exports = concurrency => {
+	if (concurrency < 1) {
+		throw new TypeError('Expected `concurrency` to be a number from 1 and up');
+	}
+
+	const queue = [];
+	let activeCount = 0;
+
+	const next = () => {
+		activeCount--;
+
+		if (queue.length > 0) {
+			queue.shift()();
+		}
+	};
+
+	return fn => new Promise((resolve, reject) => {
+		const run = () => {
+			activeCount++;
+
+			pTry(fn).then(
+				val => {
+					resolve(val);
+					next();
+				},
+				err => {
+					reject(err);
+					next();
+				}
+			);
+		};
+
+		if (activeCount < concurrency) {
+			run();
+		} else {
+			queue.push(run);
+		}
+	});
+};
+
+
+/***/ }),
+
+/***/ 6559:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
+const pLimit = __nccwpck_require__(3538);
+
+class EndError extends Error {
+	constructor(value) {
+		super();
+		this.value = value;
+	}
+}
+
+// the input can also be a promise, so we `Promise.all()` them both
+const finder = el => Promise.all(el).then(val => val[1] === true && Promise.reject(new EndError(val[0])));
+
+module.exports = (iterable, tester, opts) => {
+	opts = Object.assign({
+		concurrency: Infinity,
+		preserveOrder: true
+	}, opts);
+
+	const limit = pLimit(opts.concurrency);
+
+	// start all the promises concurrently with optional limit
+	const items = Array.from(iterable).map(el => [el, limit(() => Promise.resolve(el).then(tester))]);
+
+	// check the promises either serially or concurrently
+	const checkLimit = pLimit(opts.preserveOrder ? 1 : Infinity);
+
+	return Promise.all(items.map(el => checkLimit(() => finder(el))))
+		.then(() => {})
+		.catch(err => err instanceof EndError ? err.value : Promise.reject(err));
+};
+
+
+/***/ }),
+
+/***/ 8763:
+/***/ ((module) => {
+
+"use strict";
+
+module.exports = cb => new Promise(resolve => {
+	resolve(cb());
+});
+
+
+/***/ }),
+
+/***/ 6090:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
+const fs = __nccwpck_require__(5747);
+
+module.exports = fp => new Promise(resolve => {
+	fs.access(fp, err => {
+		resolve(!err);
+	});
+});
+
+module.exports.sync = fp => {
+	try {
+		fs.accessSync(fp);
+		return true;
+	} catch (err) {
+		return false;
+	}
 };
 
 
@@ -54934,28 +54934,60 @@ var external_fs_default = /*#__PURE__*/__nccwpck_require__.n(external_fs_);
 // EXTERNAL MODULE: ../node_modules/conventional-changelog/index.js
 var conventional_changelog = __nccwpck_require__(5354);
 var conventional_changelog_default = /*#__PURE__*/__nccwpck_require__.n(conventional_changelog);
+;// CONCATENATED MODULE: ./src/remove_changelog_duplicated.ts
+const removeDuplicates = (changelog, previousVersion) => {
+    const whitelist = ['', '### Bug Fixes', '### Features'];
+    const prevVersionMark = previousVersion.endsWith('0') ? `# [${previousVersion}]` : `## [${previousVersion}]`;
+    const preVersionIdx = changelog.indexOf(prevVersionMark);
+    const newLines = changelog.slice(0, preVersionIdx).split('\n');
+    const prevContent = changelog.slice(preVersionIdx);
+    const finalNewLines = newLines
+        .map((l) => (whitelist.includes(l) || !prevContent.includes(l)) && l)
+        .filter((l) => typeof l === 'string')
+        .join('\n');
+    return finalNewLines;
+};
+
 ;// CONCATENATED MODULE: ./src/changelog.ts
 
 
-const buildChangelog = async () => {
-    // see options here: https://github.com/conventional-changelog/conventional-changelog/tree/master/packages
-    const changelogOts = {
-        preset: 'angular',
-        releaseCount: 1
-    };
-    const context = {};
-    const gitRawCommitsOpts = {
-        merges: null
-    };
-    const commitsParserOpts = {
-        mergePattern: /^Merge pull request #(\d+) from (.*)/gi,
-        mergeCorrespondence: ['id', 'source']
-    };
-    const changelogWriterOpts = {};
+
+
+
+const fetchChangelogs = () => {
+    try {
+        const { GITHUB_WORKSPACE, INPUT_PATH } = process.env;
+        return external_fs_default().readFileSync(external_path_default().resolve(INPUT_PATH || GITHUB_WORKSPACE, 'CHANGELOG.md'), 'utf-8');
+    }
+    catch (err) {
+        return undefined;
+    }
+};
+const buildChangelog = async (previousVersion) => {
     let text = '';
-    const stream = conventional_changelog_default()(changelogOts, context, gitRawCommitsOpts, commitsParserOpts, changelogWriterOpts);
-    stream.on('data', (chunk) => (text += chunk));
-    await Promise.fromCallback((cb) => stream.on('end', cb));
+    const changelogFileContent = fetchChangelogs();
+    if (changelogFileContent) {
+        text = removeDuplicates(changelogFileContent, previousVersion);
+    }
+    else {
+        // see options here: https://github.com/conventional-changelog/conventional-changelog/tree/master/packages
+        const changelogOts = {
+            preset: 'angular',
+            releaseCount: 1
+        };
+        const context = {};
+        const gitRawCommitsOpts = {
+            merges: null
+        };
+        const commitsParserOpts = {
+            mergePattern: /^Merge pull request #(\d+) from (.*)/gi,
+            mergeCorrespondence: ['id', 'source']
+        };
+        const changelogWriterOpts = {};
+        const stream = conventional_changelog_default()(changelogOts, context, gitRawCommitsOpts, commitsParserOpts, changelogWriterOpts);
+        stream.on('data', (chunk) => (text += chunk));
+        await Promise.fromCallback((cb) => stream.on('end', cb));
+    }
     return text.toString().replace(/\%/g, '%25').replace(/\n/g, '%0A').replace(/\r/g, '%0D');
 };
 
@@ -54965,7 +54997,7 @@ const buildChangelog = async () => {
 
 
 
-const getLastTags = async () => {
+const getLastTag = async () => {
     const rawTags = await Promise.fromCallback((cb) => (0,external_child_process_.exec)('git rev-list --tags --max-count=30', cb));
     const tags = rawTags.trim().split('\n').join(' ');
     const rawRevs = await Promise.fromCallback((cb) => (0,external_child_process_.exec)(`git describe --abbrev=0 --tags ${tags}`, cb));
@@ -54978,20 +55010,23 @@ const getLastTags = async () => {
 };
 const run = async () => {
     const { GITHUB_WORKSPACE, INPUT_PATH } = process.env;
-    const lastReleaseTag = await getLastTags();
+    const lastReleaseTag = await getLastTag();
+    const previousVersion = lastReleaseTag.replace(/^v/, '');
     console.log(`::set-output name=latest_tag::${lastReleaseTag}`);
     try {
         const pkg = external_fs_default().readFileSync(external_path_default().resolve(INPUT_PATH || GITHUB_WORKSPACE, 'package.json'), 'utf-8');
         const currentVersion = JSON.parse(pkg).version;
-        const tagWithoutPrefix = lastReleaseTag.replace(/^v/, '');
+        const isNewRelease = previousVersion !== currentVersion;
         console.log(`::set-output name=version::${currentVersion}`);
-        console.log(`::set-output name=is_new_release::${tagWithoutPrefix !== currentVersion}`);
+        console.log(`::set-output name=is_new_release::${isNewRelease}`);
+        // No need to generate changelogs when it's not a new release
+        const changelog = isNewRelease ? await buildChangelog(previousVersion) : '';
+        console.log(`::set-output name=changelog::${changelog}`);
     }
     catch (err) {
-        console.error('Cannot process package.json');
+        console.error('Cannot process package.json', err);
+        throw err;
     }
-    const changelog = await buildChangelog();
-    console.log(`::set-output name=changelog::${changelog}`);
 };
 run();
 
