@@ -8,7 +8,8 @@ const fetchChangelogs = (): string | undefined => {
   try {
     const { GITHUB_WORKSPACE, INPUT_PATH } = process.env
     return fs.readFileSync(path.resolve(INPUT_PATH || GITHUB_WORKSPACE, 'CHANGELOG.md'), 'utf-8')
-  } catch {
+  } catch (err) {
+    console.error(err)
     return undefined
   }
 }
