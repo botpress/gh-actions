@@ -16,8 +16,8 @@ const fetchChangelogs = (): string | undefined => {
 
 export const buildChangelog = async (previousVersion: string) => {
   const changelogFileContent = fetchChangelogs()
+  console.debug('changelogFileContent', changelogFileContent)
   if (changelogFileContent) {
-    console.log('changelogFileContent', changelogFileContent)
     return removeDuplicates(changelogFileContent, previousVersion)
   } else {
     // see options here: https://github.com/conventional-changelog/conventional-changelog/tree/master/packages
