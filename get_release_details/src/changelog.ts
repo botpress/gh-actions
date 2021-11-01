@@ -2,10 +2,12 @@ import 'bluebird-global'
 import changelog from 'conventional-changelog'
 import { removeDuplicates } from './remove_changelog_duplicated'
 import fs from 'fs'
+import path from 'path'
 
 const fetchChangelogs = (): string | undefined => {
   try {
-    return fs.readFileSync('CHANGELOG.md', 'utf8')
+    const { GITHUB_WORKSPACE, INPUT_PATH } = process.env
+    return fs.readFileSync(path.resolve(INPUT_PATH || GITHUB_WORKSPACE, 'CHANGELOG.md'), 'utf-8')
   } catch {
     return undefined
   }
