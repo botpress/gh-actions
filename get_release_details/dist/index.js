@@ -54945,7 +54945,7 @@ const removeDuplicates = (changelog, previousVersion) => {
         .map((l) => (whitelist.includes(l) || !prevContent.includes(l)) && l)
         .filter((l) => typeof l === 'string')
         .join('\n');
-    return finalLines;
+    return finalLines.toString().replace(/\%/g, '%25').replace(/\n/g, '%0A').replace(/\r/g, '%0D');
 };
 
 ;// CONCATENATED MODULE: ./src/changelog.ts
@@ -54964,9 +54964,10 @@ const fetchChangelogs = () => {
     }
 };
 const buildChangelog = async (previousVersion) => {
+    let text = '';
     const changelogFileContent = fetchChangelogs();
     if (changelogFileContent) {
-        return removeDuplicates(changelogFileContent, previousVersion);
+        text = removeDuplicates(changelogFileContent, previousVersion);
     }
     else {
         // see options here: https://github.com/conventional-changelog/conventional-changelog/tree/master/packages
@@ -54983,12 +54984,11 @@ const buildChangelog = async (previousVersion) => {
             mergeCorrespondence: ['id', 'source']
         };
         const changelogWriterOpts = {};
-        let text = '';
         const stream = conventional_changelog_default()(changelogOts, context, gitRawCommitsOpts, commitsParserOpts, changelogWriterOpts);
         stream.on('data', (chunk) => (text += chunk));
         await Promise.fromCallback((cb) => stream.on('end', cb));
-        return text.toString().replace(/\%/g, '%25').replace(/\n/g, '%0A').replace(/\r/g, '%0D');
     }
+    return text.toString().replace(/\%/g, '%25').replace(/\n/g, '%0A').replace(/\r/g, '%0D');
 };
 
 ;// CONCATENATED MODULE: ./src/index.ts

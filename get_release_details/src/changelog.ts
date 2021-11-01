@@ -14,9 +14,10 @@ const fetchChangelogs = (): string | undefined => {
 }
 
 export const buildChangelog = async (previousVersion: string) => {
+  let text = ''
   const changelogFileContent = fetchChangelogs()
   if (changelogFileContent) {
-    return removeDuplicates(changelogFileContent, previousVersion)
+    text = removeDuplicates(changelogFileContent, previousVersion)
   } else {
     // see options here: https://github.com/conventional-changelog/conventional-changelog/tree/master/packages
     const changelogOts = {
@@ -33,11 +34,10 @@ export const buildChangelog = async (previousVersion: string) => {
     }
     const changelogWriterOpts = {}
 
-    let text = ''
     const stream = changelog(changelogOts, context, gitRawCommitsOpts, commitsParserOpts, changelogWriterOpts)
     stream.on('data', (chunk) => (text += chunk))
     await Promise.fromCallback((cb) => stream.on('end', cb))
-
-    return text.toString().replace(/\%/g, '%25').replace(/\n/g, '%0A').replace(/\r/g, '%0D')
   }
+
+  return text.toString().replace(/\%/g, '%25').replace(/\n/g, '%0A').replace(/\r/g, '%0D')
 }
