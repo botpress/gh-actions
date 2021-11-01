@@ -40,7 +40,7 @@ const run = async () => {
 
     console.log(`::set-output name=changelog::${changelog}`)
   } catch (err) {
-    console.error('Cannot process package.json')
+    console.error('Cannot process package.json', err)
     throw err
   }
 }
