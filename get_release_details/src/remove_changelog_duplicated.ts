@@ -1,4 +1,5 @@
 export const removeDuplicates = (changelog: string, previousVersion: string) => {
+  console.log('removeDuplicates called', changelog, previousVersion)
   const whitelist = ['', '### Bug Fixes', '### Features']
   const prevVersionMark = previousVersion.endsWith('0') ? `# [${previousVersion}]` : `## [${previousVersion}]`
   const preVersionIdx = changelog.indexOf(prevVersionMark)
@@ -11,5 +12,6 @@ export const removeDuplicates = (changelog: string, previousVersion: string) => 
     .filter((l) => typeof l === 'string')
     .join('\n')
 
+  console.log('finalLines', finalLines)
   return finalLines
 }
