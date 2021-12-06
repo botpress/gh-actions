@@ -1,10 +1,9 @@
 {
   "name": "set_ssh_key",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "dist/index.js",
   "license": "MIT",
   "scripts": {
-    "build": "yarn run ncc build src/index.ts --target es2019"
-  },
-  "dependencies": {}
+    "build": "ncc build src/index.ts --target es2019"
+  }
 }

@@ -6,6 +6,7 @@ inputs:
     required: true
   host:
     description: 'Hostname of the destination'
+    required: false
 runs:
   using: 'node12'
   main: 'dist/index.js'
