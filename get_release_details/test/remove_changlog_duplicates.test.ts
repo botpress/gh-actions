@@ -1,4 +1,4 @@
-import { removeDuplicates } from '../src/remove_changelog_duplicated'
+import { removeDuplicates } from '../src/changelog/utils'
 
 const changelogsWithDuplicated = `
 ## [0.0.41](https://github.com/botpress/studio/compare/v0.0.28...v0.0.41) (2021-10-22)

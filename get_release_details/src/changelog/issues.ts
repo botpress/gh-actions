@@ -5,8 +5,7 @@ import * as core from '@actions/core'
 import * as github from '@actions/github'
 
 export class Transformer {
-  static defaultTransform = async (): Promise<ChangelogWriterOpts['transform']> =>
-    (await angular).conventionalChangelog.writerOpts.transform
+  static defaultTransform = async (): Promise<Function> => (await angular).conventionalChangelog.writerOpts.transform
 
   private pullRequestNumbers: number[] = []
   private pullRequestIssues: PullRequestIssues = {}

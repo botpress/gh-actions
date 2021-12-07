@@ -22,6 +22,7 @@ export const buildChangelog = async (previousVersion: string) => {
     text = removeDuplicates(changelogFileContent, previousVersion)
   } else {
     const transformer = new Transformer()
+    const defaultTransform = await Transformer.defaultTransform()
     // see options here: https://github.com/conventional-changelog/conventional-changelog/tree/master/packages
     const changelogOts: Options = {
       preset: 'angular',
@@ -36,7 +37,11 @@ export const buildChangelog = async (previousVersion: string) => {
       mergeCorrespondence: ['id', 'source']
     }
     const changelogWriterOpts: ChangelogWriterOpts = {
-      transform: transformer.referenceIssues
+      transform: (commit, context) => {
+        ;(transformer.referenceIssues as any)(commit, context)
+
+        return defaultTransform(commit, context)
+      }
     }
 
     await Promise.fromCallback((cb) =>
