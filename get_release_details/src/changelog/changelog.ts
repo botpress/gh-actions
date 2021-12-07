@@ -1,8 +1,10 @@
 import 'bluebird-global'
-import changelog from 'conventional-changelog'
-import { removeDuplicates } from './remove_changelog_duplicated'
+import changelog, { Options } from 'conventional-changelog'
+import { removeDuplicates } from './utils'
 import fs from 'fs'
 import path from 'path'
+import { ChangelogWriterOpts, CommitsParserOpts, Context, GitRawCommitsOptions } from './types'
+import { Transformer } from './issues'
 
 const fetchChangelogs = (): string | undefined => {
   try {
@@ -19,20 +21,33 @@ export const buildChangelog = async (previousVersion: string) => {
   if (changelogFileContent) {
     text = removeDuplicates(changelogFileContent, previousVersion)
   } else {
+    const transformer = new Transformer()
     // see options here: https://github.com/conventional-changelog/conventional-changelog/tree/master/packages
-    const changelogOts = {
+    const changelogOts: Options = {
       preset: 'angular',
       releaseCount: 1
     }
-    const context = {}
-    const gitRawCommitsOpts = {
+    const context: Context = {}
+    const gitRawCommitsOpts: GitRawCommitsOptions = {
       merges: null
     }
-    const commitsParserOpts = {
+    const commitsParserOpts: CommitsParserOpts = {
       mergePattern: /^Merge pull request #(\d+) from (.*)/gi,
       mergeCorrespondence: ['id', 'source']
     }
-    const changelogWriterOpts = {}
+    const changelogWriterOpts: ChangelogWriterOpts = {
+      transform: transformer.referenceIssues
+    }
+
+    await Promise.fromCallback((cb) =>
+      changelog(changelogOts, context, gitRawCommitsOpts, commitsParserOpts, {
+        transform: transformer.fetchPullRequestNumbers
+      })
+        .on('data', () => {})
+        .on('end', cb)
+    )
+
+    await transformer.getIssues('botpress', 'gh-actions')
 
     const stream = changelog(changelogOts, context, gitRawCommitsOpts, commitsParserOpts, changelogWriterOpts)
     stream.on('data', (chunk) => (text += chunk))

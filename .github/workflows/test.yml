@@ -18,3 +18,28 @@ jobs:
       - name: Run tests
         run: |
           yarn test --coverage --verbose
+
+  get_release_details:
+    name: Test Get Release Details
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@master
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '12.18.1'
+          cache: 'yarn'
+
+      - name: Get Release Details
+        id: release_details
+        uses: ./get_release_details
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Change Log
+        run: |
+          echo "Changelog: ${{ steps.release_details.outputs.changelog }}"
+          echo "Is new release?: ${{ steps.release_details.outputs.is_new_release }}"
+          echo "Version: ${{ steps.release_details.outputs.version }}"
+          echo "Latest Tag: ${{ steps.release_details.outputs.latest_tag }}"

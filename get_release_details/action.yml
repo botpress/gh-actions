@@ -4,6 +4,9 @@ inputs:
   path:
     description: 'Custom path to package.json'
     required: false
+  token:
+    description: 'Github Token'
+    required: true
 outputs:
   latest_tag:
     description: 'Latest Release Tag'

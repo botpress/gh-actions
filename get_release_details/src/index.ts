@@ -2,7 +2,7 @@ import { exec } from 'child_process'
 import 'bluebird-global'
 import path from 'path'
 import fs from 'fs'
-import { buildChangelog } from './changelog'
+import { buildChangelog } from './changelog/changelog'
 
 const getLastTag = async (): Promise<string> => {
   const rawTags: string = await Promise.fromCallback((cb) => exec('git rev-list --tags --max-count=30', cb))
