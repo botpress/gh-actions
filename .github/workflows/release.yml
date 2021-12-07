@@ -13,22 +13,21 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@master
-      - uses: actions/setup-node@v2
-        with:
-          node-version: '12.18.1'
-          cache: 'yarn'
+      #- uses: actions/setup-node@v2
+      #  with:
+      #    node-version: '12.18.1'
+      #    cache: 'yarn'
 
-      - name: Fetch Node Packages
-        run: |
-          yarn --frozen-lockfile
+      #- name: Fetch Node Packages
+      #  run: |
+      #    yarn --frozen-lockfile
 
-      - name: Build Actions
-        run: yarn build
+      #- name: Build Actions
+      #  run: yarn build
 
       - name: Push Release
         shell: bash
         run: |
-          ls -la .github/workflows/code/release.sh
           .github/workflows/code/release.sh
         env:
-          TAG_NAME: ${{ inputs.tag-name }}
+          TAG_NAME: ${{ github.event.inputs.tag-name }}
