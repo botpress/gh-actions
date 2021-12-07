@@ -3,6 +3,7 @@ import 'bluebird-global'
 import path from 'path'
 import fs from 'fs'
 import { buildChangelog } from './changelog/changelog'
+import * as core from '@actions/core'
 
 const getLastTag = async (): Promise<string> => {
   const rawTags: string = await Promise.fromCallback((cb) => exec('git rev-list --tags --max-count=30', cb))
@@ -20,7 +21,8 @@ const getLastTag = async (): Promise<string> => {
 
 const run = async () => {
   // TODO¨: Remove this
-  const changelog = buildChangelog('')
+  const changelog = await buildChangelog('')
+  core.debug(changelog)
   console.log(`::set-output name=changelog::${changelog}`)
   return
 
