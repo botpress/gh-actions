@@ -22,7 +22,8 @@ const getLastTag = async (): Promise<string> => {
 const run = async () => {
   // TODO¨: Remove this
   const changelog = await buildChangelog('')
-  core.debug(changelog)
+  core.info('test')
+  core.info(changelog)
   console.log(`::set-output name=changelog::${changelog}`)
   return
 
