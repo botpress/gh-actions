@@ -20,7 +20,8 @@ const getLastTag = async (): Promise<string> => {
 
 const run = async () => {
   // TODO¨: Remove this
-  buildChangelog('')
+  const changelog = buildChangelog('')
+  console.log(`::set-output name=changelog::${changelog}`)
   return
 
   const { GITHUB_WORKSPACE, INPUT_PATH } = process.env
