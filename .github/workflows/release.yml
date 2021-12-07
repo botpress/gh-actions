@@ -7,6 +7,7 @@ on:
         description: tag name to push
 jobs:
   release:
+    name: Release
     runs-on: 'ubuntu-latest'
 
     steps:
@@ -17,11 +18,17 @@ jobs:
           node-version: '12.18.1'
           cache: 'yarn'
 
-      - name: Build
+      - name: Fetch Node Packages
+        run: |
+          yarn --frozen-lockfile
+
+      - name: Build Actions
         run: yarn build
 
-      - id: Release
+      - name: Push Release
         shell: bash
-        run: ${{ github.action_path }}/code/release.sh
+        run: |
+          ls -la .github/workflows/code/release.sh
+          .github/workflows/code/release.sh
         env:
           TAG_NAME: ${{ inputs.tag-name }}
