@@ -67193,6 +67193,7 @@ const buildChangelog = async (previousVersion) => {
 
 
 
+
 const getLastTag = async () => {
     const rawTags = await Promise.fromCallback((cb) => (0,external_child_process_.exec)('git rev-list --tags --max-count=30', cb));
     const tags = rawTags.trim().split('\n').join(' ');
@@ -67206,7 +67207,10 @@ const getLastTag = async () => {
 };
 const run = async () => {
     // TODO¨: Remove this
-    buildChangelog('');
+    const changelog = await buildChangelog('');
+    core.info('test');
+    core.info(changelog);
+    console.log(`::set-output name=changelog::${changelog}`);
     return;
     const { GITHUB_WORKSPACE, INPUT_PATH } = process.env;
     const lastReleaseTag = await getLastTag();
