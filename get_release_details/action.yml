@@ -3,6 +3,7 @@ description: 'Returns the latest release tag (ignore branches)'
 inputs:
   path:
     description: 'Custom path to package.json'
+    required: false
 outputs:
   latest_tag:
     description: 'Latest Release Tag'
