@@ -19,6 +19,10 @@ const getLastTag = async (): Promise<string> => {
 }
 
 const run = async () => {
+  // TODO¨: Remove this
+  buildChangelog('')
+  return
+
   const { GITHUB_WORKSPACE, INPUT_PATH } = process.env
   const lastReleaseTag = await getLastTag()
   const previousVersion = lastReleaseTag.replace(/^v/, '')
