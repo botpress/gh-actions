@@ -25,7 +25,7 @@ jobs:
       - name: Build Actions
         run: yarn build
 
-      - id: Push Release
+      - name: Push Release
         shell: bash
         run: ${{ github.action_path }}/code/release.sh
         env:
