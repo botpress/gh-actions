@@ -69211,7 +69211,7 @@ class Transformer {
         this.referenceIssues = (commit, _context) => {
             if (commit.references.length) {
                 const issue = commit.references[0].issue;
-                const issues = this.pullRequestIssues[Number(issue)];
+                const issues = this.pullRequestIssues[Number(issue)] || [];
                 for (const issue of issues) {
                     commit.references.push({
                         action: 'closes',
