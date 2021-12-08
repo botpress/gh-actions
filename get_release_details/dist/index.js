@@ -69228,19 +69228,24 @@ class Transformer {
         this.getIssues = async (owner, repo) => {
             const token = core.getInput('token');
             for (const pull_number of this.pullRequestNumbers) {
-                const octokit = github.getOctokit(token);
-                const pr = await octokit.rest.pulls.get({
-                    owner,
-                    repo,
-                    pull_number
-                });
-                const description = pr.data.body;
-                if (!description) {
-                    this.pullRequestIssues[pull_number] = [];
-                    continue;
+                try {
+                    const octokit = github.getOctokit(token);
+                    const pr = await octokit.rest.pulls.get({
+                        owner,
+                        repo,
+                        pull_number
+                    });
+                    const description = pr.data.body;
+                    if (!description) {
+                        this.pullRequestIssues[pull_number] = [];
+                        continue;
+                    }
+                    const issues = this.extractIssues(description);
+                    this.pullRequestIssues[pull_number] = issues;
                 }
-                const issues = this.extractIssues(description);
-                this.pullRequestIssues[pull_number] = issues;
+                catch {
+                    core.info(`Pull Request #${pull_number} does not exists`);
+                }
             }
         };
         this.extractIssues = (description) => {
