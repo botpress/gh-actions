@@ -6,8 +6,6 @@ import { ChangelogWriterOpts, CommitsParserOpts, Context, GitRawCommitsOptions }
 import { Transformer } from './issues'
 
 export const buildChangelog = async (previousVersion: string) => {
-  let text = ''
-
   const transformer = new Transformer()
   const defaultTransform = await Transformer.defaultTransform()
   // see options here: https://github.com/conventional-changelog/conventional-changelog/tree/master/packages
@@ -42,12 +40,16 @@ export const buildChangelog = async (previousVersion: string) => {
   const [owner, repo] = process.env.GITHUB_REPOSITORY.split('/')
   await transformer.getIssues(owner, repo)
 
+  let text = ''
+
   const stream = changelog(changelogOts, context, gitRawCommitsOpts, commitsParserOpts, changelogWriterOpts)
   stream.on('data', (chunk) => (text += chunk))
   await Promise.fromCallback((cb) => stream.on('end', cb))
 
-  const filePath = path.join(process.env.INPUT_PATH || process.env.GITHUB_WORKSPACE, 'CHANGELOG.md')
-  fse.appendFile(filePath, text.toString(), { encoding: 'utf-8' })
+  text = text.toString()
 
-  return text.toString()
+  const filePath = path.join(process.env.INPUT_PATH || process.env.GITHUB_WORKSPACE, 'CHANGELOG.md')
+  fse.appendFile(filePath, text, { encoding: 'utf-8' })
+
+  return text
 }

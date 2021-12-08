@@ -69277,7 +69277,6 @@ Transformer.defaultTransform = async () => (await (conventional_changelog_angula
 
 
 const buildChangelog = async (previousVersion) => {
-    let text = '';
     const transformer = new Transformer();
     const defaultTransform = await Transformer.defaultTransform();
     // see options here: https://github.com/conventional-changelog/conventional-changelog/tree/master/packages
@@ -69307,12 +69306,14 @@ const buildChangelog = async (previousVersion) => {
         .on('end', cb));
     const [owner, repo] = process.env.GITHUB_REPOSITORY.split('/');
     await transformer.getIssues(owner, repo);
+    let text = '';
     const stream = conventional_changelog_default()(changelogOts, context, gitRawCommitsOpts, commitsParserOpts, changelogWriterOpts);
     stream.on('data', (chunk) => (text += chunk));
     await Promise.fromCallback((cb) => stream.on('end', cb));
+    text = text.toString();
     const filePath = external_path_default().join(process.env.INPUT_PATH || process.env.GITHUB_WORKSPACE, 'CHANGELOG.md');
-    lib_default().appendFile(filePath, text.toString(), { encoding: 'utf-8' });
-    return text.toString();
+    lib_default().appendFile(filePath, text, { encoding: 'utf-8' });
+    return text;
 };
 
 ;// CONCATENATED MODULE: ./src/index.ts
@@ -69321,7 +69322,9 @@ const buildChangelog = async (previousVersion) => {
 
 
 
+
 const getLastTag = async () => {
+    await Promise.fromCallback((cb) => (0,external_child_process_.exec)('git fetch --prune --unshallow', cb));
     const rawTags = await Promise.fromCallback((cb) => (0,external_child_process_.exec)('git rev-list --tags --max-count=30', cb));
     const tags = rawTags.trim().split('\n').join(' ');
     const rawRevs = await Promise.fromCallback((cb) => (0,external_child_process_.exec)(`git describe --abbrev=0 --tags ${tags}`, cb));
@@ -69333,9 +69336,9 @@ const getLastTag = async () => {
     }
 };
 const run = async () => {
-    // TODO¨: Remove this
+    // TODO: Remove this
     const changelog = await buildChangelog('');
-    console.log(`::set-output name=changelog::${changelog}`);
+    core.setOutput('changelog', changelog);
     return;
     const { GITHUB_WORKSPACE, INPUT_PATH } = process.env;
     const lastReleaseTag = await getLastTag();

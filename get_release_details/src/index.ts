@@ -6,6 +6,8 @@ import { buildChangelog } from './changelog/changelog'
 import * as core from '@actions/core'
 
 const getLastTag = async (): Promise<string> => {
+  await Promise.fromCallback((cb) => exec('git fetch --prune --unshallow', cb))
+
   const rawTags: string = await Promise.fromCallback((cb) => exec('git rev-list --tags --max-count=30', cb))
   const tags = rawTags.trim().split('\n').join(' ')
 
@@ -20,9 +22,9 @@ const getLastTag = async (): Promise<string> => {
 }
 
 const run = async () => {
-  // TODO¨: Remove this
+  // TODO: Remove this
   const changelog = await buildChangelog('')
-  console.log(`::set-output name=changelog::${changelog}`)
+  core.setOutput('changelog', changelog)
   return
 
   const { GITHUB_WORKSPACE, INPUT_PATH } = process.env
