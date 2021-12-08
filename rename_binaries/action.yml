@@ -1,8 +1,8 @@
 name: 'rename_binaries'
 description: 'Rename binaries based on the branch name'
 inputs:
-  branch:
-    description: 'Branch name'
+  subname:
+    description: 'Binary subname. Uses branch name if not set.'
     required: false
   path:
     description: 'Path to binary folder'
