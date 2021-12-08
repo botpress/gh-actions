@@ -62,16 +62,17 @@ var external_path_default = /*#__PURE__*/__nccwpck_require__.n(external_path_nam
 ;// CONCATENATED MODULE: ./src/index.ts
 
 
-const { INPUT_PATH, GITHUB_REF } = process.env;
+const { INPUT_PATH, INPUT_SUBNAME, GITHUB_REF } = process.env;
 if (!external_fs_default().existsSync(INPUT_PATH)) {
     console.error("Path doesn't exist");
     process.exit(1);
 }
 const branchWithoutHead = GITHUB_REF.replace('refs/heads/', '');
 const branchName = branchWithoutHead.replace(/[\W_]+/g, '_');
+const subName = INPUT_SUBNAME || branchName;
 for (const fileName of external_fs_default().readdirSync(INPUT_PATH)) {
     const [name, _version, platform, arch] = fileName.split('-');
-    const newName = `${name}-${branchName}-${platform}-${arch}`;
+    const newName = `${name}-${subName}-${platform}-${arch}`;
     external_fs_default().renameSync(external_path_default().join(INPUT_PATH, fileName), external_path_default().join(INPUT_PATH, newName));
 }
 
