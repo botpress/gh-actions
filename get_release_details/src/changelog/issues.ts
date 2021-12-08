@@ -15,6 +15,7 @@ const CLOSES_ISSUES_KEYWORDS = [
   'resolve',
   'resolved'
 ]
+const CLOSES_ISSUES_KEYWORDS_REGEX = new RegExp(CLOSES_ISSUES_KEYWORDS.join('|'), 'i')
 const REGEX_ISSUES =
   /(?:(?<![/\w-.])\w[\w-.]+?\/\w[\w-.]+?#|(?:https:\/\/github\.com\/\w[\w-.]+?\/\w[\w-.]+?\/issues\/)|\B#)[1-9]\d*?\b/g
 const REGEX_NUMBER = /[1-9]+/g
@@ -89,9 +90,8 @@ export class Transformer {
   private extractIssues = (description: string): string[] => {
     const issues = new Set<string>()
 
-    const relevantLines = description.split('\n').filter((line) => CLOSES_ISSUES_KEYWORDS.includes(line.toLowerCase()))
+    const relevantLines = description.split('\n').filter((line) => CLOSES_ISSUES_KEYWORDS_REGEX.test(line))
 
-    core.info(`Relevant lines: ${relevantLines.join('\n')}`)
     for (const line of relevantLines) {
       const matches = line.match(REGEX_ISSUES) || []
 

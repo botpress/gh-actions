@@ -69207,6 +69207,7 @@ const CLOSES_ISSUES_KEYWORDS = [
     'resolve',
     'resolved'
 ];
+const CLOSES_ISSUES_KEYWORDS_REGEX = new RegExp(CLOSES_ISSUES_KEYWORDS.join('|'), 'i');
 const REGEX_ISSUES = /(?:(?<![/\w-.])\w[\w-.]+?\/\w[\w-.]+?#|(?:https:\/\/github\.com\/\w[\w-.]+?\/\w[\w-.]+?\/issues\/)|\B#)[1-9]\d*?\b/g;
 const REGEX_NUMBER = /[1-9]+/g;
 class Transformer {
@@ -69267,8 +69268,7 @@ class Transformer {
         // TODO: Add support for external repository by storing { issueNumber, owner, repo }[]
         this.extractIssues = (description) => {
             const issues = new Set();
-            const relevantLines = description.split('\n').filter((line) => CLOSES_ISSUES_KEYWORDS.includes(line.toLowerCase()));
-            core.info(`Relevant lines: ${relevantLines.join('\n')}`);
+            const relevantLines = description.split('\n').filter((line) => CLOSES_ISSUES_KEYWORDS_REGEX.test(line));
             for (const line of relevantLines) {
                 const matches = line.match(REGEX_ISSUES) || [];
                 for (const match of matches) {
