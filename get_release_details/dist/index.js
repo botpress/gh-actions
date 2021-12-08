@@ -69268,9 +69268,11 @@ class Transformer {
         this.extractIssues = (description) => {
             const issues = new Set();
             const relevantLines = description.split('\n').filter((line) => CLOSES_ISSUES_KEYWORDS.includes(line.toLowerCase()));
+            core.info(`Relevant lines: ${relevantLines.join('\n')}`);
             for (const line of relevantLines) {
                 const matches = line.match(REGEX_ISSUES) || [];
                 for (const match of matches) {
+                    core.info(`Found a match: ${match}`);
                     const issue = match.match(REGEX_NUMBER);
                     issue.length && issues.add(issue[0]);
                 }
