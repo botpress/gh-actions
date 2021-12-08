@@ -69204,6 +69204,7 @@ class Transformer {
             // We only want the first issue as it is the PR number
             if (commit.references.length) {
                 const issue = commit.references[0].issue;
+                core.info(`Found PR #${issue}`);
                 this.pullRequestNumbers.push(Number(issue));
             }
             return commit;
@@ -69240,7 +69241,9 @@ class Transformer {
                         this.pullRequestIssues[pull_number] = [];
                         continue;
                     }
+                    core.info(`PR #${pull_number} Description: ${description}`);
                     const issues = this.extractIssues(description);
+                    core.info(`PR #${pull_number} Found issues: ${issues}`);
                     this.pullRequestIssues[pull_number] = issues;
                 }
                 catch {
@@ -69253,7 +69256,7 @@ class Transformer {
             const re = /(?:(?<![/\w-.])\w[\w-.]+?\/\w[\w-.]+?|\B)#[1-9]\d*?\b/g;
             for (const line of description.split('\n')) {
                 // TODO: Add more keywords
-                if (!['closes', 'fixes', 'resolves'].includes(line.toLocaleLowerCase())) {
+                if (!['closes', 'fixes', 'resolves'].includes(line.toLowerCase())) {
                     continue;
                 }
                 const matches = line.match(re);
