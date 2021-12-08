@@ -34,8 +34,6 @@ jobs:
       - name: Get Release Details
         id: release_details
         uses: ./get_release_details
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Change Log
         run: |
