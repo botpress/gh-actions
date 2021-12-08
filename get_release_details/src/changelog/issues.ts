@@ -4,6 +4,20 @@ import angular from 'conventional-changelog-angular'
 import * as core from '@actions/core'
 import * as github from '@actions/github'
 
+const CLOSES_ISSUES_KEYWORDS = [
+  'closes',
+  'close',
+  'closed',
+  'fixes',
+  'fixe',
+  'fixed',
+  'resolves',
+  'resolve',
+  'resolved'
+]
+const REGEX_ISSUES =
+  /(?:(?<![/\w-.])\w[\w-.]+?\/\w[\w-.]+?#|(?:https:\/\/github\.com\/\w[\w-.]+?\/\w[\w-.]+?\/issues\/)|\B#)[1-9]\d*?\b/g
+const REGEX_NUMBER = /[1-9]+/g
 export class Transformer {
   static defaultTransform = async (): Promise<Function> => (await angular).conventionalChangelog.writerOpts.transform
 
@@ -71,22 +85,18 @@ export class Transformer {
     }
   }
 
+  // TODO: Add support for external repository by storing { issueNumber, owner, repo }[]
   private extractIssues = (description: string): string[] => {
     const issues = new Set<string>()
-    const re = /(?:(?<![/\w-.])\w[\w-.]+?\/\w[\w-.]+?|\B)#[1-9]\d*?\b/g
 
-    for (const line of description.split('\n')) {
-      // TODO: Add more keywords
-      if (!['closes', 'fixes', 'resolves'].includes(line.toLowerCase())) {
-        continue
-      }
+    const relevantLines = description.split('\n').filter((line) => CLOSES_ISSUES_KEYWORDS.includes(line.toLowerCase()))
 
-      const matches = line.match(re)
+    for (const line of relevantLines) {
+      const matches = line.match(REGEX_ISSUES) || []
 
-      if (matches.length) {
-        for (const match of matches) {
-          issues.add(match)
-        }
+      for (const match of matches) {
+        const issue = match.match(REGEX_NUMBER)
+        issue.length && issues.add(issue[0])
       }
     }
 

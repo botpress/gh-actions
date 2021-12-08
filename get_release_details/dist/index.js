@@ -69196,6 +69196,19 @@ var _a;
 
 
 
+const CLOSES_ISSUES_KEYWORDS = [
+    'closes',
+    'close',
+    'closed',
+    'fixes',
+    'fixe',
+    'fixed',
+    'resolves',
+    'resolve',
+    'resolved'
+];
+const REGEX_ISSUES = /(?:(?<![/\w-.])\w[\w-.]+?\/\w[\w-.]+?#|(?:https:\/\/github\.com\/\w[\w-.]+?\/\w[\w-.]+?\/issues\/)|\B#)[1-9]\d*?\b/g;
+const REGEX_NUMBER = /[1-9]+/g;
 class Transformer {
     constructor() {
         this.pullRequestNumbers = [];
@@ -69251,19 +69264,15 @@ class Transformer {
                 }
             }
         };
+        // TODO: Add support for external repository by storing { issueNumber, owner, repo }[]
         this.extractIssues = (description) => {
             const issues = new Set();
-            const re = /(?:(?<![/\w-.])\w[\w-.]+?\/\w[\w-.]+?|\B)#[1-9]\d*?\b/g;
-            for (const line of description.split('\n')) {
-                // TODO: Add more keywords
-                if (!['closes', 'fixes', 'resolves'].includes(line.toLowerCase())) {
-                    continue;
-                }
-                const matches = line.match(re);
-                if (matches.length) {
-                    for (const match of matches) {
-                        issues.add(match);
-                    }
+            const relevantLines = description.split('\n').filter((line) => CLOSES_ISSUES_KEYWORDS.includes(line.toLowerCase()));
+            for (const line of relevantLines) {
+                const matches = line.match(REGEX_ISSUES) || [];
+                for (const match of matches) {
+                    const issue = match.match(REGEX_NUMBER);
+                    issue.length && issues.add(issue[0]);
                 }
             }
             return Array.from(issues);
