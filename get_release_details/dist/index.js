@@ -69305,7 +69305,8 @@ const buildChangelog = async (previousVersion) => {
     })
         .on('data', () => { })
         .on('end', cb));
-    await transformer.getIssues('botpress', 'gh-actions');
+    const [owner, repo] = process.env.GITHUB_REPOSITORY.split('/');
+    await transformer.getIssues(owner, repo);
     const stream = conventional_changelog_default()(changelogOts, context, gitRawCommitsOpts, commitsParserOpts, changelogWriterOpts);
     stream.on('data', (chunk) => (text += chunk));
     await Promise.fromCallback((cb) => stream.on('end', cb));

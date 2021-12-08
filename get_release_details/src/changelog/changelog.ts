@@ -39,7 +39,8 @@ export const buildChangelog = async (previousVersion: string) => {
       .on('end', cb)
   )
 
-  await transformer.getIssues('botpress', 'gh-actions')
+  const [owner, repo] = process.env.GITHUB_REPOSITORY.split('/')
+  await transformer.getIssues(owner, repo)
 
   const stream = changelog(changelogOts, context, gitRawCommitsOpts, commitsParserOpts, changelogWriterOpts)
   stream.on('data', (chunk) => (text += chunk))
