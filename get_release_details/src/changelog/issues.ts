@@ -74,7 +74,7 @@ export class Transformer {
 
     for (const line of description.split('\n')) {
       // TODO: Add more keywords
-      if (!['closes', 'fixes', 'resolves'].includes(line)) {
+      if (!['closes', 'fixes', 'resolves'].includes(line.toLocaleLowerCase())) {
         continue
       }
 

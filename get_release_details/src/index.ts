@@ -22,16 +22,11 @@ const getLastTag = async (): Promise<string> => {
 }
 
 const run = async () => {
-  // TODO: Remove this
-  const changelog = await buildChangelog('')
-  core.setOutput('changelog', changelog)
-  return
-
   const { GITHUB_WORKSPACE, INPUT_PATH } = process.env
   const lastReleaseTag = await getLastTag()
   const previousVersion = lastReleaseTag.replace(/^v/, '')
 
-  console.log(`::set-output name=latest_tag::${lastReleaseTag}`)
+  core.setOutput('latest_tag', lastReleaseTag)
 
   try {
     const pkg = fs.readFileSync(path.resolve(INPUT_PATH || GITHUB_WORKSPACE, 'package.json'), 'utf-8')
@@ -39,13 +34,13 @@ const run = async () => {
     const currentVersion = JSON.parse(pkg).version
     const isNewRelease = previousVersion !== currentVersion
 
-    console.log(`::set-output name=version::${currentVersion}`)
-    console.log(`::set-output name=is_new_release::${isNewRelease}`)
+    core.setOutput('version', currentVersion)
+    core.setOutput('is_new_release', isNewRelease)
 
     // No need to generate changelogs when it's not a new release
     const changelog = isNewRelease ? await buildChangelog(previousVersion) : ''
 
-    console.log(`::set-output name=changelog::${changelog}`)
+    core.setOutput('changelog', changelog)
   } catch (err) {
     console.error('Cannot process package.json', err)
     throw err
