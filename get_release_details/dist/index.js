@@ -69228,7 +69228,6 @@ class Transformer {
         this.getIssues = async (owner, repo) => {
             const token = core.getInput('token');
             for (const pull_number of this.pullRequestNumbers) {
-                console.log('pull_number', pull_number);
                 const octokit = github.getOctokit(token);
                 const pr = await octokit.rest.pulls.get({
                     owner,
