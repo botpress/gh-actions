@@ -4,7 +4,7 @@
   "main": "dist/index.js",
   "license": "MIT",
   "scripts": {
-    "build": "ncc build src/index.ts --target es2019"
+    "build": "yarn run -T ncc build src/index.ts --target es2019"
   },
   "dependencies": {
     "@actions/core": "^1.6.0",

@@ -69196,6 +69196,7 @@ var _a;
 
 
 
+const RELEASE_BRANCHES = `release/`;
 const CLOSES_ISSUES_KEYWORDS = [
     'closes',
     'close',
@@ -69250,8 +69251,9 @@ class Transformer {
                         repo,
                         pull_number
                     });
+                    const branch = pr.data.head.ref;
                     const description = pr.data.body;
-                    if (!description) {
+                    if (!description || branch.includes(RELEASE_BRANCHES)) {
                         this.pullRequestIssues[pull_number] = [];
                         continue;
                     }
@@ -69317,16 +69319,18 @@ const buildChangelog = async (previousVersion) => {
         transform: transformer.fetchPullRequestNumbers
     })
         .on('data', () => { })
-        .on('end', cb));
+        .on('end', cb)
+        .on('error', cb));
     const [owner, repo] = process.env.GITHUB_REPOSITORY.split('/');
     await transformer.getIssues(owner, repo);
     let text = '';
     const stream = conventional_changelog_default()(changelogOts, context, gitRawCommitsOpts, commitsParserOpts, changelogWriterOpts);
     stream.on('data', (chunk) => (text += chunk));
-    await Promise.fromCallback((cb) => stream.on('end', cb));
+    await Promise.fromCallback((cb) => stream.on('end', cb).on('error', cb));
     text = text.toString();
     const filePath = external_path_default().join(process.env.INPUT_PATH || process.env.GITHUB_WORKSPACE, 'CHANGELOG.md');
-    lib_default().appendFile(filePath, text, { encoding: 'utf-8' });
+    const oldChangelog = await lib_default().readFile(filePath, { encoding: 'utf-8' });
+    await lib_default().writeFile(filePath, `${text}${oldChangelog}`, { encoding: 'utf-8' });
     return text;
 };
 
@@ -69365,7 +69369,7 @@ const run = async () => {
         core.setOutput('changelog', changelog);
     }
     catch (err) {
-        console.error('Cannot process package.json', err);
+        core.error('An error occurred while running the action', err);
         throw err;
     }
 };

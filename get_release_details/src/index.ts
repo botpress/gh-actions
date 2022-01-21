@@ -42,7 +42,8 @@ const run = async () => {
 
     core.setOutput('changelog', changelog)
   } catch (err) {
-    console.error('Cannot process package.json', err)
+    core.error('An error occurred while running the action', err)
+
     throw err
   }
 }

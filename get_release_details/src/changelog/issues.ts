@@ -4,6 +4,7 @@ import angular from 'conventional-changelog-angular'
 import * as core from '@actions/core'
 import * as github from '@actions/github'
 
+const RELEASE_BRANCHES = `release/`
 const CLOSES_ISSUES_KEYWORDS = [
   'closes',
   'close',
@@ -69,8 +70,9 @@ export class Transformer {
           pull_number
         })
 
+        const branch = pr.data.head.ref
         const description = pr.data.body
-        if (!description) {
+        if (!description || branch.includes(RELEASE_BRANCHES)) {
           this.pullRequestIssues[pull_number] = []
           continue
         }

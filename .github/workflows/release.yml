@@ -20,7 +20,7 @@ jobs:
 
       #- name: Fetch Node Packages
       #  run: |
-      #    yarn --frozen-lockfile
+      #    yarn --immutable
 
       #- name: Build Actions
       #  run: yarn build

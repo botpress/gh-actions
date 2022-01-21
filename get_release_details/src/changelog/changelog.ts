@@ -35,6 +35,7 @@ export const buildChangelog = async (previousVersion: string) => {
     })
       .on('data', () => {})
       .on('end', cb)
+      .on('error', cb)
   )
 
   const [owner, repo] = process.env.GITHUB_REPOSITORY.split('/')
@@ -44,12 +45,13 @@ export const buildChangelog = async (previousVersion: string) => {
 
   const stream = changelog(changelogOts, context, gitRawCommitsOpts, commitsParserOpts, changelogWriterOpts)
   stream.on('data', (chunk) => (text += chunk))
-  await Promise.fromCallback((cb) => stream.on('end', cb))
+  await Promise.fromCallback((cb) => stream.on('end', cb).on('error', cb))
 
   text = text.toString()
 
   const filePath = path.join(process.env.INPUT_PATH || process.env.GITHUB_WORKSPACE, 'CHANGELOG.md')
-  fse.appendFile(filePath, text, { encoding: 'utf-8' })
+  const oldChangelog = await fse.readFile(filePath, { encoding: 'utf-8' })
+  await fse.writeFile(filePath, `${text}${oldChangelog}`, { encoding: 'utf-8' })
 
   return text
 }
