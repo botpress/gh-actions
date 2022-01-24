@@ -69211,7 +69211,7 @@ const CLOSES_ISSUES_KEYWORDS = [
 ];
 const CLOSES_ISSUES_KEYWORDS_REGEX = new RegExp(CLOSES_ISSUES_KEYWORDS.join('|'), 'i');
 const REGEX_ISSUES = /(?:(?<![/\w-.])\w[\w-.]+?\/\w[\w-.]+?#|(?:https:\/\/github\.com\/\w[\w-.]+?\/\w[\w-.]+?\/issues\/)|\B#)[1-9]\d*?\b/g;
-const REGEX_OWNER_REPO = /https:\/\/github.com\/(.+)\/(.+)\/issues\/.*/g;
+const REGEX_OWNER_REPO = /^https:\/\/github.com\/(.+)\/(.+)\/issues\/.*/;
 const REGEX_NUMBER = /[1-9]+/g;
 class Transformer {
     constructor() {
@@ -69264,7 +69264,7 @@ class Transformer {
                     }
                     core.info(`PR #${pull_number} Description: ${description}`);
                     const issues = this.extractIssues(description);
-                    core.info(`PR #${pull_number} Found issues: ${issues}`);
+                    core.info(`PR #${pull_number} Found issues: ${JSON.stringify(issues, undefined, 4)}`);
                     this.pullRequestIssues[pull_number] = issues;
                 }
                 catch {
@@ -69280,7 +69280,7 @@ class Transformer {
                 for (const match of matches) {
                     core.info(`Found a match: ${match}`);
                     const [issue] = match.match(REGEX_NUMBER);
-                    const [owner, repository] = match.match(REGEX_OWNER_REPO);
+                    const [_, owner, repository] = match.match(REGEX_OWNER_REPO);
                     core.info(`Owner, repository and issue: ${owner}:${repository} ${issue}`);
                     if (issue) {
                         issues[issue] = { issue, owner, repository };
