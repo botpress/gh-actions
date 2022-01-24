@@ -21,7 +21,7 @@ const CLOSES_ISSUES_KEYWORDS_REGEX = new RegExp(CLOSES_ISSUES_KEYWORDS.join('|')
 const REGEX_ISSUES =
   /(?:(?<![/\w-.])\w[\w-.]+?\/\w[\w-.]+?#|(?:https:\/\/github\.com\/\w[\w-.]+?\/\w[\w-.]+?\/issues\/)|\B#)[1-9]\d*?\b/g
 const REGEX_OWNER_REPO = /^https:\/\/github.com\/(.+)\/(.+)\/issues\/.*/
-const REGEX_NUMBER = /[1-9]+/g
+const REGEX_NUMBER = /[1-9]\d*/g
 
 export class Transformer {
   static defaultTransform = async (): Promise<Function> => (await angular).conventionalChangelog.writerOpts.transform
