@@ -69268,8 +69268,8 @@ class Transformer {
                     core.info(`PR #${pull_number} Found issues: ${JSON.stringify(issues, undefined, 4)}`);
                     this.pullRequestIssues[pull_number] = issues;
                 }
-                catch {
-                    core.info(`Pull Request #${pull_number} does not exists`);
+                catch (err) {
+                    core.info(`Pull Request #${pull_number} does not exists: ${err}`);
                 }
             }
         };
