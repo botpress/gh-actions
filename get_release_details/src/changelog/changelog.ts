@@ -4,10 +4,12 @@ import fse from 'fs-extra'
 import path from 'path'
 import { ChangelogWriterOpts, CommitsParserOpts, Context, GitRawCommitsOptions } from './types'
 import { Transformer } from './issues'
+import { BASE_PATH } from './utils'
 
-export const buildChangelog = async (previousVersion: string) => {
+export const buildChangelog = async () => {
   const transformer = new Transformer()
   const defaultTransform = await Transformer.defaultTransform()
+
   // see options here: https://github.com/conventional-changelog/conventional-changelog/tree/master/packages
   const changelogOts: Options = {
     preset: 'angular',
@@ -23,12 +25,15 @@ export const buildChangelog = async (previousVersion: string) => {
   }
   const changelogWriterOpts: ChangelogWriterOpts = {
     transform: (commit, context) => {
-      ;(transformer.referenceIssues as any)(commit, context)
+      transformer.referenceIssues(commit, context)
 
       return defaultTransform(commit, context)
     }
   }
 
+  // Since fetching pull request information requires the code to be async,
+  // we have to run changelog once using the custom transformer and then
+  // re-running it with the default one afterwards
   await Promise.fromCallback((cb) =>
     changelog(changelogOts, context, gitRawCommitsOpts, commitsParserOpts, {
       transform: transformer.fetchPullRequestNumbers
@@ -49,7 +54,7 @@ export const buildChangelog = async (previousVersion: string) => {
 
   text = text.toString()
 
-  const filePath = path.join(process.env.INPUT_PATH || process.env.GITHUB_WORKSPACE, 'CHANGELOG.md')
+  const filePath = path.join(BASE_PATH, 'CHANGELOG.md')
   const oldChangelog = await fse.readFile(filePath, { encoding: 'utf-8' })
   await fse.writeFile(filePath, `${text}${oldChangelog}`, { encoding: 'utf-8' })
 

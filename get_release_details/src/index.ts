@@ -2,8 +2,10 @@ import { exec } from 'child_process'
 import 'bluebird-global'
 import path from 'path'
 import fs from 'fs'
-import { buildChangelog } from './changelog/changelog'
 import * as core from '@actions/core'
+
+import { buildChangelog } from './changelog/changelog'
+import { BASE_PATH } from './changelog/utils'
 
 const getLastTag = async (): Promise<string> => {
   await Promise.fromCallback((cb) => exec('git fetch --prune --unshallow', cb))
@@ -22,14 +24,13 @@ const getLastTag = async (): Promise<string> => {
 }
 
 const run = async () => {
-  const { GITHUB_WORKSPACE, INPUT_PATH } = process.env
   const lastReleaseTag = await getLastTag()
   const previousVersion = lastReleaseTag.replace(/^v/, '')
 
   core.setOutput('latest_tag', lastReleaseTag)
 
   try {
-    const pkg = fs.readFileSync(path.resolve(INPUT_PATH || GITHUB_WORKSPACE, 'package.json'), 'utf-8')
+    const pkg = fs.readFileSync(path.resolve(BASE_PATH, 'package.json'), 'utf-8')
 
     const currentVersion = JSON.parse(pkg).version
     const isNewRelease = previousVersion !== currentVersion
@@ -38,7 +39,7 @@ const run = async () => {
     core.setOutput('is_new_release', isNewRelease)
 
     // No need to generate changelogs when it's not a new release
-    const changelog = isNewRelease ? await buildChangelog(previousVersion) : ''
+    const changelog = isNewRelease ? await buildChangelog() : ''
 
     core.setOutput('changelog', changelog)
   } catch (err) {

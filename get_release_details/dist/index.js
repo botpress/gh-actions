@@ -69178,6 +69178,8 @@ var external_path_default = /*#__PURE__*/__nccwpck_require__.n(external_path_);
 // EXTERNAL MODULE: external "fs"
 var external_fs_ = __nccwpck_require__(7147);
 var external_fs_default = /*#__PURE__*/__nccwpck_require__.n(external_fs_);
+// EXTERNAL MODULE: ../node_modules/@actions/core/lib/core.js
+var core = __nccwpck_require__(5316);
 // EXTERNAL MODULE: ../node_modules/conventional-changelog/index.js
 var conventional_changelog = __nccwpck_require__(5354);
 var conventional_changelog_default = /*#__PURE__*/__nccwpck_require__.n(conventional_changelog);
@@ -69187,8 +69189,6 @@ var lib_default = /*#__PURE__*/__nccwpck_require__.n(lib);
 // EXTERNAL MODULE: ../node_modules/conventional-changelog-angular/index.js
 var conventional_changelog_angular = __nccwpck_require__(9894);
 var conventional_changelog_angular_default = /*#__PURE__*/__nccwpck_require__.n(conventional_changelog_angular);
-// EXTERNAL MODULE: ../node_modules/@actions/core/lib/core.js
-var core = __nccwpck_require__(5316);
 // EXTERNAL MODULE: ../node_modules/@actions/github/lib/github.js
 var github = __nccwpck_require__(2189);
 ;// CONCATENATED MODULE: ./src/changelog/issues.ts
@@ -69218,6 +69218,7 @@ class Transformer {
         this.pullRequestNumbers = [];
         this.pullRequestIssues = {};
         this.fetchPullRequestNumbers = (commit, _context) => {
+            core.info(`Commit, Context : ${JSON.stringify(commit, undefined, 4)} ${JSON.stringify(_context, undefined, 4)}`);
             // We only want the first issue as it is the PR number
             if (commit.references.length) {
                 const issue = commit.references[0].issue;
@@ -69278,18 +69279,16 @@ class Transformer {
             const issues = {};
             const relevantLines = description.split('\n').filter((line) => CLOSES_ISSUES_KEYWORDS_REGEX.test(line));
             for (const line of relevantLines) {
-                core.info(`Current line: ${line}`);
                 const matches = line.match(REGEX_ISSUES) || [];
-                core.info(`Matches for that line: ${JSON.stringify(matches)}`);
                 for (const match of matches) {
                     core.info(`Found a match: ${match}`);
                     const issue = (_b = match.match(REGEX_NUMBER)) === null || _b === void 0 ? void 0 : _b[0];
-                    // e.g. ownerRepoMatches = [ 'https://github.com/owner/repo/issues/11', 'owner', 'repo' ]
-                    const ownerRepoMatches = match.match(REGEX_OWNER_REPO);
-                    let owner = ownerRepoMatches === null || ownerRepoMatches === void 0 ? void 0 : ownerRepoMatches[1];
-                    let repository = ownerRepoMatches === null || ownerRepoMatches === void 0 ? void 0 : ownerRepoMatches[2];
-                    core.info(`Owner, repository and issue: ${owner}:${repository} ${issue}`);
                     if (issue) {
+                        // e.g. ownerRepoMatches = [ 'https://github.com/owner/repo/issues/11', 'owner', 'repo' ]
+                        const ownerRepoMatches = match.match(REGEX_OWNER_REPO);
+                        let owner = ownerRepoMatches === null || ownerRepoMatches === void 0 ? void 0 : ownerRepoMatches[1];
+                        let repository = ownerRepoMatches === null || ownerRepoMatches === void 0 ? void 0 : ownerRepoMatches[2];
+                        core.info(`Owner, repository and issue: ${owner}/${repository} ${issue}`);
                         issues[issue] = { issue, owner, repository };
                     }
                 }
@@ -69299,7 +69298,7 @@ class Transformer {
         this.getOwnerAndRepository = (issueOwner, issueRepository) => {
             let [owner, repository] = process.env.GITHUB_REPOSITORY.split('/');
             // If the issue's owner and repo is the same as the one that runs this actions, only display the issue number
-            // e.g. display '#13' instead of 'owner/repo/#14'
+            // e.g. display '#13' instead of 'owner/repo/14'
             if (issueOwner === owner && issueRepository === repository) {
                 return [null, null];
             }
@@ -69310,13 +69309,29 @@ class Transformer {
 _a = Transformer;
 Transformer.defaultTransform = async () => (await (conventional_changelog_angular_default())).conventionalChangelog.writerOpts.transform;
 
+;// CONCATENATED MODULE: ./src/changelog/utils.ts
+const BASE_PATH = process.env.INPUT_PATH || process.env.GITHUB_WORKSPACE;
+const WHITELISTED_SECTIONS = (/* unused pure expression or super */ null && (['', '### Bug Fixes', '### Features']));
+const removeDuplicates = (changelog, previousVersion) => {
+    const prevVersionMark = previousVersion.endsWith('0') ? `# [${previousVersion}]` : `## [${previousVersion}]`;
+    const preVersionIdx = changelog.indexOf(prevVersionMark);
+    const newLines = changelog.slice(0, preVersionIdx).split('\n');
+    const prevContent = changelog.slice(preVersionIdx);
+    const finalNewLines = newLines
+        .map((l) => (WHITELISTED_SECTIONS.includes(l) || !prevContent.includes(l)) && l)
+        .filter((l) => typeof l === 'string')
+        .join('\n');
+    return finalNewLines;
+};
+
 ;// CONCATENATED MODULE: ./src/changelog/changelog.ts
 
 
 
 
 
-const buildChangelog = async (previousVersion) => {
+
+const buildChangelog = async () => {
     const transformer = new Transformer();
     const defaultTransform = await Transformer.defaultTransform();
     // see options here: https://github.com/conventional-changelog/conventional-changelog/tree/master/packages
@@ -69334,11 +69349,13 @@ const buildChangelog = async (previousVersion) => {
     };
     const changelogWriterOpts = {
         transform: (commit, context) => {
-            ;
             transformer.referenceIssues(commit, context);
             return defaultTransform(commit, context);
         }
     };
+    // Since fetching pull request information requires the code to be async,
+    // we have to run changelog once using the custom transformer and then
+    // re-running it with the default one afterwards
     await Promise.fromCallback((cb) => conventional_changelog_default()(changelogOts, context, gitRawCommitsOpts, commitsParserOpts, {
         transform: transformer.fetchPullRequestNumbers
     })
@@ -69352,13 +69369,14 @@ const buildChangelog = async (previousVersion) => {
     stream.on('data', (chunk) => (text += chunk));
     await Promise.fromCallback((cb) => stream.on('end', cb).on('error', cb));
     text = text.toString();
-    const filePath = external_path_default().join(process.env.INPUT_PATH || process.env.GITHUB_WORKSPACE, 'CHANGELOG.md');
+    const filePath = external_path_default().join(BASE_PATH, 'CHANGELOG.md');
     const oldChangelog = await lib_default().readFile(filePath, { encoding: 'utf-8' });
     await lib_default().writeFile(filePath, `${text}${oldChangelog}`, { encoding: 'utf-8' });
     return text;
 };
 
 ;// CONCATENATED MODULE: ./src/index.ts
+
 
 
 
@@ -69378,18 +69396,17 @@ const getLastTag = async () => {
     }
 };
 const run = async () => {
-    const { GITHUB_WORKSPACE, INPUT_PATH } = process.env;
     const lastReleaseTag = await getLastTag();
     const previousVersion = lastReleaseTag.replace(/^v/, '');
     core.setOutput('latest_tag', lastReleaseTag);
     try {
-        const pkg = external_fs_default().readFileSync(external_path_default().resolve(INPUT_PATH || GITHUB_WORKSPACE, 'package.json'), 'utf-8');
+        const pkg = external_fs_default().readFileSync(external_path_default().resolve(BASE_PATH, 'package.json'), 'utf-8');
         const currentVersion = JSON.parse(pkg).version;
         const isNewRelease = previousVersion !== currentVersion;
         core.setOutput('version', currentVersion);
         core.setOutput('is_new_release', isNewRelease);
         // No need to generate changelogs when it's not a new release
-        const changelog = isNewRelease ? await buildChangelog(previousVersion) : '';
+        const changelog = isNewRelease ? await buildChangelog() : '';
         core.setOutput('changelog', changelog);
     }
     catch (err) {
