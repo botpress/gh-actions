@@ -5,7 +5,7 @@ import * as core from '@actions/core'
 import * as github from '@actions/github'
 
 const RELEASE_BRANCHES = `release/`
-const WHITELISTED_PR_TYPES = ['bug', 'feat']
+const WHITELISTED_PR_TYPES = ['fix', 'feat']
 const CLOSES_ISSUES_KEYWORDS = [
   'closes',
   'close',
