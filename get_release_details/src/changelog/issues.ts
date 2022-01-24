@@ -1,10 +1,11 @@
-import { ChangelogWriterOpts, PullRequestIssues } from './types'
+import { ChangelogWriterOpts, PullRequestIssues, ExtractedIssues } from './types'
 import angular from 'conventional-changelog-angular'
 
 import * as core from '@actions/core'
 import * as github from '@actions/github'
 
 const RELEASE_BRANCHES = `release/`
+const WHITELISTED_PR_TYPES = ['bug', 'feat']
 const CLOSES_ISSUES_KEYWORDS = [
   'closes',
   'close',
@@ -19,7 +20,9 @@ const CLOSES_ISSUES_KEYWORDS = [
 const CLOSES_ISSUES_KEYWORDS_REGEX = new RegExp(CLOSES_ISSUES_KEYWORDS.join('|'), 'i')
 const REGEX_ISSUES =
   /(?:(?<![/\w-.])\w[\w-.]+?\/\w[\w-.]+?#|(?:https:\/\/github\.com\/\w[\w-.]+?\/\w[\w-.]+?\/issues\/)|\B#)[1-9]\d*?\b/g
+const REGEX_OWNER_REPO = /https:\/\/github.com\/(.+)\/(.+)\/issues\/.*/g
 const REGEX_NUMBER = /[1-9]+/g
+
 export class Transformer {
   static defaultTransform = async (): Promise<Function> => (await angular).conventionalChangelog.writerOpts.transform
 
@@ -41,13 +44,13 @@ export class Transformer {
     if (commit.references.length) {
       const issue = commit.references[0].issue
 
-      const issues = this.pullRequestIssues[Number(issue)] || []
+      const issues = this.pullRequestIssues[Number(issue)] || {}
 
-      for (const issue of issues) {
+      for (const { issue, owner, repository } of Object.values(issues)) {
         commit.references.push({
           action: 'closes',
-          owner: null,
-          repository: null,
+          owner,
+          repository,
           issue: issue.replace('#', ''),
           raw: issue,
           prefix: '#'
@@ -72,8 +75,13 @@ export class Transformer {
 
         const branch = pr.data.head.ref
         const description = pr.data.body
-        if (!description || branch.includes(RELEASE_BRANCHES)) {
-          this.pullRequestIssues[pull_number] = []
+        const title = pr.data.title
+        if (
+          !description ||
+          branch.includes(RELEASE_BRANCHES) ||
+          !WHITELISTED_PR_TYPES.some((value) => title.includes(value))
+        ) {
+          this.pullRequestIssues[pull_number] = {}
           continue
         }
 
@@ -88,9 +96,8 @@ export class Transformer {
     }
   }
 
-  // TODO: Add support for external repository by storing { issueNumber, owner, repo }[]
-  private extractIssues = (description: string): string[] => {
-    const issues = new Set<string>()
+  private extractIssues = (description: string): ExtractedIssues => {
+    const issues: ExtractedIssues = {}
 
     const relevantLines = description.split('\n').filter((line) => CLOSES_ISSUES_KEYWORDS_REGEX.test(line))
 
@@ -99,11 +106,16 @@ export class Transformer {
 
       for (const match of matches) {
         core.info(`Found a match: ${match}`)
-        const issue = match.match(REGEX_NUMBER)
-        issue.length && issues.add(issue[0])
+        const [issue] = match.match(REGEX_NUMBER)
+        const [owner, repository] = match.match(REGEX_OWNER_REPO)
+        core.info(`Owner, repository and issue: ${owner}:${repository} ${issue}`)
+
+        if (issue) {
+          issues[issue] = { issue, owner, repository }
+        }
       }
     }
 
-    return Array.from(issues)
+    return issues
   }
 }

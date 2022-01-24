@@ -7,6 +7,16 @@ export type GitRawCommitsOptions = ChangelogParameters[2]
 export type CommitsParserOpts = ChangelogParameters[3]
 export type ChangelogWriterOpts = ChangelogParameters[4]
 
+interface Issue {
+  issue: string
+  owner?: string
+  repository?: string
+}
+
 export type PullRequestIssues = {
-  [pullRequest: number]: string[]
+  [pullRequest: number]: ExtractedIssues
+}
+
+export type ExtractedIssues = {
+  [issue: string]: Issue
 }
