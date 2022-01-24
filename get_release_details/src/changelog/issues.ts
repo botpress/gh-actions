@@ -104,7 +104,10 @@ export class Transformer {
     const relevantLines = description.split('\n').filter((line) => CLOSES_ISSUES_KEYWORDS_REGEX.test(line))
 
     for (const line of relevantLines) {
+      core.info(`Current line: ${line}`)
+
       const matches = line.match(REGEX_ISSUES) || []
+      core.info(`Matches for that line: ${JSON.stringify(matches)}`)
 
       for (const match of matches) {
         core.info(`Found a match: ${match}`)
