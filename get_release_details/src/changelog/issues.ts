@@ -111,8 +111,13 @@ export class Transformer {
 
       for (const match of matches) {
         core.info(`Found a match: ${match}`)
-        const [issue] = match.match(REGEX_NUMBER)
-        const [_, owner, repository] = match.match(REGEX_OWNER_REPO)
+        const issue = match.match(REGEX_NUMBER)?.[0]
+        // e.g. ownerRepoMatches = [ 'https://github.com/owner/repo/issues/11', 'owner', 'repo' ]
+        const ownerRepoMatches = match.match(REGEX_OWNER_REPO)
+
+        let owner = ownerRepoMatches?.[1]
+        let repository = ownerRepoMatches?.[2]
+
         core.info(`Owner, repository and issue: ${owner}:${repository} ${issue}`)
 
         if (issue) {

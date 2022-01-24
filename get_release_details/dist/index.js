@@ -69274,6 +69274,7 @@ class Transformer {
             }
         };
         this.extractIssues = (description) => {
+            var _b;
             const issues = {};
             const relevantLines = description.split('\n').filter((line) => CLOSES_ISSUES_KEYWORDS_REGEX.test(line));
             for (const line of relevantLines) {
@@ -69282,8 +69283,11 @@ class Transformer {
                 core.info(`Matches for that line: ${JSON.stringify(matches)}`);
                 for (const match of matches) {
                     core.info(`Found a match: ${match}`);
-                    const [issue] = match.match(REGEX_NUMBER);
-                    const [_, owner, repository] = match.match(REGEX_OWNER_REPO);
+                    const issue = (_b = match.match(REGEX_NUMBER)) === null || _b === void 0 ? void 0 : _b[0];
+                    // e.g. ownerRepoMatches = [ 'https://github.com/owner/repo/issues/11', 'owner', 'repo' ]
+                    const ownerRepoMatches = match.match(REGEX_OWNER_REPO);
+                    let owner = ownerRepoMatches === null || ownerRepoMatches === void 0 ? void 0 : ownerRepoMatches[1];
+                    let repository = ownerRepoMatches === null || ownerRepoMatches === void 0 ? void 0 : ownerRepoMatches[2];
                     core.info(`Owner, repository and issue: ${owner}:${repository} ${issue}`);
                     if (issue) {
                         issues[issue] = { issue, owner, repository };
