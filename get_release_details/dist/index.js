@@ -60745,7 +60745,7 @@ class Transformer {
             // We only want the first issue as it is the PR number
             if (commit.references.length) {
                 const issue = commit.references[0].issue;
-                core.info(`Found PR #${issue}`);
+                core.debug(`Found PR #${issue}`);
                 this.pullRequestNumbers.push(Number(issue));
             }
             return commit;
@@ -60787,10 +60787,10 @@ class Transformer {
                     if (!description || branch.includes(RELEASE_BRANCHES)) {
                         continue;
                     }
-                    core.info(`PR #${pull_number} Description: ${description}`);
+                    core.debug(`PR #${pull_number} Description: ${description}`);
                     const issues = this.extractIssues(description);
                     if (Object.keys(issues).length) {
-                        core.info(`PR #${pull_number} Found issues: ${JSON.stringify(issues, undefined, 4)}`);
+                        core.debug(`PR #${pull_number} Found issues: ${JSON.stringify(issues, undefined, 4)}`);
                         this.pullRequestIssues[pull_number] = issues;
                     }
                 }
@@ -60806,14 +60806,14 @@ class Transformer {
             for (const line of relevantLines) {
                 const matches = line.match(REGEX_ISSUES) || [];
                 for (const match of matches) {
-                    core.info(`Found a match: ${match}`);
+                    core.debug(`Found a match: ${match}`);
                     const issue = (_b = match.match(REGEX_NUMBER)) === null || _b === void 0 ? void 0 : _b[0];
                     if (issue) {
                         // e.g. ownerRepoMatches = [ 'https://github.com/owner/repo/issues/11', 'owner', 'repo' ]
                         const ownerRepoMatches = match.match(REGEX_OWNER_REPO);
                         let owner = (ownerRepoMatches === null || ownerRepoMatches === void 0 ? void 0 : ownerRepoMatches[1]) || null;
                         let repository = (ownerRepoMatches === null || ownerRepoMatches === void 0 ? void 0 : ownerRepoMatches[2]) || null;
-                        core.info(`Owner, repository and issue: ${owner}/${repository} ${issue}`);
+                        core.debug(`Owner, repository and issue: ${owner}/${repository} ${issue}`);
                         issues[issue] = { issue, owner, repository };
                     }
                 }
@@ -60899,17 +60899,13 @@ const changelog_1 = __nccwpck_require__(8926);
 const utils_1 = __nccwpck_require__(154);
 const utils_2 = __nccwpck_require__(4893);
 const getLastTag = async () => {
-    core.info('getLastTag called');
     await (0, utils_2.PromiseFromCallback)((cb) => (0, child_process_1.exec)('git fetch --prune --unshallow', cb));
-    core.info('Promise returned');
     const tag = await (0, utils_2.PromiseFromCallback)((cb) => (0, child_process_1.exec)('git describe --tags --abbrev=0', cb));
-    core.info(`tag fetched ${tag}`);
     if (/^v\d/.test(tag)) {
         return tag;
     }
 };
 const run = async () => {
-    core.info('Run called');
     try {
         const lastReleaseTag = await getLastTag();
         const previousVersion = lastReleaseTag === null || lastReleaseTag === void 0 ? void 0 : lastReleaseTag.replace(/^v/, '');
@@ -60924,7 +60920,6 @@ const run = async () => {
         core.setOutput('changelog', changelog);
     }
     catch (err) {
-        core.info(`An error occurred ${err}`);
         core.setFailed(err);
     }
 };
@@ -60934,38 +60929,15 @@ run();
 /***/ }),
 
 /***/ 4893:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+/***/ ((__unused_webpack_module, exports) => {
 
 "use strict";
 
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.PromiseFromCallback = void 0;
-const core = __importStar(__nccwpck_require__(5316));
 const PromiseFromCallback = async (func) => {
-    core.info(`PromiseFromCallback called`);
     return new Promise((resolve, reject) => {
         const callback = (e, r) => {
-            core.info(`err ${e}`);
-            core.info(`res ${r}`);
             if (e) {
                 reject(e);
             }
