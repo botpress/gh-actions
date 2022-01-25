@@ -1,12 +1,26 @@
-import 'bluebird-global'
 import changelog, { Options } from 'conventional-changelog'
-import fse from 'fs-extra'
+import fs from 'fs'
 import path from 'path'
-import { ChangelogWriterOpts, CommitsParserOpts, Context, GitRawCommitsOptions } from './types'
+
+import { CommitsParserOpts, Context, GitRawCommitsOptions } from './types'
 import { Transformer } from './issues'
 import { BASE_PATH } from './utils'
+import { PromiseFromCallback } from '../utils'
+
+const updateChangelog = async (text: string) => {
+  const filePath = path.join(BASE_PATH, 'CHANGELOG.md')
+
+  // Checks if file exists
+  if (!(await PromiseFromCallback((cb) => fs.access(filePath, cb)))) {
+    return
+  }
+
+  const existingChangelog = await PromiseFromCallback((cb) => fs.readFile(filePath, { encoding: 'utf-8' }, cb))
+  return PromiseFromCallback((cb) => fs.writeFile(filePath, `${text}${existingChangelog}`, { encoding: 'utf-8' }, cb))
+}
 
 export const buildChangelog = async () => {
+  // The transformer is use to extract issues closed by Pull Requests
   const transformer = new Transformer()
   const defaultTransform = await Transformer.defaultTransform()
 
@@ -23,18 +37,11 @@ export const buildChangelog = async () => {
     mergePattern: /^Merge pull request #(\d+) from (.*)/gi,
     mergeCorrespondence: ['id', 'source']
   }
-  const changelogWriterOpts: ChangelogWriterOpts = {
-    transform: (commit, context) => {
-      transformer.referenceIssues(commit, context)
-
-      return defaultTransform(commit, context)
-    }
-  }
 
   // Since fetching pull request information requires the code to be async,
   // we have to run changelog once using the custom transformer and then
   // re-running it with the default one afterwards
-  await Promise.fromCallback((cb) =>
+  await PromiseFromCallback((cb) =>
     changelog(changelogOts, context, gitRawCommitsOpts, commitsParserOpts, {
       transform: transformer.fetchPullRequestNumbers
     })
@@ -43,20 +50,25 @@ export const buildChangelog = async () => {
       .on('error', cb)
   )
 
-  const [owner, repo] = process.env.GITHUB_REPOSITORY.split('/')
+  // We fetch the issues referenced in Pull Requests we just crawled
+  const [owner, repo] = process.env.GITHUB_REPOSITORY!.split('/')
   await transformer.getIssues(owner, repo)
 
   let text = ''
 
-  const stream = changelog(changelogOts, context, gitRawCommitsOpts, commitsParserOpts, changelogWriterOpts)
+  const stream = changelog(changelogOts, context, gitRawCommitsOpts, commitsParserOpts, {
+    transform: (commit, context) => {
+      transformer.referenceIssues(commit, context)
+
+      return defaultTransform(commit, context)
+    }
+  })
   stream.on('data', (chunk) => (text += chunk))
-  await Promise.fromCallback((cb) => stream.on('end', cb).on('error', cb))
+  await PromiseFromCallback((cb) => stream.on('end', cb).on('error', cb))
 
   text = text.toString()
 
-  const filePath = path.join(BASE_PATH, 'CHANGELOG.md')
-  const oldChangelog = await fse.readFile(filePath, { encoding: 'utf-8' })
-  await fse.writeFile(filePath, `${text}${oldChangelog}`, { encoding: 'utf-8' })
+  await updateChangelog(text)
 
   return text
 }

@@ -127,7 +127,7 @@ const RESPONSE_3 = {
 const PULL_REQUEST_ISSUES = {
   [PR_NUMBER_1]: {
     [ISSUE_NUMBER_2]: { issue: ISSUE_NUMBER_2, owner: EXTERNAL_OWNER, repository: EXTERNAL_OWNER },
-    [ISSUE_NUMBER_1]: { issue: ISSUE_NUMBER_1, owner: undefined, repository: undefined }
+    [ISSUE_NUMBER_1]: { issue: ISSUE_NUMBER_1, owner: null, repository: null }
   }
 }
 
@@ -218,10 +218,10 @@ describe('Issues - Transformer', () => {
           {
             action: 'closes',
             issue: ISSUE_NUMBER_1,
-            owner: undefined,
+            owner: null,
             prefix: '#',
             raw: ISSUE_NUMBER_1,
-            repository: undefined
+            repository: null
           },
           {
             action: 'closes',

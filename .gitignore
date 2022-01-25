@@ -1,4 +1,5 @@
 coverage
+*.log
 
 .yarn-integrity
 node_modules

@@ -4,6 +4,9 @@
   "main": "dist/index.js",
   "license": "MIT",
   "scripts": {
-    "build": "yarn run -T ncc build src/index.ts --target es2019"
+    "build": "yarn tsc --build"
+  },
+  "devDependencies": {
+    "typescript": "^4.5.5"
   }
 }

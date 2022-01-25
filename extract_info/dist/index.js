@@ -1,16 +1,7 @@
-/******/ (() => { // webpackBootstrap
-/******/ 	/* webpack/runtime/compat */
-/******/ 	
-/******/ 	if (typeof __nccwpck_require__ !== 'undefined') __nccwpck_require__.ab = __dirname + "/";
-/******/ 	
-/************************************************************************/
-var __webpack_exports__ = {};
+"use strict";
 const { INPUT_BRANCH, GITHUB_REF } = process.env;
+// GITHUB_REF is necessarily defined when running this on Github Actions
 const branchWithoutHead = (INPUT_BRANCH || GITHUB_REF).replace('refs/heads/', '');
 const branchName = branchWithoutHead.replace(/[\W_]+/g, '_');
 console.log(`::set-output name=branch::${branchWithoutHead}`);
 console.log(`::set-output name=branch_sanitized::${branchName}`);
-
-module.exports = __webpack_exports__;
-/******/ })()
-;

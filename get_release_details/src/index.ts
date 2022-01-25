@@ -1,36 +1,34 @@
 import { exec } from 'child_process'
-import 'bluebird-global'
 import path from 'path'
 import fs from 'fs'
 import * as core from '@actions/core'
 
 import { buildChangelog } from './changelog/changelog'
 import { BASE_PATH } from './changelog/utils'
+import { PromiseFromCallback } from './utils'
 
-const getLastTag = async (): Promise<string> => {
-  await Promise.fromCallback((cb) => exec('git fetch --prune --unshallow', cb))
+const getLastTag = async (): Promise<string | undefined> => {
+  try {
+    const tag: string = await PromiseFromCallback((cb) => exec('git describe --tags --abbrev=0', cb))
 
-  const rawTags: string = await Promise.fromCallback((cb) => exec('git rev-list --tags --max-count=30', cb))
-  const tags = rawTags.trim().split('\n').join(' ')
-
-  const rawRevs: string = await Promise.fromCallback((cb) => exec(`git describe --abbrev=0 --tags ${tags}`, cb))
-  const revs = rawRevs.trim().split('\n')
-
-  for (let i = 0; i < revs.length; i++) {
-    if (/^v\d/.test(revs[i])) {
-      return revs[i]
+    if (/^v\d/.test(tag)) {
+      return tag
     }
+  } catch (err) {
+    core.setFailed(`Could not fetch last tag ${err}`)
   }
 }
 
 const run = async () => {
-  const lastReleaseTag = await getLastTag()
-  const previousVersion = lastReleaseTag.replace(/^v/, '')
-
-  core.setOutput('latest_tag', lastReleaseTag)
-
   try {
-    const pkg = fs.readFileSync(path.resolve(BASE_PATH, 'package.json'), 'utf-8')
+    const lastReleaseTag = await getLastTag()
+    const previousVersion = lastReleaseTag?.replace(/^v/, '')
+
+    core.setOutput('latest_tag', lastReleaseTag)
+
+    const pkg: string = await PromiseFromCallback((cb) =>
+      fs.readFile(path.resolve(BASE_PATH, 'package.json'), 'utf-8', cb)
+    )
 
     const currentVersion = JSON.parse(pkg).version
     const isNewRelease = previousVersion !== currentVersion
@@ -43,9 +41,7 @@ const run = async () => {
 
     core.setOutput('changelog', changelog)
   } catch (err) {
-    core.error('An error occurred while running the action', err)
-
-    throw err
+    core.setFailed((err as Error))
   }
 }
 

@@ -117,8 +117,8 @@ export class Transformer {
           // e.g. ownerRepoMatches = [ 'https://github.com/owner/repo/issues/11', 'owner', 'repo' ]
           const ownerRepoMatches = match.match(REGEX_OWNER_REPO)
 
-          let owner = ownerRepoMatches?.[1]
-          let repository = ownerRepoMatches?.[2]
+          let owner = ownerRepoMatches?.[1] || null
+          let repository = ownerRepoMatches?.[2] || null
 
           core.debug(`Owner, repository and issue: ${owner}/${repository} ${issue}`)
 
