@@ -25,7 +25,6 @@ jobs:
         run: |
           for package in rename_binaries get_release_details set_ssh_key extract_info
           do
-            echo $package
             if [ "$(git diff --ignore-space-at-eol ${{ package }}/dist/ | wc -l)" -gt "0" ]; then
               echo "::set-output name=package::${{ package }}"
               echo "Detected uncommitted changes after build.  See status below:"
