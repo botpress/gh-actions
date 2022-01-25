@@ -40,6 +40,7 @@ const run = async () => {
 
     core.setOutput('changelog', changelog)
   } catch (err) {
+    core.info(`An error occurred ${err}`)
     core.setFailed(err as Error)
   }
 }
