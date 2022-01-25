@@ -1,8 +1,11 @@
-const { INPUT_BRANCH, GITHUB_REF } = process.env
+import * as core from '@actions/core'
 
-// GITHUB_REF is necessarily defined when running this on Github Actions
-const branchWithoutHead = (INPUT_BRANCH || GITHUB_REF!).replace('refs/heads/', '')
+const branch = core.getInput('branch')
+// GITHUB_REF is always defined inside the CI
+const ref = process.env.GITHUB_REF!
+
+const branchWithoutHead = (branch || ref).replace('refs/heads/', '')
 const branchName = branchWithoutHead.replace(/[\W_]+/g, '_')
 
-console.log(`::set-output name=branch::${branchWithoutHead}`)
-console.log(`::set-output name=branch_sanitized::${branchName}`)
+core.setOutput('branch', branchWithoutHead)
+core.setOutput('branch_sanitized', branchName)

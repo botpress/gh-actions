@@ -2,10 +2,9 @@ import changelog, { Options } from 'conventional-changelog'
 import fs from 'fs'
 import path from 'path'
 
-import { CommitsParserOpts, Context, GitRawCommitsOptions } from './types'
+import { PromiseFromCallback, BASE_PATH } from '../utils'
 import { Transformer } from './issues'
-import { BASE_PATH } from './utils'
-import { PromiseFromCallback } from '../utils'
+import { CommitsParserOpts, Context, GitRawCommitsOptions } from './types'
 
 const updateChangelog = async (text: string) => {
   const filePath = path.join(BASE_PATH, 'CHANGELOG.md')

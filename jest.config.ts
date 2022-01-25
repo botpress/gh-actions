@@ -6,6 +6,7 @@ const config: Config.InitialOptions = {
 
   projects: [
     {
+      globalSetup: '<rootDir>/get_release_details/test/jest.setup.ts',
       testMatch: ['<rootDir>/get_release_details/test/**/(*.)test.ts'],
       displayName: { name: 'GetReleaseDetails', color: 'blue' },
       testEnvironment: 'jsdom',

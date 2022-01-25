@@ -1,11 +1,10 @@
-import { exec } from 'child_process'
-import path from 'path'
-import fs from 'fs'
 import * as core from '@actions/core'
+import { exec } from 'child_process'
+import fs from 'fs'
+import path from 'path'
 
 import { buildChangelog } from './changelog/changelog'
-import { BASE_PATH } from './changelog/utils'
-import { PromiseFromCallback } from './utils'
+import { PromiseFromCallback, BASE_PATH } from './utils'
 
 const getLastTag = async (): Promise<string | undefined> => {
   await PromiseFromCallback((cb) => exec('git fetch --prune --unshallow', cb))
@@ -42,4 +41,4 @@ const run = async () => {
   }
 }
 
-run()
+void run()

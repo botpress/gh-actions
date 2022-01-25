@@ -1,4 +1,3 @@
-export const BASE_PATH = process.env.INPUT_PATH || process.env.GITHUB_WORKSPACE || ''
 export const WHITELISTED_SECTIONS = ['', '### Bug Fixes', '### Features']
 
 /**

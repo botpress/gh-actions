@@ -1,10 +1,9 @@
-import { PullRequestIssues, ExtractedIssues, Transform } from './types'
-import angular from 'conventional-changelog-angular'
-
 import * as core from '@actions/core'
 import * as github from '@actions/github'
+import angular from 'conventional-changelog-angular'
+import { PullRequestIssues, ExtractedIssues, Transform } from './types'
 
-const RELEASE_BRANCHES = `release/`
+const RELEASE_BRANCHES = 'release/'
 const WHITELISTED_PR_TYPES = ['fix', 'feat']
 const CLOSES_ISSUES_KEYWORDS = [
   'closes',
@@ -130,7 +129,7 @@ export class Transformer {
   }
 
   private getOwnerAndRepository = (issueOwner?: string, issueRepository?: string): (string | null)[] => {
-    let [owner, repository] = process.env.GITHUB_REPOSITORY!.split('/')
+    const [owner, repository] = process.env.GITHUB_REPOSITORY!.split('/')
     // If the issue's owner and repo is the same as the one that runs this actions, only display the issue number
     // e.g. display '#13' instead of 'owner/repo/#14'
     if (!issueOwner || !issueRepository || (issueOwner === owner && issueRepository === repository)) {

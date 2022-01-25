@@ -1,5 +1,5 @@
-import { TransformCommit, TransformContext } from '../../src/changelog/types'
 import { Transformer } from '../../src/changelog/issues'
+import { TransformCommit, TransformContext } from '../../src/changelog/types'
 
 const responseMock = jest.fn()
 jest.mock('@actions/github', () => {
@@ -50,7 +50,7 @@ const COMMIT: TransformCommit = {
       owner: null,
       repository: null,
       issue: '',
-      raw: `some random commit`,
+      raw: 'some random commit',
       prefix: ''
     },
     {
@@ -58,7 +58,7 @@ const COMMIT: TransformCommit = {
       owner: null,
       repository: null,
       issue: '',
-      raw: `another random commit`,
+      raw: 'another random commit',
       prefix: ''
     }
   ] as any,
@@ -118,7 +118,7 @@ const RESPONSE_2 = {
 }
 const RESPONSE_3 = {
   data: {
-    body: `This is a PR description\nCloses nothing`,
+    body: 'This is a PR description\nCloses nothing',
     head: {
       ref: 'not_a_release_branch_2'
     }

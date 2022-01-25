@@ -18,10 +18,10 @@ interface Issue {
   repository: string | null
 }
 
-export type PullRequestIssues = {
+export interface PullRequestIssues {
   [pullRequest: number]: ExtractedIssues
 }
 
-export type ExtractedIssues = {
+export interface ExtractedIssues {
   [issue: string]: Issue
 }
