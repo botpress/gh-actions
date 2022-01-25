@@ -8,20 +8,17 @@ import { BASE_PATH } from './changelog/utils'
 import { PromiseFromCallback } from './utils'
 
 const getLastTag = async (): Promise<string | undefined> => {
-  try {
-    await PromiseFromCallback((cb) => exec('git fetch --prune --unshallow', cb))
+  await PromiseFromCallback((cb) => exec('git fetch --prune --unshallow', cb))
 
-    const tag: string = await PromiseFromCallback((cb) => exec('git describe --tags --abbrev=0', cb))
+  const tag = await PromiseFromCallback<string>((cb) => exec('git describe --tags --abbrev=0', cb))
 
-    if (/^v\d/.test(tag)) {
-      return tag
-    }
-  } catch (err) {
-    core.setFailed(`Could not fetch last tag ${err}`)
+  if (/^v\d/.test(tag)) {
+    return tag
   }
 }
 
 const run = async () => {
+  core.info('Run called')
   try {
     const lastReleaseTag = await getLastTag()
     const previousVersion = lastReleaseTag?.replace(/^v/, '')

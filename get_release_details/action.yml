@@ -1,5 +1,5 @@
 name: 'get_release_details'
-description: 'Returns the latest release tag (ignore branches)'
+description: 'Returns release details like the latest release tag (ignore branches) and a changelog'
 inputs:
   path:
     description: 'Custom path to package.json'

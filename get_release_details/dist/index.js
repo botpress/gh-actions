@@ -60899,18 +60899,14 @@ const changelog_1 = __nccwpck_require__(8926);
 const utils_1 = __nccwpck_require__(154);
 const utils_2 = __nccwpck_require__(4893);
 const getLastTag = async () => {
-    try {
-        await (0, utils_2.PromiseFromCallback)((cb) => (0, child_process_1.exec)('git fetch --prune --unshallow', cb));
-        const tag = await (0, utils_2.PromiseFromCallback)((cb) => (0, child_process_1.exec)('git describe --tags --abbrev=0', cb));
-        if (/^v\d/.test(tag)) {
-            return tag;
-        }
-    }
-    catch (err) {
-        core.setFailed(`Could not fetch last tag ${err}`);
+    await (0, utils_2.PromiseFromCallback)((cb) => (0, child_process_1.exec)('git fetch --prune --unshallow', cb));
+    const tag = await (0, utils_2.PromiseFromCallback)((cb) => (0, child_process_1.exec)('git describe --tags --abbrev=0', cb));
+    if (/^v\d/.test(tag)) {
+        return tag;
     }
 };
 const run = async () => {
+    core.info('Run called');
     try {
         const lastReleaseTag = await getLastTag();
         const previousVersion = lastReleaseTag === null || lastReleaseTag === void 0 ? void 0 : lastReleaseTag.replace(/^v/, '');
