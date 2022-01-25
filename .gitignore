@@ -1,3 +1,5 @@
+coverage
+
 .yarn-integrity
 node_modules
 yarn-error.log

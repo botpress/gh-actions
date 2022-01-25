@@ -69218,21 +69218,26 @@ class Transformer {
         this.pullRequestNumbers = [];
         this.pullRequestIssues = {};
         this.fetchPullRequestNumbers = (commit, _context) => {
-            core.info(`Commit, Context : ${JSON.stringify(commit, undefined, 4)} ${JSON.stringify(_context, undefined, 4)}`);
+            if (!WHITELISTED_PR_TYPES.some((value) => { var _b; return (_b = commit.type) === null || _b === void 0 ? void 0 : _b.includes(value); })) {
+                return false;
+            }
             // We only want the first issue as it is the PR number
             if (commit.references.length) {
                 const issue = commit.references[0].issue;
-                core.info(`Found PR #${issue}`);
+                core.debug(`Found PR #${issue}`);
                 this.pullRequestNumbers.push(Number(issue));
             }
             return commit;
         };
         this.referenceIssues = (commit, _context) => {
+            if (!WHITELISTED_PR_TYPES.some((value) => { var _b; return (_b = commit.type) === null || _b === void 0 ? void 0 : _b.includes(value); })) {
+                return false;
+            }
+            // We only want the first issue as it is the PR number
             if (commit.references.length) {
                 const issue = commit.references[0].issue;
                 const issues = this.pullRequestIssues[Number(issue)] || {};
-                for (const { issue, owner: issueOwner, repository: issueRepository } of Object.values(issues)) {
-                    const [owner, repository] = this.getOwnerAndRepository(issueOwner, issueRepository);
+                for (const { issue, owner, repository } of Object.values(issues)) {
                     commit.references.push({
                         action: 'closes',
                         owner,
@@ -69257,20 +69262,19 @@ class Transformer {
                     });
                     const branch = pr.data.head.ref;
                     const description = pr.data.body;
-                    const title = pr.data.title;
-                    if (!description ||
-                        branch.includes(RELEASE_BRANCHES) ||
-                        !WHITELISTED_PR_TYPES.some((value) => title.includes(value))) {
-                        this.pullRequestIssues[pull_number] = {};
+                    // Skip in case the PR description is empty or if it's the release PR
+                    if (!description || branch.includes(RELEASE_BRANCHES)) {
                         continue;
                     }
-                    core.info(`PR #${pull_number} Description: ${description}`);
+                    core.debug(`PR #${pull_number} Description: ${description}`);
                     const issues = this.extractIssues(description);
-                    core.info(`PR #${pull_number} Found issues: ${JSON.stringify(issues, undefined, 4)}`);
-                    this.pullRequestIssues[pull_number] = issues;
+                    if (Object.keys(issues).length) {
+                        core.debug(`PR #${pull_number} Found issues: ${JSON.stringify(issues, undefined, 4)}`);
+                        this.pullRequestIssues[pull_number] = issues;
+                    }
                 }
                 catch (err) {
-                    core.info(`Pull Request #${pull_number} does not exists: ${err}`);
+                    core.error(`Pull Request #${pull_number} does not exists ${err}`);
                 }
             }
         };
@@ -69281,28 +69285,19 @@ class Transformer {
             for (const line of relevantLines) {
                 const matches = line.match(REGEX_ISSUES) || [];
                 for (const match of matches) {
-                    core.info(`Found a match: ${match}`);
+                    core.debug(`Found a match: ${match}`);
                     const issue = (_b = match.match(REGEX_NUMBER)) === null || _b === void 0 ? void 0 : _b[0];
                     if (issue) {
                         // e.g. ownerRepoMatches = [ 'https://github.com/owner/repo/issues/11', 'owner', 'repo' ]
                         const ownerRepoMatches = match.match(REGEX_OWNER_REPO);
                         let owner = ownerRepoMatches === null || ownerRepoMatches === void 0 ? void 0 : ownerRepoMatches[1];
                         let repository = ownerRepoMatches === null || ownerRepoMatches === void 0 ? void 0 : ownerRepoMatches[2];
-                        core.info(`Owner, repository and issue: ${owner}/${repository} ${issue}`);
+                        core.debug(`Owner, repository and issue: ${owner}/${repository} ${issue}`);
                         issues[issue] = { issue, owner, repository };
                     }
                 }
             }
             return issues;
-        };
-        this.getOwnerAndRepository = (issueOwner, issueRepository) => {
-            let [owner, repository] = process.env.GITHUB_REPOSITORY.split('/');
-            // If the issue's owner and repo is the same as the one that runs this actions, only display the issue number
-            // e.g. display '#13' instead of 'owner/repo/14'
-            if (issueOwner === owner && issueRepository === repository) {
-                return [null, null];
-            }
-            return [issueOwner, issueRepository];
         };
     }
 }
@@ -69312,6 +69307,15 @@ Transformer.defaultTransform = async () => (await (conventional_changelog_angula
 ;// CONCATENATED MODULE: ./src/changelog/utils.ts
 const BASE_PATH = process.env.INPUT_PATH || process.env.GITHUB_WORKSPACE;
 const WHITELISTED_SECTIONS = (/* unused pure expression or super */ null && (['', '### Bug Fixes', '### Features']));
+/**
+ * This function removes duplicates to the changelog of the latest version in a list of changelogs
+ *
+ * *Note: It does not remove duplicates if there is any inside the changelog of the latest version*
+ *
+ * @param changelog The complete changelog to search duplicates on
+ * @param previousVersion The version before the latest version contained in the changelog
+ * @returns The latest changelog without duplicates
+ */
 const removeDuplicates = (changelog, previousVersion) => {
     const prevVersionMark = previousVersion.endsWith('0') ? `# [${previousVersion}]` : `## [${previousVersion}]`;
     const preVersionIdx = changelog.indexOf(prevVersionMark);

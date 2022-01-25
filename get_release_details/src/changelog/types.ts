@@ -9,7 +9,8 @@ export type ChangelogWriterOpts = ChangelogParameters[4]
 export type Transform = Extract<ChangelogWriterOpts['transform'], Function>
 
 type TransformParameters = Parameters<Transform>
-export type Commit = TransformParameters[0]
+export type TransformCommit = TransformParameters[0]
+export type TransformContext = TransformParameters[1]
 
 interface Issue {
   issue: string

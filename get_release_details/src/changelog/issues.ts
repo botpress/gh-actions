@@ -30,11 +30,14 @@ export class Transformer {
   private pullRequestIssues: PullRequestIssues = {}
 
   fetchPullRequestNumbers: Transform = (commit, _context) => {
-    core.info(`Commit, Context : ${JSON.stringify(commit, undefined, 4)} ${JSON.stringify(_context, undefined, 4)}`)
+    if (!WHITELISTED_PR_TYPES.some((value) => commit.type?.includes(value))) {
+      return false
+    }
+
     // We only want the first issue as it is the PR number
     if (commit.references.length) {
       const issue = commit.references[0].issue
-      core.info(`Found PR #${issue}`)
+      core.debug(`Found PR #${issue}`)
       this.pullRequestNumbers.push(Number(issue))
     }
 
@@ -42,14 +45,16 @@ export class Transformer {
   }
 
   referenceIssues: Transform = (commit, _context) => {
+    if (!WHITELISTED_PR_TYPES.some((value) => commit.type?.includes(value))) {
+      return false
+    }
+
+    // We only want the first issue as it is the PR number
     if (commit.references.length) {
       const issue = commit.references[0].issue
-
       const issues = this.pullRequestIssues[Number(issue)] || {}
 
-      for (const { issue, owner: issueOwner, repository: issueRepository } of Object.values(issues)) {
-        const [owner, repository] = this.getOwnerAndRepository(issueOwner, issueRepository)
-
+      for (const { issue, owner, repository } of Object.values(issues)) {
         commit.references.push({
           action: 'closes',
           owner,
@@ -78,23 +83,20 @@ export class Transformer {
 
         const branch = pr.data.head.ref
         const description = pr.data.body
-        const title = pr.data.title
-        if (
-          !description ||
-          branch.includes(RELEASE_BRANCHES) ||
-          !WHITELISTED_PR_TYPES.some((value) => title.includes(value))
-        ) {
-          this.pullRequestIssues[pull_number] = {}
+        // Skip in case the PR description is empty or if it's the release PR
+        if (!description || branch.includes(RELEASE_BRANCHES)) {
           continue
         }
 
-        core.info(`PR #${pull_number} Description: ${description}`)
+        core.debug(`PR #${pull_number} Description: ${description}`)
         const issues = this.extractIssues(description)
-        core.info(`PR #${pull_number} Found issues: ${JSON.stringify(issues, undefined, 4)}`)
 
-        this.pullRequestIssues[pull_number] = issues
+        if (Object.keys(issues).length) {
+          core.debug(`PR #${pull_number} Found issues: ${JSON.stringify(issues, undefined, 4)}`)
+          this.pullRequestIssues[pull_number] = issues
+        }
       } catch (err) {
-        core.info(`Pull Request #${pull_number} does not exists: ${err}`)
+        core.error(`Pull Request #${pull_number} does not exists ${err}`)
       }
     }
   }
@@ -108,7 +110,7 @@ export class Transformer {
       const matches = line.match(REGEX_ISSUES) || []
 
       for (const match of matches) {
-        core.info(`Found a match: ${match}`)
+        core.debug(`Found a match: ${match}`)
         const issue = match.match(REGEX_NUMBER)?.[0]
 
         if (issue) {
@@ -118,7 +120,7 @@ export class Transformer {
           let owner = ownerRepoMatches?.[1]
           let repository = ownerRepoMatches?.[2]
 
-          core.info(`Owner, repository and issue: ${owner}/${repository} ${issue}`)
+          core.debug(`Owner, repository and issue: ${owner}/${repository} ${issue}`)
 
           issues[issue] = { issue, owner, repository }
         }
@@ -126,17 +128,5 @@ export class Transformer {
     }
 
     return issues
-  }
-
-  private getOwnerAndRepository = (issueOwner: string, issueRepository: string) => {
-    let [owner, repository] = process.env.GITHUB_REPOSITORY.split('/')
-
-    // If the issue's owner and repo is the same as the one that runs this actions, only display the issue number
-    // e.g. display '#13' instead of 'owner/repo/14'
-    if (issueOwner === owner && issueRepository === repository) {
-      return [null, null]
-    }
-
-    return [issueOwner, issueRepository]
   }
 }
