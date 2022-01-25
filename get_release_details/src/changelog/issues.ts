@@ -37,7 +37,7 @@ export class Transformer {
     // We only want the first issue as it is the PR number
     if (commit.references.length) {
       const issue = commit.references[0].issue
-      core.debug(`Found PR #${issue}`)
+      core.info(`Found PR #${issue}`)
       this.pullRequestNumbers.push(Number(issue))
     }
 
@@ -88,11 +88,11 @@ export class Transformer {
           continue
         }
 
-        core.debug(`PR #${pull_number} Description: ${description}`)
+        core.info(`PR #${pull_number} Description: ${description}`)
         const issues = this.extractIssues(description)
 
         if (Object.keys(issues).length) {
-          core.debug(`PR #${pull_number} Found issues: ${JSON.stringify(issues, undefined, 4)}`)
+          core.info(`PR #${pull_number} Found issues: ${JSON.stringify(issues, undefined, 4)}`)
           this.pullRequestIssues[pull_number] = issues
         }
       } catch (err) {
@@ -110,7 +110,7 @@ export class Transformer {
       const matches = line.match(REGEX_ISSUES) || []
 
       for (const match of matches) {
-        core.debug(`Found a match: ${match}`)
+        core.info(`Found a match: ${match}`)
         const issue = match.match(REGEX_NUMBER)?.[0]
 
         if (issue) {
@@ -120,7 +120,7 @@ export class Transformer {
           let owner = ownerRepoMatches?.[1] || null
           let repository = ownerRepoMatches?.[2] || null
 
-          core.debug(`Owner, repository and issue: ${owner}/${repository} ${issue}`)
+          core.info(`Owner, repository and issue: ${owner}/${repository} ${issue}`)
 
           issues[issue] = { issue, owner, repository }
         }

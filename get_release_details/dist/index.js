@@ -60745,7 +60745,7 @@ class Transformer {
             // We only want the first issue as it is the PR number
             if (commit.references.length) {
                 const issue = commit.references[0].issue;
-                core.debug(`Found PR #${issue}`);
+                core.info(`Found PR #${issue}`);
                 this.pullRequestNumbers.push(Number(issue));
             }
             return commit;
@@ -60787,10 +60787,10 @@ class Transformer {
                     if (!description || branch.includes(RELEASE_BRANCHES)) {
                         continue;
                     }
-                    core.debug(`PR #${pull_number} Description: ${description}`);
+                    core.info(`PR #${pull_number} Description: ${description}`);
                     const issues = this.extractIssues(description);
                     if (Object.keys(issues).length) {
-                        core.debug(`PR #${pull_number} Found issues: ${JSON.stringify(issues, undefined, 4)}`);
+                        core.info(`PR #${pull_number} Found issues: ${JSON.stringify(issues, undefined, 4)}`);
                         this.pullRequestIssues[pull_number] = issues;
                     }
                 }
@@ -60806,14 +60806,14 @@ class Transformer {
             for (const line of relevantLines) {
                 const matches = line.match(REGEX_ISSUES) || [];
                 for (const match of matches) {
-                    core.debug(`Found a match: ${match}`);
+                    core.info(`Found a match: ${match}`);
                     const issue = (_b = match.match(REGEX_NUMBER)) === null || _b === void 0 ? void 0 : _b[0];
                     if (issue) {
                         // e.g. ownerRepoMatches = [ 'https://github.com/owner/repo/issues/11', 'owner', 'repo' ]
                         const ownerRepoMatches = match.match(REGEX_OWNER_REPO);
                         let owner = (ownerRepoMatches === null || ownerRepoMatches === void 0 ? void 0 : ownerRepoMatches[1]) || null;
                         let repository = (ownerRepoMatches === null || ownerRepoMatches === void 0 ? void 0 : ownerRepoMatches[2]) || null;
-                        core.debug(`Owner, repository and issue: ${owner}/${repository} ${issue}`);
+                        core.info(`Owner, repository and issue: ${owner}/${repository} ${issue}`);
                         issues[issue] = { issue, owner, repository };
                     }
                 }
