@@ -60811,14 +60811,22 @@ class Transformer {
                     if (issue) {
                         // e.g. ownerRepoMatches = [ 'https://github.com/owner/repo/issues/11', 'owner', 'repo' ]
                         const ownerRepoMatches = match.match(REGEX_OWNER_REPO);
-                        let owner = (ownerRepoMatches === null || ownerRepoMatches === void 0 ? void 0 : ownerRepoMatches[1]) || null;
-                        let repository = (ownerRepoMatches === null || ownerRepoMatches === void 0 ? void 0 : ownerRepoMatches[2]) || null;
+                        const [owner, repository] = this.getOwnerAndRepository(ownerRepoMatches === null || ownerRepoMatches === void 0 ? void 0 : ownerRepoMatches[1], ownerRepoMatches === null || ownerRepoMatches === void 0 ? void 0 : ownerRepoMatches[2]);
                         core.debug(`Owner, repository and issue: ${owner}/${repository} ${issue}`);
                         issues[issue] = { issue, owner, repository };
                     }
                 }
             }
             return issues;
+        };
+        this.getOwnerAndRepository = (issueOwner, issueRepository) => {
+            let [owner, repository] = process.env.GITHUB_REPOSITORY.split('/');
+            // If the issue's owner and repo is the same as the one that runs this actions, only display the issue number
+            // e.g. display '#13' instead of 'owner/repo/#14'
+            if (!issueOwner || !issueRepository || (issueOwner === owner && issueRepository === repository)) {
+                return [null, null];
+            }
+            return [issueOwner, issueRepository];
         };
     }
 }

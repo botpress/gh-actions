@@ -117,8 +117,7 @@ export class Transformer {
           // e.g. ownerRepoMatches = [ 'https://github.com/owner/repo/issues/11', 'owner', 'repo' ]
           const ownerRepoMatches = match.match(REGEX_OWNER_REPO)
 
-          let owner = ownerRepoMatches?.[1] || null
-          let repository = ownerRepoMatches?.[2] || null
+          const [owner, repository] = this.getOwnerAndRepository(ownerRepoMatches?.[1], ownerRepoMatches?.[2])
 
           core.debug(`Owner, repository and issue: ${owner}/${repository} ${issue}`)
 
@@ -128,5 +127,16 @@ export class Transformer {
     }
 
     return issues
+  }
+
+  private getOwnerAndRepository = (issueOwner?: string, issueRepository?: string): (string | null)[] => {
+    let [owner, repository] = process.env.GITHUB_REPOSITORY!.split('/')
+    // If the issue's owner and repo is the same as the one that runs this actions, only display the issue number
+    // e.g. display '#13' instead of 'owner/repo/#14'
+    if (!issueOwner || !issueRepository || (issueOwner === owner && issueRepository === repository)) {
+      return [null, null]
+    }
+
+    return [issueOwner, issueRepository]
   }
 }
