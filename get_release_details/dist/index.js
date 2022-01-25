@@ -60631,11 +60631,11 @@ const utils_2 = __nccwpck_require__(4893);
 const updateChangelog = async (text) => {
     const filePath = path_1.default.join(utils_1.BASE_PATH, 'CHANGELOG.md');
     // Checks if file exists
-    if (!(await (0, utils_2.PromiseFromCallback)((cb) => fs_1.default.access(filePath, cb)))) {
+    if (!fs_1.default.existsSync(filePath)) {
         return;
     }
     const existingChangelog = await (0, utils_2.PromiseFromCallback)((cb) => fs_1.default.readFile(filePath, { encoding: 'utf-8' }, cb));
-    return (0, utils_2.PromiseFromCallback)((cb) => fs_1.default.writeFile(filePath, `${text}${existingChangelog}`, { encoding: 'utf-8' }, cb));
+    return (0, utils_2.PromiseFromCallback)((cb) => fs_1.default.writeFile(filePath, `${text}${existingChangelog}`, { encoding: 'utf-8' }, () => cb(null, undefined)));
 };
 const buildChangelog = async () => {
     // The transformer is use to extract issues closed by Pull Requests
@@ -60900,7 +60900,7 @@ const utils_1 = __nccwpck_require__(154);
 const utils_2 = __nccwpck_require__(4893);
 const getLastTag = async () => {
     core.info('getLastTag called');
-    await (0, utils_2.PromiseFromCallback)((cb) => (0, child_process_1.exec)('git fetch --prune --unshallow', cb));
+    await (0, utils_2.PromiseFromCallback)((cb) => (0, child_process_1.exec)('git describe --tags --abbrev=0', cb));
     core.info('Promise returned');
     const tag = await (0, utils_2.PromiseFromCallback)((cb) => (0, child_process_1.exec)('git describe --tags --abbrev=0', cb));
     core.info(`tag fetched ${tag}`);
@@ -60934,19 +60934,42 @@ run();
 /***/ }),
 
 /***/ 4893:
-/***/ ((__unused_webpack_module, exports) => {
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
 
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.PromiseFromCallback = void 0;
+const core = __importStar(__nccwpck_require__(5316));
 const PromiseFromCallback = async (func) => {
+    core.info(`PromiseFromCallback called`);
     return new Promise((resolve, reject) => {
         const callback = (e, r) => {
+            core.info(`err ${e}`);
+            core.info(`res ${r}`);
             if (e) {
                 reject(e);
             }
-            else if (r) {
+            else {
                 resolve(r);
             }
         };

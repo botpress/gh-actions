@@ -11,12 +11,14 @@ const updateChangelog = async (text: string) => {
   const filePath = path.join(BASE_PATH, 'CHANGELOG.md')
 
   // Checks if file exists
-  if (!(await PromiseFromCallback((cb) => fs.access(filePath, cb)))) {
+  if (!fs.existsSync(filePath)) {
     return
   }
 
   const existingChangelog = await PromiseFromCallback((cb) => fs.readFile(filePath, { encoding: 'utf-8' }, cb))
-  return PromiseFromCallback((cb) => fs.writeFile(filePath, `${text}${existingChangelog}`, { encoding: 'utf-8' }, cb))
+  return PromiseFromCallback((cb) =>
+    fs.writeFile(filePath, `${text}${existingChangelog}`, { encoding: 'utf-8' }, () => cb(null, undefined))
+  )
 }
 
 export const buildChangelog = async () => {
