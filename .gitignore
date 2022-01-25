@@ -5,6 +5,8 @@ coverage
 node_modules
 yarn-error.log
 
+.parcel-cache
+
 .yarn/*
 !.yarn/patches
 !.yarn/plugins

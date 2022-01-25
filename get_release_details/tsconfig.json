@@ -3,7 +3,8 @@
   "compilerOptions": {
     "rootDir": "src",
     "outDir": "dist",
-    "types": []
+    "types": [],
+    "isolatedModules": true
   },
   "include": ["src"],
   "exclude": ["test"]
