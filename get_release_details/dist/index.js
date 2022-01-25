@@ -60899,8 +60899,11 @@ const changelog_1 = __nccwpck_require__(8926);
 const utils_1 = __nccwpck_require__(154);
 const utils_2 = __nccwpck_require__(4893);
 const getLastTag = async () => {
+    core.info('getLastTag called');
     await (0, utils_2.PromiseFromCallback)((cb) => (0, child_process_1.exec)('git fetch --prune --unshallow', cb));
+    core.info('Promise returned');
     const tag = await (0, utils_2.PromiseFromCallback)((cb) => (0, child_process_1.exec)('git describe --tags --abbrev=0', cb));
+    core.info(`tag fetched ${tag}`);
     if (/^v\d/.test(tag)) {
         return tag;
     }

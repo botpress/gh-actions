@@ -8,9 +8,15 @@ import { BASE_PATH } from './changelog/utils'
 import { PromiseFromCallback } from './utils'
 
 const getLastTag = async (): Promise<string | undefined> => {
+  core.info('getLastTag called')
+
   await PromiseFromCallback((cb) => exec('git fetch --prune --unshallow', cb))
 
+  core.info('Promise returned')
+
   const tag = await PromiseFromCallback<string>((cb) => exec('git describe --tags --abbrev=0', cb))
+
+  core.info(`tag fetched ${tag}`)
 
   if (/^v\d/.test(tag)) {
     return tag
