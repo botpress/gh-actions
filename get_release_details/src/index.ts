@@ -9,6 +9,8 @@ import { PromiseFromCallback } from './utils'
 
 const getLastTag = async (): Promise<string | undefined> => {
   try {
+    await PromiseFromCallback((cb) => exec('git fetch --prune --unshallow', cb))
+
     const tag: string = await PromiseFromCallback((cb) => exec('git describe --tags --abbrev=0', cb))
 
     if (/^v\d/.test(tag)) {
