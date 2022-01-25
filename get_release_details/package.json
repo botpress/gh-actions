@@ -4,7 +4,7 @@
   "main": "dist/index.js",
   "license": "MIT",
   "scripts": {
-    "build": "yarn ncc build src/index.ts"
+    "build": "yarn ncc build src/index.ts -m -q"
   },
   "dependencies": {
     "@actions/core": "^1.6.0",
