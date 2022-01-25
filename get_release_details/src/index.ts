@@ -41,7 +41,7 @@ const run = async () => {
 
     core.setOutput('changelog', changelog)
   } catch (err) {
-    core.setFailed((err as Error))
+    core.setFailed(err as Error)
   }
 }
 

@@ -1,7 +1,6 @@
 {
   "private": true,
   "scripts": {
-    "eslint": "eslint --ext .ts",
     "prettier": "prettier --check '**/*.ts' '!**/*.d.ts'",
     "build": "yarn workspaces foreach -ptiv run build",
     "test": "jest",
