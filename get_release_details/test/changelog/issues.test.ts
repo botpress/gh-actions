@@ -159,6 +159,16 @@ describe('Issues - Transformer', () => {
   })
 
   describe('GetIssues', () => {
+    const defaultEnv = { ...process.env }
+
+    beforeAll(() => {
+      process.env.GITHUB_REPOSITORY = `${OWNER}/${REPO}`
+    })
+
+    afterAll(() => {
+      process.env = defaultEnv
+    })
+
     test('should extract issue numbers from the pull requests description', async () => {
       responseMock.mockImplementationOnce(async () => RESPONSE)
 
