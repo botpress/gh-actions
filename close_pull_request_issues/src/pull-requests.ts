@@ -76,17 +76,16 @@ export class PullRequest {
           continue
         }
 
-        core.info(`PR #${pull_number} Description: ${description}`)
         const issues = this.extractIssues(description)
 
         if (Object.keys(issues).length) {
-          core.info(`PR #${pull_number} Found issues: ${JSON.stringify(issues, undefined, 4)}`)
+          core.info(`(#${pull_number}) Pull Request: Found issues: ${JSON.stringify(issues, undefined, 4)}`)
           for (const issue of issues) {
             this.issues.add(issue)
           }
         }
       } catch (err) {
-        core.error(`Pull Request #${pull_number} does not exists ${err}`)
+        core.error(`(#${pull_number}) Pull Request does not exists ${err}`)
       }
     }
   }
@@ -99,7 +98,7 @@ export class PullRequest {
 
       try {
         if (comment && comment.length > 0) {
-          core.info(`(#${issue_number}) Adding a comment before closing the issue`)
+          core.info(`(${owner}/${repo}#${issue_number}) Adding a comment before closing the issue`)
           /* await this.octokit.rest.issues.createComment({
             owner,
             repo,
@@ -108,7 +107,7 @@ export class PullRequest {
           }) */
         }
 
-        core.info(`(#${issue_number}) Closing the issue`)
+        core.info(`(${owner}/${repo}#${issue_number}) Closing the issue`)
         /* await this.octokit.rest.issues.update({
           owner,
           repo,
@@ -116,7 +115,7 @@ export class PullRequest {
           state: 'closed'
         }) */
       } catch (err) {
-        core.info(`Error occurred while commenting and closing issue #${issue_number}: ${err}`)
+        core.info(`Error occurred while commenting and closing issue (${owner}/${repo}#${issue_number}): ${err}`)
       }
     }
   }
