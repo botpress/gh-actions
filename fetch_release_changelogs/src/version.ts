@@ -29,6 +29,7 @@ export const getVersionsRange = async (tags: string[]): Promise<{ [repo: string]
       }
 
       ranges[repo].push(version)
+      core.info(`ranges[repo]: ${ranges[repo].join(', ')}`)
     }
   }
 
