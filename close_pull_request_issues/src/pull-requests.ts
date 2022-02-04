@@ -108,12 +108,12 @@ export class PullRequest {
         }
 
         core.info(`(${owner}/${repo}#${issue_number}) Closing the issue`)
-        /* await this.octokit.rest.issues.update({
+        await this.octokit.rest.issues.update({
           owner,
           repo,
           issue_number,
           state: 'closed'
-        }) */
+        })
       } catch (err) {
         core.info(`Error occurred while commenting and closing issue (${owner}/${repo}#${issue_number}): ${err}`)
       }
