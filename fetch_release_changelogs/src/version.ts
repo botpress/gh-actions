@@ -4,6 +4,7 @@ import { PromiseFromCallback, REPOS } from './utils'
 
 export const getVersionsRange = async (tags: string[]): Promise<{ [repo: string]: string[] }> => {
   const ranges: { [repo: string]: string[] } = REPOS.reduce((a, r) => ({ ...a, [r]: [] }), {})
+  core.info(`tags ${tags.join(', ')}`)
 
   for (const tag of tags) {
     const strPkg = await PromiseFromCallback<string>((cb) => exec(`git show ${tag}:package.json`, cb))
