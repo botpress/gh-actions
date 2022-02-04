@@ -57,6 +57,7 @@ export class PullRequest {
     }
 
     this.pullRequestNumbers = extractedPullRequests.map((p) => Number(p.replace('#', '')))
+    core.info(`Extracted Pull Requests: ${this.pullRequestNumbers.join(', ')}`)
   }
 
   getIssues = async () => {
