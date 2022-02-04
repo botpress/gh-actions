@@ -22,7 +22,7 @@ export const getVersionsRange = async (tags: string[]): Promise<{ [repo: string]
       // [X] 2. Version bump (e.g. 1.0.0 -> 1.1.1)
       // [X] 3. Version downgrade (e.g. 1.1.1 -> 1.0.0)
       // [X] 4. Version does not exists (e.g. undefined -> undefined)
-      if (!version || (ranges[repo].length === 1 && ranges[repo][0] <= version)) {
+      if (!version || (ranges[repo].length === 1 && ranges[repo][0] >= version)) {
         ranges[repo] = []
 
         continue
