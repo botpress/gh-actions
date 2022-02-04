@@ -20,7 +20,9 @@ const capitalize = (str: string): string => {
 const run = async () => {
   try {
     const tags = (await getLastTwoTags()) || []
+    core.info(`tags: ${tags.join(', ')}`)
     const ranges = await getVersionsRange(tags)
+    core.info(`ranges: ${JSON.stringify(ranges, undefined, 2)}`)
     let changelogs: string = ''
 
     for (const [repo, versions] of Object.entries(ranges)) {
