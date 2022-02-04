@@ -57,7 +57,7 @@ export class PullRequest {
     }
 
     this.pullRequestNumbers = extractedPullRequests.map((p) => Number(p.replace('#', '')))
-    core.info(`Extracted Pull Requests: ${this.pullRequestNumbers.join(', ')}`)
+    core.debug(`Extracted Pull Requests: ${this.pullRequestNumbers.join(', ')}`)
   }
 
   getIssues = async () => {
@@ -80,7 +80,7 @@ export class PullRequest {
         const issues = this.extractIssues(description)
 
         if (Object.keys(issues).length) {
-          core.info(`(#${pull_number}) Pull Request: Found issues: ${JSON.stringify(issues, undefined, 4)}`)
+          core.debug(`(#${pull_number}) Pull Request: Found issues: ${JSON.stringify(issues, undefined, 4)}`)
           for (const issue of issues) {
             this.issues.add(issue)
           }
@@ -99,16 +99,16 @@ export class PullRequest {
 
       try {
         if (comment && comment.length > 0) {
-          core.info(`(${owner}/${repo}#${issue_number}) Adding a comment before closing the issue`)
-          /* await this.octokit.rest.issues.createComment({
+          core.debug(`(${owner}/${repo}#${issue_number}) Adding a comment before closing the issue`)
+          await this.octokit.rest.issues.createComment({
             owner,
             repo,
             issue_number,
             body: comment
-          }) */
+          })
         }
 
-        core.info(`(${owner}/${repo}#${issue_number}) Closing the issue`)
+        core.debug(`(${owner}/${repo}#${issue_number}) Closing the issue`)
         await this.octokit.rest.issues.update({
           owner,
           repo,
@@ -116,7 +116,7 @@ export class PullRequest {
           state: 'closed'
         })
       } catch (err) {
-        core.info(`Error occurred while commenting and closing issue (${owner}/${repo}#${issue_number}): ${err}`)
+        core.error(`Error occurred while commenting and closing issue (${owner}/${repo}#${issue_number}): ${err}`)
       }
     }
   }
@@ -130,7 +130,7 @@ export class PullRequest {
       const matches = line.match(REGEX_ISSUES) || []
 
       for (const match of matches) {
-        core.info(`Found a match: ${match}`)
+        core.debug(`Found a match: ${match}`)
         const issue = match.match(REGEX_NUMBER)?.[0]
 
         if (issue) {
@@ -139,7 +139,7 @@ export class PullRequest {
 
           const [owner, repo] = this.getOwnerAndRepository(ownerRepoMatches?.[1], ownerRepoMatches?.[2])
 
-          core.info(`Owner, repository and issue: ${owner}/${repo} ${issue}`)
+          core.debug(`Owner, repository and issue: ${owner}/${repo} ${issue}`)
 
           issues.push({ issue: Number(issue), owner, repo })
         }

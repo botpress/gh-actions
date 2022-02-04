@@ -4,6 +4,7 @@ import angular from 'conventional-changelog-angular'
 import { PullRequestIssues, ExtractedIssues, Transform } from './types'
 
 const RELEASE_BRANCHES = 'release/'
+const RELEASE_TITLE_REGEX = /^chore\(.*\): v.*/
 const WHITELISTED_PR_TYPES = ['fix', 'feat']
 const CLOSES_ISSUES_KEYWORDS = [
   'closes',
@@ -82,8 +83,9 @@ export class Transformer {
 
         const branch = pr.data.head.ref
         const description = pr.data.body
+        const title = pr.data.title
         // Skip in case the PR description is empty or if it's the release PR
-        if (!description || branch.includes(RELEASE_BRANCHES)) {
+        if (!description || branch.includes(RELEASE_BRANCHES) || title.match(RELEASE_TITLE_REGEX)) {
           continue
         }
 
