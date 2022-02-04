@@ -5,7 +5,7 @@ import { PromiseFromCallback } from './utils'
 import { getVersionsRange } from './version'
 
 const getLastTwoTags = async (): Promise<string[] | undefined> => {
-  //await PromiseFromCallback((cb) => exec('git fetch --prune --unshallow', cb)).catch()
+  await PromiseFromCallback((cb) => exec('git fetch --prune --unshallow', cb)).catch(() => {})
   const tags = await PromiseFromCallback<string>((cb) => exec('git tag | sort -V | tail -2', cb))
 
   if (/v\d.*/g.test(tags)) {
@@ -20,16 +20,14 @@ const capitalize = (str: string): string => {
 const run = async () => {
   try {
     const tags = (await getLastTwoTags()) || []
-    core.info(`tags: ${tags.join(', ')}`)
     const ranges = await getVersionsRange(tags)
-    core.info(`ranges: ${JSON.stringify(ranges, undefined, 2)}`)
     let changelogs: string = ''
 
     for (const [repo, versions] of Object.entries(ranges)) {
       const repoChangelogs = await getChangelogs(repo, versions)
 
       if (repoChangelogs.length) {
-        changelogs = `${changelogs}\n#${capitalize(repo)}\n${repoChangelogs.join('\n')}`
+        changelogs = `${changelogs}\n\n# ${capitalize(repo)}\n\n${repoChangelogs.join('\n\n')}`
       }
     }
 
