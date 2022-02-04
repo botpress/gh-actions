@@ -12,7 +12,9 @@ export const getVersionsRange = async (tags: string[]): Promise<{ [repo: string]
     core.info(`repos ${REPOS.join(', ')}`)
 
     for (const repo of REPOS) {
+      core.info(`repo ${repo}`)
       const version = pkg?.[repo]?.['version'] as string | undefined
+      core.info(`version ${version}`)
 
       // Scenarios
       // [X] 1. Version stays the same (e.g. 1.0.0 -> 1.0.0)
