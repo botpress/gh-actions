@@ -5,7 +5,7 @@ import { PromiseFromCallback } from './utils'
 import { getVersionsRange } from './version'
 
 const getLastTwoTags = async (): Promise<string[] | undefined> => {
-  await PromiseFromCallback((cb) => exec('git fetch --prune --unshallow', cb)).catch()
+  //await PromiseFromCallback((cb) => exec('git fetch --prune --unshallow', cb)).catch()
   const tags = await PromiseFromCallback<string>((cb) => exec('git tag | sort -V | tail -2', cb))
 
   if (/v\d.*/g.test(tags)) {
