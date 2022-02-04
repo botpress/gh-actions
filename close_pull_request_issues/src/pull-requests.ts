@@ -12,7 +12,7 @@ interface Issue {
 // Extracts anything that matches '#xxxx' where x is a number
 const PULL_REQUEST_NUMBER_REGEX = /#[1-9]\d*?\b/g
 const RELEASE_BRANCHES = 'release/'
-const RELEASE_TITLE = 'chore(server) v'
+const RELEASE_TITLE_REGEX = /^chore\(.*\): v.*/
 const CLOSES_ISSUES_KEYWORDS = [
   'closes',
   'close',
@@ -72,7 +72,7 @@ export class PullRequest {
         const title = pr.data.title
         const description = pr.data.body
         // Skip in case the PR description is empty or if it's a release PR
-        if (!description || branch.includes(RELEASE_BRANCHES) || title.includes(RELEASE_TITLE)) {
+        if (!description || branch.includes(RELEASE_BRANCHES) || title.match(RELEASE_TITLE_REGEX)) {
           continue
         }
 
