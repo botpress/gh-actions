@@ -1,3 +1,4 @@
+import * as core from '@actions/core'
 import { exec } from 'child_process'
 import { PromiseFromCallback, REPOS } from './utils'
 
@@ -7,6 +8,8 @@ export const getVersionsRange = async (tags: string[]): Promise<{ [repo: string]
   for (const tag of tags) {
     const strPkg = await PromiseFromCallback<string>((cb) => exec(`git show ${tag}:package.json`, cb))
     const pkg = JSON.parse(strPkg)
+    core.info(`pkg: ${JSON.stringify(pkg, undefined, 2)}`)
+    core.info(`repos ${REPOS.join(', ')}`)
 
     for (const repo of REPOS) {
       const version = pkg?.[repo]?.['version'] as string | undefined
