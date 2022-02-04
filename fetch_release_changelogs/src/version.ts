@@ -32,10 +32,11 @@ export const getVersionsRange = async (tags: string[]): Promise<{ [repo: string]
     }
   }
 
+  // TODO:
   // Scenarios
   // [X] 5. Version does not exists (e.g. 1.0.0 -> undefined)
   // [X] 6. Version does not exists (e.g. undefined -> 1.1.1)
-  Object.keys(ranges).forEach((r) => (ranges[r].length <= 1 ? (ranges[r] = []) : undefined))
+  //Object.keys(ranges).forEach((r) => (ranges[r].length <= 1 ? (ranges[r] = []) : undefined))
 
   return ranges
 }
