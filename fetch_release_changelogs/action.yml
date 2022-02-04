@@ -1,0 +1,16 @@
+name: 'fetch_release_changelogs'
+description: 'Returns the release changelog of some repositories'
+inputs:
+  repos:
+    description: 'The list of repos where to fetch changelogs (must be valid JSON)'
+    required: true
+  token:
+    description: 'Github Token'
+    required: false
+    default: ${{ github.token }}
+outputs:
+  changelog:
+    description: 'Contains all the changelogs'
+runs:
+  using: 'node12'
+  main: 'dist/index.js'

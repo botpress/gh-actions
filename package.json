@@ -1,5 +1,9 @@
 {
-  "private": true,
+  "name": "@botpress/gh-actions",
+  "version": "1.0.0",
+  "description": "Botpress Github Actions repo",
+  "author": "Botpress, Inc.",
+  "license": "AGPL-3.0",
   "scripts": {
     "eslint": "eslint '**/*.ts' --ext .ts",
     "prettier": "prettier --check '**/*.ts' '!**/*.d.ts'",
@@ -10,6 +14,7 @@
   "workspaces": [
     "rename_binaries",
     "get_release_details",
+    "fetch_release_changelogs",
     "set_ssh_key",
     "extract_info"
   ],
