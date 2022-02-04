@@ -15,6 +15,7 @@
     "rename_binaries",
     "get_release_details",
     "fetch_release_changelogs",
+    "close_pull_request_issues",
     "set_ssh_key",
     "extract_info"
   ],

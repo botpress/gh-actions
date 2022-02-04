@@ -2152,6 +2152,20 @@ __metadata:
   languageName: node
   linkType: hard
 
+"close_pull_request_issues@workspace:close_pull_request_issues":
+  version: 0.0.0-use.local
+  resolution: "close_pull_request_issues@workspace:close_pull_request_issues"
+  dependencies:
+    "@actions/core": ^1.6.0
+    "@actions/github": ^5.0.0
+    "@octokit/rest": ^18.12.0
+    "@types/node": ^12.18.1
+    "@types/semver": ^7.3.9
+    "@vercel/ncc": ^0.33.1
+    typescript: ^4.5.5
+  languageName: unknown
+  linkType: soft
+
 "co@npm:^4.6.0":
   version: 4.6.0
   resolution: "co@npm:4.6.0"

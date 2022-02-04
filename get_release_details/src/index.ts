@@ -7,7 +7,7 @@ import { buildChangelog } from './changelog/changelog'
 import { PromiseFromCallback, BASE_PATH } from './utils'
 
 const getLastTag = async (): Promise<string | undefined> => {
-  await PromiseFromCallback((cb) => exec('git fetch --prune --unshallow', cb))
+  await PromiseFromCallback((cb) => exec('git fetch --prune --unshallow', cb)).catch(() => {})
   const tag = await PromiseFromCallback<string>((cb) => exec('git describe --tags --abbrev=0', cb))
 
   if (/^v\d/.test(tag)) {
