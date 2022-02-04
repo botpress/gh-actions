@@ -14,9 +14,7 @@ export const getChangelogs = async (repo: string, versions: string[]) => {
     repo
   })
 
-  // TODO: If sorted break once we hit a version that does not match
   for (const release of releases.data) {
-    core.info(`release tag: ${release.tag_name}`)
     if (release.prerelease || release.draft) {
       continue
     }
