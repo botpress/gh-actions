@@ -4,7 +4,7 @@
   "main": "dist/index.js",
   "license": "MIT",
   "scripts": {
-    "build": "yarn ncc build src/index.ts -m -q && ncp ../node_modules/conventional-changelog-angular dist/angular",
+    "build": "yarn ncc build src/index.ts && ncp ../node_modules/conventional-changelog-angular dist/angular",
     "clean": "yarn run -T rimraf dist"
   },
   "dependencies": {

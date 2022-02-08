@@ -30,15 +30,11 @@ export const buildChangelog = async () => {
   core.info(__dirname)
 
   core.info(JSON.stringify(fs.readdirSync(__dirname), undefined, 4))
-  //core.info(JSON.stringify(fs.readdirSync(path.resolve(__dirname, './angular')), undefined, 4))
-
-  const aa = require('conventional-changelog-angular')
-  core.info(aa)
-  core.info(JSON.stringify(path.isAbsolute(path.resolve(__dirname, './angular/index.js'))))
+  core.info(JSON.stringify(fs.readdirSync(path.resolve(__dirname, './angular')), undefined, 4))
 
   // see options here: https://github.com/conventional-changelog/conventional-changelog/tree/master/packages
   const changelogOts: Options = {
-    preset: 'angular', // process.env.NODE_ENV === 'test' ? 'angular' : path.resolve(__dirname, './angular/index.js'),
+    preset: JSON.stringify(require.resolve('conventional-changelog-angular')),
     releaseCount: 1,
     warn: core.warning,
     debug: core.debug
