@@ -3,7 +3,7 @@ import fs from 'fs'
 import path from 'path'
 
 import { PromiseFromCallback, BASE_PATH } from '../utils'
-import { Transformer } from './issues'
+//import { Transformer } from './issues'
 import { CommitsParserOpts, Context, GitRawCommitsOptions } from './types'
 
 const updateChangelog = async (text: string) => {
@@ -22,8 +22,8 @@ const updateChangelog = async (text: string) => {
 
 export const buildChangelog = async () => {
   // The transformer is use to extract issues closed by Pull Requests
-  const transformer = new Transformer()
-  const defaultTransform = await Transformer.defaultTransform()
+  //const transformer = new Transformer()
+  //const defaultTransform = await Transformer.defaultTransform()
 
   // see options here: https://github.com/conventional-changelog/conventional-changelog/tree/master/packages
   const changelogOts: Options = {
