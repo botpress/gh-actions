@@ -7,7 +7,7 @@
   "scripts": {
     "eslint": "eslint '**/*.ts' --ext .ts",
     "prettier": "prettier --check '**/*.ts' '!**/*.d.ts'",
-    "build": "yarn workspaces foreach -ptiv run build",
+    "build": "yarn clean && yarn workspaces foreach -ptiv run build",
     "clean": "yarn workspaces foreach -pti run clean",
     "test": "jest",
     "postinstall": "husky install"

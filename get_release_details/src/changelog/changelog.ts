@@ -28,7 +28,7 @@ export const buildChangelog = async () => {
 
   // see options here: https://github.com/conventional-changelog/conventional-changelog/tree/master/packages
   const changelogOts: Options = {
-    preset: 'angular',
+    preset: './angular',
     releaseCount: 1,
     warn: core.warning,
     debug: core.debug

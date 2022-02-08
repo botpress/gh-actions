@@ -4,7 +4,7 @@
   "main": "dist/index.js",
   "license": "MIT",
   "scripts": {
-    "build": "yarn ncc build src/index.ts -m -q",
+    "build": "yarn ncc build src/index.ts -m -q && ncp ../node_modules/conventional-changelog-angular dist/angular && yarn run -T rimraf dist/*.hbs",
     "clean": "yarn run -T rimraf dist"
   },
   "dependencies": {
@@ -18,6 +18,7 @@
     "@types/conventional-changelog": "^3.1.1",
     "@types/node": "^12.18.1",
     "@vercel/ncc": "^0.33.1",
+    "ncp": "^2.0.0",
     "typescript": "^4.5.5"
   }
 }
