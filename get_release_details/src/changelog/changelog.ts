@@ -26,6 +26,8 @@ export const buildChangelog = async () => {
   const transformer = new Transformer()
   const defaultTransform = await Transformer.defaultTransform()
 
+  core.info(path.resolve(__dirname, './angular/index.js'))
+
   // see options here: https://github.com/conventional-changelog/conventional-changelog/tree/master/packages
   const changelogOts: Options = {
     preset: process.env.NODE_ENV === 'test' ? 'angular' : path.resolve(__dirname, './angular/index.js'),
