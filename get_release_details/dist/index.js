@@ -5028,7 +5028,8 @@ function presetLoader (requireMethod) {
         // require returned a promise that resolves to a config object.
         return config
       }
-    } catch (_) {
+    } catch (err) {
+      console.log(err)
       throw Error('does not exist')
     }
   }
