@@ -1,3 +1,4 @@
+import * as core from '@actions/core'
 import changelog, { Options } from 'conventional-changelog'
 import fs from 'fs'
 import path from 'path'
@@ -29,7 +30,8 @@ export const buildChangelog = async () => {
   const changelogOts: Options = {
     preset: 'angular',
     releaseCount: 1,
-    warn: console.warn
+    warn: core.warning,
+    debug: core.debug
   }
   const context: Context = {}
   const gitRawCommitsOpts: GitRawCommitsOptions = {
