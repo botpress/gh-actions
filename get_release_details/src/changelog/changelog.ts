@@ -38,11 +38,12 @@ export const buildChangelog = async () => {
     mergePattern: /^Merge pull request #(\d+) from (.*)/gi,
     mergeCorrespondence: ['id', 'source']
   }
+  const changelogWriterOpts = {}
 
   // Since fetching pull request information requires the code to be async,
   // we have to run changelog once using the custom transformer and then
   // re-running it with the default one afterwards
-  await PromiseFromCallback((cb) =>
+  /* await PromiseFromCallback((cb) =>
     changelog(changelogOts, context, gitRawCommitsOpts, commitsParserOpts, {
       transform: transformer.fetchPullRequestNumbers
     })
@@ -53,11 +54,11 @@ export const buildChangelog = async () => {
 
   // We fetch the issues referenced in Pull Requests we just crawled
   const [owner, repo] = process.env.GITHUB_REPOSITORY!.split('/')
-  await transformer.getIssues(owner, repo)
+  await transformer.getIssues(owner, repo) */
 
   let text = ''
 
-  const stream = changelog(changelogOts, context, gitRawCommitsOpts, commitsParserOpts)
+  const stream = changelog(changelogOts, context, gitRawCommitsOpts, commitsParserOpts, changelogWriterOpts)
   stream.on('data', (chunk) => (text += chunk))
   await PromiseFromCallback((cb) => stream.on('end', cb).on('error', cb))
 
