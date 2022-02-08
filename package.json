@@ -9,7 +9,7 @@
     "prettier": "prettier --check '**/*.ts' '!**/*.d.ts'",
     "build": "yarn workspaces foreach -ptiv run build",
     "test": "jest",
-    "prepare": "husky install"
+    "postinstall": "husky install"
   },
   "workspaces": [
     "rename_binaries",
@@ -30,6 +30,7 @@
     "eslint-plugin-jsdoc": "37.7.1",
     "husky": "^7.0.4",
     "jest": "^27.4.7",
+    "pinst": "^2.1.6",
     "prettier": "^2.5.1",
     "ts-jest": "^27.1.3",
     "ts-node": "^10.4.0"
