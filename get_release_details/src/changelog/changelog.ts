@@ -57,11 +57,7 @@ export const buildChangelog = async () => {
 
   let text = ''
 
-  const stream = changelog(changelogOts, context, gitRawCommitsOpts, commitsParserOpts, {
-    transform: (commit, context) => {
-      return defaultTransform(commit, context)
-    }
-  })
+  const stream = changelog(changelogOts, context, gitRawCommitsOpts, commitsParserOpts)
   stream.on('data', (chunk) => (text += chunk))
   await PromiseFromCallback((cb) => stream.on('end', cb).on('error', cb))
 
