@@ -26,15 +26,15 @@ export const buildChangelog = async () => {
   const transformer = new Transformer()
   const defaultTransform = await Transformer.defaultTransform()
 
-  core.info(path.resolve('/var', __dirname, './angular/index.js'))
+  core.info(path.resolve(__dirname, './angular/index.js'))
   core.info(__dirname)
+
+  core.info(JSON.stringify(fs.readdirSync(__dirname), undefined, 4))
+  core.info(JSON.stringify(fs.readdirSync(path.resolve(__dirname, './angular')), undefined, 4))
 
   // see options here: https://github.com/conventional-changelog/conventional-changelog/tree/master/packages
   const changelogOts: Options = {
-    preset:
-      process.env.NODE_ENV === 'test'
-        ? 'angular'
-        : '/var/run/act/actions/botpress-gh-actions-get_release_details@next/get_release_details/dist/angular/index.js', //path.resolve('/var', __dirname, './angular/index.js'),
+    preset: process.env.NODE_ENV === 'test' ? 'angular' : path.resolve(__dirname, './angular/index.js'),
     releaseCount: 1,
     warn: core.warning,
     debug: core.debug
