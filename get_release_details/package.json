@@ -4,7 +4,8 @@
   "main": "dist/index.js",
   "license": "MIT",
   "scripts": {
-    "build": "yarn ncc build src/index.ts -m -q"
+    "build": "yarn ncc build src/index.ts -m -q",
+    "clean": "yarn run -T rimraf dist"
   },
   "dependencies": {
     "@actions/core": "^1.6.0",

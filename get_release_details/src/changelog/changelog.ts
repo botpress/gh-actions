@@ -3,7 +3,7 @@ import fs from 'fs'
 import path from 'path'
 
 import { PromiseFromCallback, BASE_PATH } from '../utils'
-//import { Transformer } from './issues'
+import { Transformer } from './issues'
 import { CommitsParserOpts, Context, GitRawCommitsOptions } from './types'
 
 const updateChangelog = async (text: string) => {
@@ -22,13 +22,14 @@ const updateChangelog = async (text: string) => {
 
 export const buildChangelog = async () => {
   // The transformer is use to extract issues closed by Pull Requests
-  //const transformer = new Transformer()
-  //const defaultTransform = await Transformer.defaultTransform()
+  const transformer = new Transformer()
+  const defaultTransform = await Transformer.defaultTransform()
 
   // see options here: https://github.com/conventional-changelog/conventional-changelog/tree/master/packages
   const changelogOts: Options = {
     preset: 'angular',
-    releaseCount: 1
+    releaseCount: 1,
+    warn: console.warn
   }
   const context: Context = {}
   const gitRawCommitsOpts: GitRawCommitsOptions = {
@@ -38,12 +39,11 @@ export const buildChangelog = async () => {
     mergePattern: /^Merge pull request #(\d+) from (.*)/gi,
     mergeCorrespondence: ['id', 'source']
   }
-  const changelogWriterOpts = {}
 
   // Since fetching pull request information requires the code to be async,
   // we have to run changelog once using the custom transformer and then
   // re-running it with the default one afterwards
-  /* await PromiseFromCallback((cb) =>
+  await PromiseFromCallback((cb) =>
     changelog(changelogOts, context, gitRawCommitsOpts, commitsParserOpts, {
       transform: transformer.fetchPullRequestNumbers
     })
@@ -54,11 +54,17 @@ export const buildChangelog = async () => {
 
   // We fetch the issues referenced in Pull Requests we just crawled
   const [owner, repo] = process.env.GITHUB_REPOSITORY!.split('/')
-  await transformer.getIssues(owner, repo) */
+  await transformer.getIssues(owner, repo)
 
   let text = ''
 
-  const stream = changelog(changelogOts, context, gitRawCommitsOpts, commitsParserOpts, changelogWriterOpts)
+  const stream = changelog(changelogOts, context, gitRawCommitsOpts, commitsParserOpts, {
+    transform: (commit, context) => {
+      transformer.referenceIssues(commit, context)
+
+      return defaultTransform(commit, context)
+    }
+  })
   stream.on('data', (chunk) => (text += chunk))
   await PromiseFromCallback((cb) => stream.on('end', cb).on('error', cb))
 
