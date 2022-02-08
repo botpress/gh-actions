@@ -59,8 +59,6 @@ export const buildChangelog = async () => {
 
   const stream = changelog(changelogOts, context, gitRawCommitsOpts, commitsParserOpts, {
     transform: (commit, context) => {
-      transformer.referenceIssues(commit, context)
-
       return defaultTransform(commit, context)
     }
   })
