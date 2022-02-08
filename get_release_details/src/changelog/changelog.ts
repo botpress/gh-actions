@@ -28,7 +28,7 @@ export const buildChangelog = async () => {
 
   // see options here: https://github.com/conventional-changelog/conventional-changelog/tree/master/packages
   const changelogOts: Options = {
-    preset: './angular',
+    preset: process.env.NODE_ENV === 'test' ? 'angular' : path.resolve('./angular'),
     releaseCount: 1,
     warn: core.warning,
     debug: core.debug
