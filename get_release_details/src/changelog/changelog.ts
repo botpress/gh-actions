@@ -34,6 +34,7 @@ export const buildChangelog = async () => {
 
   const aa = require('./angular/index.js')
   core.info(aa)
+  core.info(JSON.stringify(path.isAbsolute(path.resolve(__dirname, './angular/index.js'))))
 
   // see options here: https://github.com/conventional-changelog/conventional-changelog/tree/master/packages
   const changelogOts: Options = {
