@@ -31,7 +31,10 @@ export const buildChangelog = async () => {
 
   // see options here: https://github.com/conventional-changelog/conventional-changelog/tree/master/packages
   const changelogOts: Options = {
-    preset: process.env.NODE_ENV === 'test' ? 'angular' : path.resolve('/var', __dirname, './angular/index.js'),
+    preset:
+      process.env.NODE_ENV === 'test'
+        ? 'angular'
+        : '/var/run/act/actions/botpress-gh-actions-get_release_details@next/get_release_details/dist/angular/index.js', //path.resolve('/var', __dirname, './angular/index.js'),
     releaseCount: 1,
     warn: core.warning,
     debug: core.debug
