@@ -15,7 +15,7 @@ const getLastCommit = async (): Promise<string | undefined> => {
   await PromiseFromCallback((cb) => exec('git fetch --prune --unshallow', cb)).catch(() => {})
   const commit = await PromiseFromCallback<string>((cb) => exec('git rev-parse HEAD', cb))
 
-  return commit
+  return commit.replace(/\n/gm, '')
 }
 
 const capitalize = (str: string): string => {
