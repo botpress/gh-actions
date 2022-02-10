@@ -28,12 +28,13 @@ const run = async () => {
   try {
     const tag = await getLastTag()
     const commit = await getLastCommit()
-    if (!tag || !commit) {
-      throw new Error('Cannot fetch last commit or last tag')
-    }
 
     core.debug(`Last tag: ${tag}`)
     core.debug(`Last commit: ${commit}`)
+
+    if (!tag || !commit) {
+      throw new Error('Cannot fetch last commit or last tag')
+    }
 
     const ranges = await getVersionsRange([tag, commit])
     let changelogs: string = ''
