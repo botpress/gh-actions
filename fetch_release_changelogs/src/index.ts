@@ -4,13 +4,20 @@ import { getChangelogs } from './changelog'
 import { PromiseFromCallback } from './utils'
 import { getVersionsRange } from './version'
 
-const getLastTwoTags = async (): Promise<string[] | undefined> => {
+const getLastTag = async (): Promise<string | undefined> => {
   await PromiseFromCallback((cb) => exec('git fetch --prune --unshallow', cb)).catch(() => {})
-  const tags = await PromiseFromCallback<string>((cb) => exec('git tag | sort -V | tail -2', cb))
+  const tag = await PromiseFromCallback<string>((cb) => exec('git describe --tags --abbrev=0', cb))
 
-  if (/v\d.*/g.test(tags)) {
-    return tags.split('\n')
+  if (/^v\d/.test(tag)) {
+    return tag
   }
+}
+
+const getLastCommit = async (): Promise<string | undefined> => {
+  await PromiseFromCallback((cb) => exec('git fetch --prune --unshallow', cb)).catch(() => {})
+  const commit = await PromiseFromCallback<string>((cb) => exec('git rev-parse HEAD', cb))
+
+  return commit
 }
 
 const capitalize = (str: string): string => {
@@ -19,8 +26,16 @@ const capitalize = (str: string): string => {
 
 const run = async () => {
   try {
-    const tags = (await getLastTwoTags()) || []
-    const ranges = await getVersionsRange(tags)
+    const tag = await getLastTag()
+    const commit = await getLastCommit()
+    if (!tag || !commit) {
+      throw new Error('Cannot fetch last commit or last tag')
+    }
+
+    core.debug(`Last tag: ${tag}`)
+    core.debug(`Last commit: ${commit}`)
+
+    const ranges = await getVersionsRange([tag, commit])
     let changelogs: string = ''
 
     for (const [repo, versions] of Object.entries(ranges)) {
