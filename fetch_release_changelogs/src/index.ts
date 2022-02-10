@@ -9,9 +9,9 @@ const getLastTag = async (): Promise<string | undefined> => {
   const tag = await PromiseFromCallback<string>((cb) => exec('git describe --tags --abbrev=0', cb))
 
   core.debug(`tag: ${tag}`)
-  core.debug(`is tag: ${/^v\d+\.\d+\.\d+$/.test(tag)}`)
+  core.debug(`is tag: ${/^v\d/.test(tag)}`)
 
-  if (/^v\d+\.\d+\.\d+$/.test(tag)) {
+  if (/^v\d/.test(tag)) {
     return tag
   }
 }
