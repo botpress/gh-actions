@@ -105,7 +105,8 @@ const RESPONSE = {
     body: `This is a PR description\n\nIt closes ${ISSUE_1}, ${ISSUE_1}, ${ISSUE_1}\nPlus resolves ${ISSUE_2} and ${ISSUE_3}`,
     head: {
       ref: 'not_a_release_branch'
-    }
+    },
+    title: 'feat(something): does something'
   }
 }
 const RESPONSE_2 = {
@@ -113,7 +114,8 @@ const RESPONSE_2 = {
     body: `This is a PR description\n\nIt closes ${ISSUE_1}`,
     head: {
       ref: 'release/v0.0.5'
-    }
+    },
+    title: 'fix(something): fixes something'
   }
 }
 const RESPONSE_3 = {
