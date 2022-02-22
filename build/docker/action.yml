@@ -19,7 +19,7 @@ inputs:
   dockerfile:
     description: "path to Dockerfile"
     required: true
-    default: Dockerfile
+    default: ""
   aws-access-key-id:
     description: "aws access key id"
     required: true
@@ -71,8 +71,8 @@ runs:
       env:
         DOCKER_BUILDKIT: "1"
       with:
-        context: ${{ inputs.work-dir }}/${{ inputs.docker-context }}
-        file: ${{ inputs.work-dir }}/${{ inputs.dockerfile }}
+        context: ${{ inputs.docker-context }}
+        file: ${{ inputs.dockerfile }}
         push: ${{ inputs.push }}
         cache-from: type=local,src=/tmp/.buildx-cache
         cache-to: type=local,dest=/tmp/.buildx-cache
