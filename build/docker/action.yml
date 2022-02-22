@@ -11,7 +11,7 @@ inputs:
   work-dir:
     description: "working directory where to build the Dockerfile"
     required: true
-    default: ./
+    default: "."
   docker-context:
     description: "Docker context for the build"
     required: true
@@ -71,8 +71,8 @@ runs:
       env:
         DOCKER_BUILDKIT: "1"
       with:
-        context: ${{ inputs.work-dir }}${{ inputs.docker-context }}
-        file: ${{ inputs.work-dir }}${{ inputs.dockerfile }}
+        context: ${{ inputs.work-dir }}/${{ inputs.docker-context }}
+        file: ${{ inputs.work-dir }}/${{ inputs.dockerfile }}
         push: ${{ inputs.push }}
         cache-from: type=local,src=/tmp/.buildx-cache
         cache-to: type=local,dest=/tmp/.buildx-cache
