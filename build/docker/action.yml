@@ -42,15 +42,15 @@ runs:
         key: ${{ runner.os }}-buildx-${{ github.sha }}
         restore-keys: |
           ${{ runner.os }}-buildx-
+    - uses: aws-actions/amazon-ecr-login@v1
+      id: ecr
     - uses: docker/metadata-action@v3
       id: meta
       with:
         images: ${{ steps.ecr.outputs.registry }}/${{ inputs.repository }}
         tags: |
           type=semver,pattern={{version}}
-          type=sha,format=long
-    - uses: aws-actions/amazon-ecr-login@v1
-      id: ecr
+          type=sha,prefix=,format=long
     - name: Create ECR Registry
       shell: bash
       env:
