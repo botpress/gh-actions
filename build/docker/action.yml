@@ -70,8 +70,6 @@ runs:
     - uses: docker/build-push-action@v2
       env:
         DOCKER_BUILDKIT: "1"
-        ECR_REGISTRY: ${{ steps.ecr.outputs.registry }}
-        ECR_REPOSITORY: ${{ inputs.repository }}
       with:
         context: ${{ inputs.docker-context }}
         file: ${{ inputs.dockerfile }}
