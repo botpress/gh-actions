@@ -69,7 +69,7 @@ runs:
       with:
         context: ${{ inputs.docker-context }}
         file: ${{ inputs.dockerfile }}
-        push: true
+        push: ${{ GitHub.event_name != 'pull_request' }}
         cache-from: type=local,src=/tmp/.buildx-cache
         cache-to: type=local,dest=/tmp/.buildx-cache
         tags: ${{ steps.meta.outputs.tags }}
