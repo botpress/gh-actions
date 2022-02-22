@@ -55,8 +55,8 @@ runs:
         flavor: |
           latest=false
         tags: |
-          type=semver,pattern={{version}}
-          type=sha,prefix=,format=long
+          type=semver,event=tag,pattern={{version}}
+          type=sha,event=branch,prefix=,format=long
     - name: Create ECR Registry
       shell: bash
       env:
