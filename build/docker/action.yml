@@ -1,6 +1,10 @@
 name: Docker to ECR
 description: Push Docker image to ECR
 inputs:
+  push: 
+    description: "push to registry"
+    required: true
+    default: "true"
   repository:
     description: "repository name created inside ecr"
     required: true
@@ -48,6 +52,8 @@ runs:
       id: meta
       with:
         images: ${{ steps.ecr.outputs.registry }}/${{ inputs.repository }}
+        flavor: |
+          latest=false
         tags: |
           type=semver,pattern={{version}}
           type=sha,prefix=,format=long
@@ -69,7 +75,7 @@ runs:
       with:
         context: ${{ inputs.docker-context }}
         file: ${{ inputs.dockerfile }}
-        push: ${{ github.event_name != 'pull_request' }}
+        push: ${{ inputs.push }}
         cache-from: type=local,src=/tmp/.buildx-cache
         cache-to: type=local,dest=/tmp/.buildx-cache
         tags: ${{ steps.meta.outputs.tags }}
