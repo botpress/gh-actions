@@ -55,7 +55,6 @@ runs:
       env:
         ECR_REPOSITORY: ${{ inputs.repository }}
         ECR_REGISTRY: ${{ steps.ecr.outputs.registry }}
-        IMAGE_TAG: ${{ github.sha }}
       run: |
         aws --version
         aws ecr create-repository --repository-name $ECR_REPOSITORY || true
@@ -69,7 +68,7 @@ runs:
       with:
         context: ${{ inputs.docker-context }}
         file: ${{ inputs.dockerfile }}
-        push: ${{ GitHub.event_name != 'pull_request' }}
+        push: ${{ github.event_name != 'pull_request' }}
         cache-from: type=local,src=/tmp/.buildx-cache
         cache-to: type=local,dest=/tmp/.buildx-cache
         tags: ${{ steps.meta.outputs.tags }}
