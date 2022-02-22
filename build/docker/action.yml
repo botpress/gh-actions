@@ -30,16 +30,27 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v1
+    - uses: docker/setup-buildx-action@v1
+    - uses: aws-actions/configure-aws-credentials@v1
       with:
         aws-access-key-id: ${{ inputs.aws-access-key-id }}
         aws-secret-access-key: ${{ inputs.aws-secret-access-key }}
         aws-region: ${{ inputs.aws-region }}
-    - name: Login to Amazon ECR
-      uses: aws-actions/amazon-ecr-login@v1
+    - uses: actions/cache@v2
+      with:
+        path: /tmp/.buildx-cache
+        key: ${{ runner.os }}-buildx-${{ github.sha }}
+        restore-keys: |
+          ${{ runner.os }}-buildx-
+    - uses: docker/metadata-action@v3
+      id: meta
+      with:
+        tags: |
+          type=semver,pattern={{version}}
+          type=sha,format=long
+    - uses: aws-actions/amazon-ecr-login@v1
       id: ecr
-    - name: Build, tag, and push image to Amazon ECR
+    - name: Create ECR Registry
       shell: bash
       env:
         ECR_REPOSITORY: ${{ inputs.repository }}
@@ -50,6 +61,16 @@ runs:
         aws ecr create-repository --repository-name $ECR_REPOSITORY || true
         aws ssm get-parameter --name '/cloud/container-registry/ecr-policy-document' --query 'Parameter.Value' | jq -r > repository-policy.json
         aws ecr set-repository-policy --repository-name $ECR_REPOSITORY --policy-text file://repository-policy.json &> /dev/null
-        cd ${{ inputs.work-dir }}
-        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -f ${{ inputs.dockerfile }} ${{ inputs.docker-context }}
-        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+    - uses: docker/build-push-action@v2
+      env:
+        DOCKER_BUILDKIT: "1"
+        ECR_REGISTRY: ${{ steps.ecr.outputs.registry }}
+        ECR_REPOSITORY: ${{ inputs.repository }}
+      with:
+        context: ${{ inputs.docker-context }}
+        file: ${{ inputs.dockerfile }}
+        push: true
+        cache-from: type=local,src=/tmp/.buildx-cache
+        cache-to: type=local,dest=/tmp/.buildx-cache
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
