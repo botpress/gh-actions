@@ -34,12 +34,6 @@ runs:
         role-session-name: container_pusher
         role-to-assume: ${{ inputs.aws-role }}
         aws-region: ${{ inputs.aws-region }}
-    - uses: actions/cache@v2
-      with:
-        path: /tmp/.buildx-cache
-        key: ${{ runner.os }}-buildx-${{ github.sha }}
-        restore-keys: |
-          ${{ runner.os }}-buildx-
     - uses: aws-actions/amazon-ecr-login@v1
       id: ecr
     - uses: docker/metadata-action@v3
@@ -61,6 +55,9 @@ runs:
         aws ecr create-repository --repository-name $ECR_REPOSITORY || true
         aws ssm get-parameter --name '/cloud/container-registry/ecr-policy-document' --query 'Parameter.Value' | jq -r > repository-policy.json
         aws ecr set-repository-policy --repository-name $ECR_REPOSITORY --policy-text file://repository-policy.json &> /dev/null
+    # The cache is using an experimental feature from Github
+    # If there is any issues see the follow link
+    # https://github.com/docker/build-push-action/blob/master/docs/advanced/cache.md
     - uses: docker/build-push-action@v2
       env:
         DOCKER_BUILDKIT: "1"
@@ -68,7 +65,7 @@ runs:
         context: ${{ inputs.docker-context }}
         file: ${{ inputs.dockerfile }}
         push: ${{ inputs.push }}
-        cache-from: type=local,src=/tmp/.buildx-cache
-        cache-to: type=local,dest=/tmp/.buildx-cache
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
