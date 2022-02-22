@@ -8,11 +8,7 @@ inputs:
   repository:
     description: "repository name created inside ecr"
     required: true
-  work-dir:
-    description: "working directory where to build the Dockerfile"
-    required: true
-    default: "."
-  docker-context:
+  context:
     description: "Docker context for the build"
     required: true
     default: "."
