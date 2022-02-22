@@ -71,8 +71,8 @@ runs:
       env:
         DOCKER_BUILDKIT: "1"
       with:
-        context: ${{ inputs.docker-context }}
-        file: ${{ inputs.dockerfile }}
+        context: ${{ inputs.work-dir }}${{ inputs.docker-context }}
+        file: ${{ inputs.work-dir }}${{ inputs.dockerfile }}
         push: ${{ inputs.push }}
         cache-from: type=local,src=/tmp/.buildx-cache
         cache-to: type=local,dest=/tmp/.buildx-cache
