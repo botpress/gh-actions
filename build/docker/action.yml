@@ -1,27 +1,25 @@
 name: Docker to ECR
 description: Push Docker image to ECR
 inputs:
+  push: 
+    description: "push to registry"
+    required: true
+    default: "true"
   repository:
     description: "repository name created inside ecr"
     required: true
-  work-dir:
-    description: "working directory where to build the Dockerfile"
-    required: true
-    default: ./
-  docker-context:
+  context:
     description: "Docker context for the build"
     required: true
     default: "."
   dockerfile:
     description: "path to Dockerfile"
     required: true
-    default: Dockerfile
-  aws-access-key-id:
-    description: "aws access key id"
+    default: ""
+  aws-role:
+    description: "aws role name"
     required: true
-  aws-secret-access-key:
-    description: "aws secret access key"
-    required: true
+    default: arn:aws:iam::986677156374:role/actions/build/container_pusher
   aws-region:
     description: "aws region"
     required: true
@@ -30,26 +28,44 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v1
+    - uses: docker/setup-buildx-action@v1
+    - uses: aws-actions/configure-aws-credentials@v1
       with:
-        aws-access-key-id: ${{ inputs.aws-access-key-id }}
-        aws-secret-access-key: ${{ inputs.aws-secret-access-key }}
+        role-session-name: container_pusher
+        role-to-assume: ${{ inputs.aws-role }}
         aws-region: ${{ inputs.aws-region }}
-    - name: Login to Amazon ECR
-      uses: aws-actions/amazon-ecr-login@v1
+    - uses: aws-actions/amazon-ecr-login@v1
       id: ecr
-    - name: Build, tag, and push image to Amazon ECR
+    - uses: docker/metadata-action@v3
+      id: meta
+      with:
+        images: ${{ steps.ecr.outputs.registry }}/${{ inputs.repository }}
+        flavor: |
+          latest=false
+        tags: |
+          type=semver,pattern={{version}}
+          type=sha,enable=${{ !startsWith(github.ref, 'refs/tags') }},prefix=,format=long
+    - name: Create ECR Registry
       shell: bash
       env:
         ECR_REPOSITORY: ${{ inputs.repository }}
         ECR_REGISTRY: ${{ steps.ecr.outputs.registry }}
-        IMAGE_TAG: ${{ github.sha }}
       run: |
         aws --version
         aws ecr create-repository --repository-name $ECR_REPOSITORY || true
         aws ssm get-parameter --name '/cloud/container-registry/ecr-policy-document' --query 'Parameter.Value' | jq -r > repository-policy.json
         aws ecr set-repository-policy --repository-name $ECR_REPOSITORY --policy-text file://repository-policy.json &> /dev/null
-        cd ${{ inputs.work-dir }}
-        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -f ${{ inputs.dockerfile }} ${{ inputs.docker-context }}
-        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+    # The cache is using an experimental feature from Github
+    # If there is any issues see the follow link
+    # https://github.com/docker/build-push-action/blob/master/docs/advanced/cache.md
+    - uses: docker/build-push-action@v2
+      env:
+        DOCKER_BUILDKIT: "1"
+      with:
+        context: ${{ inputs.docker-context }}
+        file: ${{ inputs.dockerfile }}
+        push: ${{ inputs.push }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
