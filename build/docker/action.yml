@@ -55,8 +55,8 @@ runs:
         flavor: |
           latest=false
         tags: |
-          type=semver,event=tag,pattern={{version}}
-          type=sha,event=branch,prefix=,format=long
+          type=semver,pattern={{version}}
+          type=sha,enabled=${{ !startsWith(github.ref, 'refs/tags') }},prefix=,format=long
     - name: Create ECR Registry
       shell: bash
       env:
