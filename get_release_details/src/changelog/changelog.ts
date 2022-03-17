@@ -21,7 +21,7 @@ const updateChangelog = async (text: string) => {
   )
 }
 
-export const buildChangelog = async () => {
+export const buildChangelog = async (mode: string) => {
   // The transformer is use to extract issues closed by Pull Requests
   const transformer = new Transformer()
   const defaultTransform = await Transformer.defaultTransform()
@@ -29,7 +29,7 @@ export const buildChangelog = async () => {
   // see options here: https://github.com/conventional-changelog/conventional-changelog/tree/master/packages
   const changelogOts: Options = {
     preset: 'angular',
-    releaseCount: 1,
+    releaseCount: mode === 'version' ? 1 : 2,
     warn: core.warning,
     debug: core.debug
   }

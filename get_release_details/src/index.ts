@@ -43,7 +43,7 @@ const run = async () => {
     core.setOutput('is_new_release', isNewRelease)
 
     // No need to generate changelogs when it's not a new release
-    const changelog = isNewRelease ? await buildChangelog() : ''
+    const changelog = isNewRelease ? await buildChangelog(mode) : ''
 
     core.setOutput('changelog', changelog)
   } catch (err) {
