@@ -8,10 +8,6 @@ inputs:
     description: 'Github Token'
     required: false
     default: ${{ github.token }}
-  mode:
-    description: 'Check wether the "version" should be the same as the "tag" or the opposite'
-    required: false
-    default: 'version'
 outputs:
   latest_tag:
     description: 'Latest Release Tag'

@@ -25,25 +25,13 @@ const run = async () => {
     )
 
     const currentVersion = JSON.parse(pkg).version as string
-    const mode = core.getInput('mode')
-    if (mode !== 'version' && mode !== 'tag') {
-      throw new Error("Mode should either be of type 'version' or 'tag'")
-    }
-
-    let isNewRelease = false
-    if (!tagVersion) {
-      isNewRelease = true
-    } else if (mode === 'version') {
-      isNewRelease = tagVersion < currentVersion
-    } else if (mode === 'tag') {
-      isNewRelease = tagVersion === currentVersion
-    }
+    const isNewRelease = tagVersion !== currentVersion
 
     core.setOutput('version', currentVersion)
     core.setOutput('is_new_release', isNewRelease)
 
     // No need to generate changelogs when it's not a new release
-    const changelog = await buildChangelog(mode)
+    const changelog = isNewRelease ? await buildChangelog() : ''
 
     core.setOutput('changelog', changelog)
   } catch (err) {
