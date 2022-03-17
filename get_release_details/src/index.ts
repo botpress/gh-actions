@@ -16,7 +16,7 @@ const getLastTag = async (): Promise<string | undefined> => {
 const run = async () => {
   try {
     const lastReleaseTag = await getLastTag()
-    const previousVersion = lastReleaseTag?.replace(/^v/, '')
+    const tagVersion = lastReleaseTag?.replace(/^v/, '')
 
     core.setOutput('latest_tag', lastReleaseTag)
 
@@ -24,8 +24,20 @@ const run = async () => {
       fs.readFile(path.resolve(BASE_PATH, 'package.json'), 'utf-8', cb)
     )
 
-    const currentVersion = JSON.parse(pkg).version
-    const isNewRelease = previousVersion !== currentVersion
+    const currentVersion = JSON.parse(pkg).version as string
+    const mode = core.getInput('mode')
+    if (mode !== 'version' && mode !== 'tag') {
+      throw new Error("Mode should either be of type 'version' or 'tag'")
+    }
+
+    let isNewRelease = false
+    if (!tagVersion) {
+      isNewRelease = true
+    } else if (mode === 'version') {
+      isNewRelease = tagVersion < currentVersion
+    } else if (mode === 'tag') {
+      isNewRelease = tagVersion === currentVersion
+    }
 
     core.setOutput('version', currentVersion)
     core.setOutput('is_new_release', isNewRelease)
