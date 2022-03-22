@@ -7,6 +7,7 @@ inputs:
   host:
     description: 'Hostname of the destination'
     required: false
+    default: 'github.com'
 runs:
   using: 'node12'
   main: 'dist/index.js'

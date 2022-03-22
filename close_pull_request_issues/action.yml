@@ -1,0 +1,13 @@
+name: 'close_pull_request_issues'
+description: 'Closes issues referenced in pull requests'
+inputs:
+  comment:
+    description: 'Comment to use when closing an issue'
+    required: false
+  token:
+    description: 'Github Token'
+    required: false
+    default: ${{ github.token }}
+runs:
+  using: 'node12'
+  main: 'dist/index.js'

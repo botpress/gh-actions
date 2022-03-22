@@ -1,21 +1,30 @@
+import * as core from '@actions/core'
 import fs from 'fs'
-import path from 'path'
+import { join } from 'path'
 
-const { INPUT_PATH, INPUT_SUBNAME, GITHUB_REF } = process.env
+const path = core.getInput('path')
+const subname = core.getInput('subname')
+// GITHUB_REF is always defined inside the CI
+const ref = process.env.GITHUB_REF!
 
-if (!fs.existsSync(INPUT_PATH)) {
-  console.error("Path doesn't exist")
+if (!path) {
+  core.error('Missing value for path param')
   process.exit(1)
 }
 
-const branchWithoutHead = GITHUB_REF.replace('refs/heads/', '')
+if (!fs.existsSync(path)) {
+  core.error("Path doesn't exist")
+  process.exit(1)
+}
+
+const branchWithoutHead = ref.replace('refs/heads/', '')
 const branchName = branchWithoutHead.replace(/[\W_]+/g, '_')
 
-const subName = INPUT_SUBNAME || branchName
+const subName = subname || branchName
 
-for (const fileName of fs.readdirSync(INPUT_PATH)) {
+for (const fileName of fs.readdirSync(path)) {
   const [name, _version, platform, arch] = fileName.split('-')
   const newName = `${name}-${subName}-${platform}-${arch}`
 
-  fs.renameSync(path.join(INPUT_PATH, fileName), path.join(INPUT_PATH, newName))
+  fs.renameSync(join(path, fileName), join(path, newName))
 }

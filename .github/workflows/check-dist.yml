@@ -1,0 +1,41 @@
+name: Check dist/ directories
+
+on: [pull_request, workflow_dispatch]
+
+jobs:
+  check-dist:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@master
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '12.18.1'
+          cache: 'yarn'
+
+      - name: Fetch Node Packages
+        run: |
+          yarn --immutable
+      - name: Rebuild dist/ directories
+        run: |
+          yarn build
+      - name: Compare the expected and actual dist/ directories
+        id: diff
+        run: |
+          for package in rename_binaries get_release_details set_ssh_key extract_info close_pull_request_issues fetch_release_changelogs
+          do
+            if [ "$(git diff --ignore-space-at-eol '${package}/dist/:!**/node_modules/**' | wc -l)" -gt "0" ]; then
+              echo "::set-output name=package::${package}"
+              echo "Detected uncommitted changes after build.  See status below:"
+              git diff
+              exit 1
+            fi
+          done
+
+      # If dist/ is different than expected, upload the expected version as an artifact
+      - uses: actions/upload-artifact@v2
+        if: ${{ failure() && steps.diff.conclusion == 'failure' }}
+        with:
+          name: dist
+          path: format('{0}/dist/', steps.diff.outputs.package) }}
