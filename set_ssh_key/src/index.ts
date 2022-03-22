@@ -1,18 +1,30 @@
+import * as core from '@actions/core'
+import { exec } from 'child_process'
 import fs from 'fs'
 import path from 'path'
-import { exec } from 'child_process'
-import 'bluebird-global'
 
 const create = async () => {
-  const sshFolder = path.join(process.env.HOME, '.ssh')
+  const host = core.getInput('host')
+  const sshKey = core.getInput('ssh_key', { required: true })
+  // HOST is necessarily defined when running in the CIs
+  const home = process.env.HOME!
+
+  const sshFolder = path.join(home, '.ssh')
 
   fs.mkdirSync(sshFolder, { recursive: true, mode: 0o700 })
 
-  const hostInfo: string = await Promise.fromCallback((cb) =>
-    exec(`ssh-keyscan -H "${process.env.INPUT_HOST || 'github.com'}"`, cb)
+  const hostInfo = await new Promise<string>((resolve, reject) =>
+    exec(`ssh-keyscan -H "${host}"`, (err, res) => {
+      if (err) {
+        reject(err)
+      } else if (res) {
+        resolve(res)
+      }
+    })
   )
 
   fs.writeFileSync(path.join(sshFolder, 'known_hosts'), hostInfo, { mode: 0o644, flag: 'a' })
-  fs.writeFileSync(path.join(sshFolder, 'id_rsa'), process.env.INPUT_SSH_KEY, { mode: 0o400, flag: 'wx' })
+  fs.writeFileSync(path.join(sshFolder, 'id_rsa'), sshKey, { mode: 0o400, flag: 'wx' })
 }
-create()
+
+void create()
