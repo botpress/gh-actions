@@ -29,6 +29,7 @@ const REGEX_ISSUES =
   /(?:(?<![/\w-.])\w[\w-.]+?\/\w[\w-.]+?#|(?:https:\/\/github\.com\/\w[\w-.]+?\/\w[\w-.]+?\/issues\/)|\B#)[1-9]\d*?\b/g
 const REGEX_OWNER_REPO = /^https:\/\/github.com\/(.+)\/(.+)\/issues\/.*/
 const REGEX_NUMBER = /[1-9]\d*/g
+const DISCARDED_AUTHORS = ['dependabot[bot]']
 
 export class PullRequest {
   private pullRequestNumbers: number[] = []
@@ -72,8 +73,17 @@ export class PullRequest {
         const branch = pr.data.head.ref
         const title = pr.data.title
         const description = pr.data.body
-        // Skip in case the PR description is empty or if it's a release PR
-        if (!description || branch.includes(RELEASE_BRANCHES) || title.match(RELEASE_TITLE_REGEX)) {
+        const author = pr.data.user?.login || ''
+
+        // Skip in case the PR description is empty, if it's a release PR,
+        // or from integrations like dependabot
+        if (
+          !description ||
+          branch.includes(RELEASE_BRANCHES) ||
+          title.match(RELEASE_TITLE_REGEX) ||
+          DISCARDED_AUTHORS.includes(author)
+        ) {
+          core.debug(`(#${pull_number}) Pull Request skipped`)
           continue
         }
 
@@ -122,6 +132,7 @@ export class PullRequest {
   }
 
   private extractIssues = (description: string): Issue[] => {
+    core.debug('Extracting issues from PR description...')
     const issues: Issue[] = []
 
     const relevantLines = description.split('\n').filter((line) => CLOSES_ISSUES_KEYWORDS_REGEX.test(line))
