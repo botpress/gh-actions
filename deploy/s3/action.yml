@@ -20,11 +20,11 @@ inputs:
     required: true
     default: us-east-1
   invalidate-cloudfront: 
-    description: "invalidate cloudfront distribution (requires the cloudfront-distribution to be set)"
+    description: "invalidate cloudfront distribution (requires the input cloudfront-distribution)"
     required: true
     default: "false"
   cloudfront-distribution:
-    description: "cloudfront distribution id"
+    description: "cloudfront distribution id (required for the input invalidate-cloudfront)"
 
 runs:
   using: "composite"
