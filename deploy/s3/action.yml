@@ -2,32 +2,32 @@ name: AWS Deploy S3 Files
 description: Deploy files to an s3 bucket
 inputs:
   source:
-    description: "source directory to upload into the s3 bucket"
+    description: 'source directory to upload into the s3 bucket'
     required: true
-    default: "./dist"
+    default: './dist'
   bucket:
-    description: "name of the S3 bucket to deploy to"
+    description: 'name of the S3 bucket to deploy to'
     required: true
   prefix:
-    description: "prefix where to upload files in bucket (upload path ex. "path/to/my/folder")"
-    default: ""
+    description: 'prefix where to upload files in bucket (upload path ex. "path/to/my/folder")'
+    default: ''
     required: true
   aws-role:
-    description: "aws role name"
+    description: 'aws role name'
     required: true
   aws-region:
-    description: "aws region"
+    description: 'aws region'
     required: true
     default: us-east-1
-  invalidate-cloudfront: 
-    description: "invalidate cloudfront distribution (requires the input cloudfront-distribution)"
+  invalidate-cloudfront:
+    description: 'invalidate cloudfront distribution (requires the input cloudfront-distribution)'
     required: true
-    default: "false"
+    default: 'false'
   cloudfront-distribution:
-    description: "cloudfront distribution id (required for the input invalidate-cloudfront)"
+    description: 'cloudfront distribution id (required for the input invalidate-cloudfront)'
 
 runs:
-  using: "composite"
+  using: 'composite'
   steps:
     - uses: aws-actions/configure-aws-credentials@v1
       with:
