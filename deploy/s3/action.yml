@@ -6,10 +6,10 @@ inputs:
     required: true
     default: "./dist"
   bucket:
-    description: bucket name to deploy to
+    description: "name of the S3 bucket to deploy to"
     required: true
   prefix:
-    description: "prefix where to upload files in bucket"
+    description: "prefix where to upload files in bucket (upload path ex. "path/to/my/folder")"
     default: ""
     required: true
   aws-role:
