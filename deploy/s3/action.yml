@@ -38,6 +38,6 @@ runs:
       shell: bash
       run: aws s3 sync ${{ inputs.source }} s3://${{ inputs.bucket }}/${{ inputs.prefix }} --delete
     - name: Invalidate Cloudfront
-      if: ${{ inputs.invalidate-cloudfront }}
+      if: ${{ inputs.invalidate-cloudfront == 'true' }}
       shell: bash
       run: aws cloudfront create-invalidation --distribution-id ${{ inputs.cloudfront-distribution }} --paths '${{ inputs.prefix }}/*';
