@@ -40,4 +40,4 @@ runs:
     - name: Invalidate Cloudfront
       if: ${{ inputs.invalidate-cloudfront == 'true' }}
       shell: bash
-      run: aws cloudfront create-invalidation --distribution-id ${{ inputs.cloudfront-distribution }} --paths '${{ inputs.prefix }}/*';
+      run: aws cloudfront create-invalidation --distribution-id ${{ inputs.cloudfront-distribution }} --paths "${{ inputs.prefix }}/*"
