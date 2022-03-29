@@ -3,13 +3,14 @@
   "scripts": {
     "build": "yarn workspaces foreach -ptiv run build",
     "test": "jest",
-    "postinstall": "husky install gh-actions/.husky"
+    "prepare": "husky install"
   },
   "workspaces": [
     "rename_binaries",
     "get_release_details",
     "set_ssh_key",
     "backstage",
+    "techdocs",
     "extract_info"
   ],
   "devDependencies": {

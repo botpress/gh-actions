@@ -1,5 +1,5 @@
 name: 'backstage'
-description: 'Backstage'
+description: 'Backstage Botpress utility'
 inputs:
   source:
     description: 'Basckstage definition file'
