@@ -62,7 +62,7 @@ runs:
       env:
         DOCKER_BUILDKIT: "1"
       with:
-        context: ${{ inputs.docker-context }}
+        context: ${{ inputs.context }}
         file: ${{ inputs.dockerfile }}
         push: ${{ inputs.push }}
         cache-from: type=gha

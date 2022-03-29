@@ -1,0 +1,20 @@
+{
+  "name": "close_pull_request_issues",
+  "version": "2.0.0",
+  "main": "dist/index.js",
+  "license": "MIT",
+  "scripts": {
+    "build": "yarn ncc build src/index.ts -m -q"
+  },
+  "dependencies": {
+    "@actions/core": "^1.6.0",
+    "@actions/github": "^5.0.0",
+    "@octokit/rest": "^18.12.0"
+  },
+  "devDependencies": {
+    "@types/node": "^12.18.1",
+    "@types/semver": "^7.3.9",
+    "@vercel/ncc": "^0.33.3",
+    "typescript": "^4.5.5"
+  }
+}
