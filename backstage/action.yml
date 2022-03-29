@@ -1,0 +1,10 @@
+name: 'backstage'
+description: 'Backstage'
+inputs:
+  source:
+    description: 'Basckstage definition file'
+    default: './backstage.json'
+    required: true
+runs:
+  using: 'node16'
+  main: 'dist/index.js'
