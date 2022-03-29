@@ -3,7 +3,7 @@
   "scripts": {
     "build": "yarn workspaces foreach -ptiv run build",
     "test": "jest",
-    "prepare": "husky install"
+    "postinstall": "husky install gh-actions/.husky"
   },
   "workspaces": [
     "rename_binaries",
