@@ -9,6 +9,7 @@
     "rename_binaries",
     "get_release_details",
     "set_ssh_key",
+    "backstage",
     "extract_info"
   ],
   "devDependencies": {
