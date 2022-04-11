@@ -246,6 +246,9 @@ var entityFunctions = function entityFunctions(entity) {
     }
   };
 };
+var addTechDocs = function addTechDocs(entity) {
+  entity.metadata.annotations['backstage.io/techdocs-ref'] = "url:/api/techdocs/static/docs/".concat(entity.metadata.namespace, "/").concat(entity.kind, "/").concat(entity.metadata.name).toLowerCase();
+};
 
 var Api = function Api(props) {
   var system = props.system,
@@ -295,7 +298,7 @@ var Service = function Service(props) {
   });
 
   if (docs) {
-    entity.metadata.annotations['backstage.io/techdocs-ref'] = "url:/api/techdocs/static/docs/".concat(entity.metadata.namespace, "/").concat(entity.kind, "/").concat(entity.metadata.name).toLowerCase();
+    addTechDocs(entity);
   }
 
   if (github) {
@@ -377,7 +380,7 @@ var Website = function Website(props) {
   });
 
   if (docs) {
-    entity.metadata.annotations['backstage.io/techdocs-ref'] = "url:/api/techdocs/static/docs/".concat(entity.metadata.namespace, "/").concat(entity.kind, "/").concat(entity.metadata.name).toLowerCase();
+    addTechDocs(entity);
   }
 
   if (github) {
@@ -391,7 +394,7 @@ var Documentation = function Documentation(props) {
   var entity = Entity(documentationEntitySchema, props, {
     owner: props.owner
   });
-  entity.metadata.annotations['backstage.io/techdocs-ref'] = "url:/api/techdocs/static/docs/".concat(entity.metadata.namespace, "/").concat(entity.kind, "/").concat(entity.metadata.name).toLowerCase();
+  addTechDocs(entity);
   return entityFunctions(entity);
 };
 

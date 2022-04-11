@@ -427,7 +427,7 @@ interface Props$5 {
     system: string;
     providesApis?: string[];
     dependsOn?: string[];
-    docs?: {};
+    docs?: boolean;
     github?: {
         organization: string;
         repository: string;
@@ -885,7 +885,7 @@ declare const User: (props: Props$2 & MetadataProps) => {
 interface Props$1 {
     owner: string;
     system: string;
-    docs?: {};
+    docs?: boolean;
     github?: {
         organization: string;
         repository: string;

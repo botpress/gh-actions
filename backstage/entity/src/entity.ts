@@ -9,7 +9,19 @@ export const decode = (data: any): [backstage.SchemaType, backstage.BaseEntity[]
     throw Error(`Unable to parse entity ${config.error}`)
   }
 
+  const entities = convert(config.data)
+
+  entities.forEach((entity) => addLinks(entity))
+
   return [config.data, convert(config.data)]
+}
+
+const addLinks = (entity: backstage.BaseEntity) => {
+  entity.addLink({
+    title: 'Github',
+    url: `https://github.com/${github.context.repo.owner}/${github.context.repo.repo}`,
+    icon: 'logo.github'
+  })
 }
 
 const convert = (schema: backstage.SchemaType): backstage.BaseEntity[] => {
@@ -37,7 +49,7 @@ const getMetadata = (schema: backstage.SchemaType, titleSuffix: string) => {
     description: schema.description,
     owner: `group:default/${schema.team}`,
     title: `${titleName} ${titleSuffix}`,
-    docs: schema.docs ? {} : undefined,
+    docs: !!schema.docs,
     github: {
       organization: github.context.repo.owner,
       repository: github.context.repo.repo,
