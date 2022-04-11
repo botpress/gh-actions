@@ -98,7 +98,7 @@ var documentationEntitySchema = definitionSchema.extend({
   apiVersion: botpressApiVersion,
   kind: z.literal('Documentation')["default"]('Documentation'),
   spec: z.object({
-    owner: componentReference
+    owner: groupReference
   })
 });
 
