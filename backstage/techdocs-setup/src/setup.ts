@@ -1,12 +1,11 @@
 import * as core from '@actions/core'
-import * as github from '@actions/github'
 import chalk from 'chalk'
 import { readFileSync } from 'fs'
-import { dump } from 'js-yaml'
 import { nanoid } from 'nanoid'
 import { dirname, join } from 'path'
 import { FileStat, stat, createFile, parentDir, exists } from './fs'
 import { listImgs, copyImgs } from './markdown'
+import { generateMkdocsConfigFile, readMkdocsConfig } from './mkdocs'
 
 const mkdocsFilename = 'mkdocs.yml'
 
@@ -36,9 +35,9 @@ const setupFile = (source: string) => {
   const imgPaths = listImgs(markdownContent, sourceDirectory)
   copyImgs(imgPaths, sourceDirectory, outputDirectory)
 
-  const config = generateMkdocsConfig(outputDirectory)
-  createFile(config, mkdocsFilename)
+  const config = generateMkdocsConfigFile(outputDirectory, mkdocsFilename)
 
+  core.setOutput('output', config.site_dir)
   core.setOutput('source', '.')
 }
 
@@ -47,27 +46,12 @@ const setupDirectory = (source: string) => {
   const mkdocsFile = join(parentDirectory, mkdocsFilename)
 
   if (!exists(mkdocsFile)) {
-    const config = generateMkdocsConfig(source)
-    createFile(config, mkdocsFile)
+    const config = generateMkdocsConfigFile(source, mkdocsFile)
+    core.setOutput('output', config.site_dir)
+  } else {
+    const config = readMkdocsConfig(mkdocsFile)
+    core.setOutput('output', config?.site_dir ?? 'site')
   }
 
   core.setOutput('source', parentDirectory ?? '.')
-}
-
-interface MkdocsConfig {
-  site_name: string
-  docs_dir: string
-  site_dir: string
-  plugins: string[]
-}
-
-const generateMkdocsConfig = (source: string) => {
-  const mkdocs: MkdocsConfig = {
-    site_name: github.context.repo.repo,
-    docs_dir: source,
-    site_dir: nanoid(),
-    plugins: ['techdocs-core']
-  }
-
-  return dump(mkdocs)
 }

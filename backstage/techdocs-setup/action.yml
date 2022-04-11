@@ -7,6 +7,8 @@ inputs:
 outputs:
   source:
     description: "Source of the generated Techdocs configuration"
+  output:
+    description: "Output of the generated Techdocs"
 runs:
   using: "node16"
   main: "dist/index.js"

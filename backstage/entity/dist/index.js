@@ -57343,7 +57343,7 @@ const convert = (schema) => {
             throw Error(`Invalid schema type ${chalk_1.default.blue(type)}`);
     }
 };
-const capitalizeWords = (value) => value.split(' ').map(v => v.charAt(0).toUpperCase() + v.substring(1).toLowerCase());
+const capitalizeWords = (value) => value.split(' ').map(v => v.charAt(0).toUpperCase() + v.substring(1).toLowerCase()).join(' ');
 const getMetadata = (schema, titleSuffix) => {
     const titleName = capitalizeWords(schema.name.replace(/-/g, ' '));
     return {

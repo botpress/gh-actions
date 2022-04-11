@@ -19703,6 +19703,62 @@ exports.copyImgs = copyImgs;
 
 /***/ }),
 
+/***/ 4308:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.readMkdocsConfig = exports.generateMkdocsConfigFile = void 0;
+const github = __importStar(__nccwpck_require__(5861));
+const fs_1 = __nccwpck_require__(7147);
+const js_yaml_1 = __nccwpck_require__(6264);
+const nanoid_1 = __nccwpck_require__(9240);
+const fs_2 = __nccwpck_require__(2743);
+const generateMkdocsConfigFile = (source, mkdocsFile) => {
+    const mkdocs = {
+        site_name: github.context.repo.repo,
+        docs_dir: source,
+        site_dir: (0, nanoid_1.nanoid)(),
+        plugins: ['techdocs-core']
+    };
+    (0, fs_2.createFile)((0, js_yaml_1.dump)(mkdocs), mkdocsFile);
+    return mkdocs;
+};
+exports.generateMkdocsConfigFile = generateMkdocsConfigFile;
+const readMkdocsConfig = (mkdocsFile) => {
+    const content = (0, fs_1.readFileSync)(mkdocsFile).toString();
+    const config = (0, js_yaml_1.load)(content);
+    return config !== null && config !== void 0 ? config : {};
+};
+exports.readMkdocsConfig = readMkdocsConfig;
+
+
+/***/ }),
+
 /***/ 7286:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
@@ -19737,14 +19793,13 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.setup = void 0;
 const core = __importStar(__nccwpck_require__(7117));
-const github = __importStar(__nccwpck_require__(5861));
 const chalk_1 = __importDefault(__nccwpck_require__(1006));
 const fs_1 = __nccwpck_require__(7147);
-const js_yaml_1 = __nccwpck_require__(6264);
 const nanoid_1 = __nccwpck_require__(9240);
 const path_1 = __nccwpck_require__(1017);
 const fs_2 = __nccwpck_require__(2743);
 const markdown_1 = __nccwpck_require__(6300);
+const mkdocs_1 = __nccwpck_require__(4308);
 const mkdocsFilename = 'mkdocs.yml';
 const setup = (source) => {
     const type = (0, fs_2.stat)(source);
@@ -19767,27 +19822,23 @@ const setupFile = (source) => {
     (0, fs_2.createFile)(markdownContent, (0, path_1.join)(outputDirectory, 'index.md'));
     const imgPaths = (0, markdown_1.listImgs)(markdownContent, sourceDirectory);
     (0, markdown_1.copyImgs)(imgPaths, sourceDirectory, outputDirectory);
-    const config = generateMkdocsConfig(outputDirectory);
-    (0, fs_2.createFile)(config, mkdocsFilename);
+    const config = (0, mkdocs_1.generateMkdocsConfigFile)(outputDirectory, mkdocsFilename);
+    core.setOutput('output', config.site_dir);
     core.setOutput('source', '.');
 };
 const setupDirectory = (source) => {
+    var _a;
     const parentDirectory = (0, fs_2.parentDir)(source);
     const mkdocsFile = (0, path_1.join)(parentDirectory, mkdocsFilename);
     if (!(0, fs_2.exists)(mkdocsFile)) {
-        const config = generateMkdocsConfig(source);
-        (0, fs_2.createFile)(config, mkdocsFile);
+        const config = (0, mkdocs_1.generateMkdocsConfigFile)(source, mkdocsFile);
+        core.setOutput('output', config.site_dir);
+    }
+    else {
+        const config = (0, mkdocs_1.readMkdocsConfig)(mkdocsFile);
+        core.setOutput('output', (_a = config === null || config === void 0 ? void 0 : config.site_dir) !== null && _a !== void 0 ? _a : 'site');
     }
     core.setOutput('source', parentDirectory !== null && parentDirectory !== void 0 ? parentDirectory : '.');
-};
-const generateMkdocsConfig = (source) => {
-    const mkdocs = {
-        site_name: github.context.repo.repo,
-        docs_dir: source,
-        site_dir: (0, nanoid_1.nanoid)(),
-        plugins: ['techdocs-core']
-    };
-    return (0, js_yaml_1.dump)(mkdocs);
 };
 
 

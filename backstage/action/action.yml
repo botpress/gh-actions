@@ -40,6 +40,10 @@ runs:
       if: ${{ steps.entity.outputs.docs-source != '' }}
       with:
         source: ${{ steps.techdocs-setup.outputs.source }}
+        output: ${{ steps.techdocs-setup.outputs.output }}
     - shell: sh
       if: ${{ steps.entity.outputs.docs-source != '' }}
-      run: ls
+      run: |
+        cat mkdocs.yml
+        ls 
+        ls ${{ steps.techdocs-setup.outputs.output }}
