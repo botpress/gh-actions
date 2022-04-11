@@ -1094,8 +1094,22 @@ declare const serviceV1Schema: z.ZodObject<z.extendShape<{
 }, {
     type: z.ZodLiteral<"service@v1">;
     system: z.ZodEnum<["cloud", "nlp", "monitoring"]>;
+    api: z.ZodOptional<z.ZodObject<{
+        type: z.ZodEnum<["openapi", "asyncapi", "graphql", "grpc"]>;
+        source: z.ZodString;
+    }, "strip", z.ZodTypeAny, {
+        type: "openapi" | "asyncapi" | "graphql" | "grpc";
+        source: string;
+    }, {
+        type: "openapi" | "asyncapi" | "graphql" | "grpc";
+        source: string;
+    }>>;
 }>, "strip", z.ZodTypeAny, {
     docs?: string | undefined;
+    api?: {
+        type: "openapi" | "asyncapi" | "graphql" | "grpc";
+        source: string;
+    } | undefined;
     name: string;
     description: string;
     type: "service@v1";
@@ -1104,6 +1118,10 @@ declare const serviceV1Schema: z.ZodObject<z.extendShape<{
     $schema: string;
 }, {
     docs?: string | undefined;
+    api?: {
+        type: "openapi" | "asyncapi" | "graphql" | "grpc";
+        source: string;
+    } | undefined;
     name: string;
     description: string;
     type: "service@v1";
@@ -1175,8 +1193,22 @@ declare const schema: z.ZodUnion<[z.ZodObject<z.extendShape<{
 }, {
     type: z.ZodLiteral<"service@v1">;
     system: z.ZodEnum<["cloud", "nlp", "monitoring"]>;
+    api: z.ZodOptional<z.ZodObject<{
+        type: z.ZodEnum<["openapi", "asyncapi", "graphql", "grpc"]>;
+        source: z.ZodString;
+    }, "strip", z.ZodTypeAny, {
+        type: "openapi" | "asyncapi" | "graphql" | "grpc";
+        source: string;
+    }, {
+        type: "openapi" | "asyncapi" | "graphql" | "grpc";
+        source: string;
+    }>>;
 }>, "strip", z.ZodTypeAny, {
     docs?: string | undefined;
+    api?: {
+        type: "openapi" | "asyncapi" | "graphql" | "grpc";
+        source: string;
+    } | undefined;
     name: string;
     description: string;
     type: "service@v1";
@@ -1185,6 +1217,10 @@ declare const schema: z.ZodUnion<[z.ZodObject<z.extendShape<{
     $schema: string;
 }, {
     docs?: string | undefined;
+    api?: {
+        type: "openapi" | "asyncapi" | "graphql" | "grpc";
+        source: string;
+    } | undefined;
     name: string;
     description: string;
     type: "service@v1";

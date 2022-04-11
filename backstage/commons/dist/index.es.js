@@ -159,7 +159,7 @@ var Entity = function Entity(schema, metadataProps, spec) {
   });
 
   if (!entity.success) {
-    throw Error('unable to create entity');
+    throw Error("unable to create entity: ".concat(entity.error.message));
   }
 
   return _objectSpread2(_objectSpread2({}, entity.data), {}, {
@@ -410,7 +410,11 @@ var baseSchema = z.object({
 
 var serviceV1Schema = baseSchema.extend({
   type: z.literal('service@v1'),
-  system: systems.describe('system that this service is part of')
+  system: systems.describe('system that this service is part of'),
+  api: z.object({
+    type: z["enum"](['openapi', 'asyncapi', 'graphql', 'grpc']),
+    source: z.string()
+  }).optional()
 });
 
 var websiteV1Schema = baseSchema.extend({
