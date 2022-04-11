@@ -1,5 +1,3 @@
-import 'bluebird-global'
-
 import * as core from '@actions/core'
 
 import { putObject } from './aws'

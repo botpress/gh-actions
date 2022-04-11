@@ -57449,7 +57449,6 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-__nccwpck_require__(87421);
 const core = __importStar(__nccwpck_require__(37117));
 const aws_1 = __nccwpck_require__(40914);
 const entities_1 = __nccwpck_require__(99660);
@@ -57480,14 +57479,6 @@ module.exports = eval("require")("@aws-sdk/signature-v4-crt");
 /***/ ((module) => {
 
 module.exports = eval("require")("aws-crt");
-
-
-/***/ }),
-
-/***/ 87421:
-/***/ ((module) => {
-
-module.exports = eval("require")("bluebird-global");
 
 
 /***/ }),
