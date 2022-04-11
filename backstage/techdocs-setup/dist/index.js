@@ -19706,14 +19706,23 @@ const chalk_1 = __importDefault(__nccwpck_require__(1006));
 const path_1 = __importDefault(__nccwpck_require__(1017));
 const fs_1 = __nccwpck_require__(2743);
 const imgRegex = /!\[.*\]\(((.+)\.(svg|gif|png|jpe?g))\)/g;
-const listImgs = (content, directory) => {
-    const matches = imgRegex.exec(content);
-    if (!matches) {
-        return [];
+const getImages = (content) => {
+    const images = [];
+    const imgRegex = /!\[(.*?)\]\((.*?)\)/g;
+    while (true) {
+        const matches = imgRegex.exec(content);
+        if (!matches) {
+            return images;
+        }
+        images.push(matches[2]);
+        if (matches.index === imgRegex.lastIndex) {
+            imgRegex.lastIndex++;
+        }
     }
-    return matches
-        .map((_, __, groups) => groups[0])
-        .filter(imgPath => {
+};
+const listImgs = (content, directory) => {
+    const images = getImages(content);
+    return images.filter(imgPath => {
         const filePath = path_1.default.join(directory, imgPath);
         const fileExists = (0, fs_1.exists)(filePath);
         if (fileExists) {
