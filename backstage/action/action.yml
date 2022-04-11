@@ -23,10 +23,23 @@ runs:
   steps:
     - uses: aws-actions/configure-aws-credentials@v1
       with:
-        role-session-name: upload_dev_portal_entities
+        role-session-name: upload_dev_portal_entity
         role-to-assume: ${{ inputs.aws-role }}
         aws-region: ${{ inputs.aws-region }}
-    - uses: botpress/gh-actions/backstage/entities@mm-backstage
+    - uses: botpress/gh-actions/backstage/entity@mm-backstage
+      id: entity
       with:
         bucket: ${{ inputs.bucket }}
         source: ${{ inputs.source }}
+    - uses: botpress/gh-actions/backstage/techdocs-setup@mm-backstage
+      if: ${{ steps.entity.outputs.docs-source != '' }}
+      id: techdocs-setup
+      with:
+        source: ${{ steps.entity.outputs.docs-source }}
+    - uses: botpress/gh-actions/backstage/techdocs-generation@mm-backstage
+      if: ${{ steps.entity.outputs.docs-source != '' }}
+      with:
+        source: ${{ steps.techdocs-setup.outputs.source }}
+    - shell: sh
+      if: ${{ steps.entity.outputs.docs-source != '' }}
+      run: ls

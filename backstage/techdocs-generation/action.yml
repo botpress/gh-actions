@@ -1,0 +1,9 @@
+name: "Techdocs Generation"
+description: "Generate the mkdocs using Backstage Techdocs cli"
+runs:
+  using: "docker"
+  image: "Dockerfile"
+inputs:
+  source:
+    description: "Source directory containing mkdocs.yml"
+    required: true

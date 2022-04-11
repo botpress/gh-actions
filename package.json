@@ -19,8 +19,8 @@
     "close_pull_request_issues",
     "set_ssh_key",
     "backstage/commons",
-    "backstage/entities",
-    "techdocs",
+    "backstage/entity",
+    "backstage/techdocs-setup",
     "extract_info"
   ],
   "devDependencies": {

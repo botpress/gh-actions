@@ -2,14 +2,14 @@ import * as github from '@actions/github'
 import * as backstage from '@botpress/backstage'
 import chalk from 'chalk'
 
-export const decode = (data: any) => {
+export const decode = (data: any): [backstage.SchemaType, backstage.BaseEntity[]] => {
   const config = backstage.schema.safeParse(data)
 
   if (!config.success) {
     throw Error(`Unable to parse entity ${config.error}`)
   }
 
-  return convert(config.data)
+  return [config.data, convert(config.data)]
 }
 
 const convert = (schema: backstage.SchemaType): backstage.BaseEntity[] => {
@@ -20,6 +20,8 @@ const convert = (schema: backstage.SchemaType): backstage.BaseEntity[] => {
       return convertServiceV1(schema)
     case 'website@v1':
       return convertWebsiteV1(schema)
+    case 'documentation@v1':
+      return convertDocumentationV1(schema)
     default:
       throw Error(`Invalid schema type ${chalk.blue(type)}`)
   }
@@ -34,7 +36,6 @@ const getMetadata = (schema: backstage.SchemaType, titleSuffix: string) => {
     name: schema.name.toLowerCase(),
     description: schema.description,
     owner: `group:default/${schema.team}`,
-    system: `system:default/${schema.system}`,
     title: `${titleName} ${titleSuffix}`,
     github: {
       organization: github.context.repo.owner,
@@ -51,7 +52,7 @@ const convertServiceV1 = (schema: backstage.ServiceV1SchemaType) => {
     github: meta.github,
     name: meta.name,
     owner: meta.owner,
-    system: meta.system,
+    system: `system:default/${schema.system}`,
     title: meta.title,
 
     docs: {},
@@ -70,10 +71,23 @@ const convertWebsiteV1 = (schema: backstage.WebsiteV1SchemaType) => {
     github: meta.github,
     name: meta.name,
     owner: meta.owner,
-    system: meta.system,
+    system: `system:default/${schema.system}`,
     title: meta.title,
 
     docs: {},
+  })
+
+  return [entity]
+}
+
+const convertDocumentationV1 = (schema: backstage.DocumentationV1SchemaType) => {
+  const meta = getMetadata(schema, 'Website')
+
+  const entity = backstage.Documentation({
+    description: meta.description,
+    name: meta.name,
+    owner: meta.owner,
+    title: meta.title,
   })
 
   return [entity]

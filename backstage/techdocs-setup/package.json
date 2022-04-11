@@ -1,0 +1,18 @@
+{
+  "name": "techdocs",
+  "packageManager": "yarn@3.1.0",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "ncc build src/index.ts --target es2019"
+  },
+  "dependencies": {
+    "@actions/core": "^1.6.0",
+    "@actions/github": "^5.0.1",
+    "@ngneat/falso": "^4.0.0",
+    "chalk": "^5.0.1",
+    "nanoid": "^3.3.2"
+  },
+  "devDependencies": {
+    "@vercel/ncc": "^0.33.3"
+  }
+}

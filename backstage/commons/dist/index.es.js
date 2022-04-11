@@ -94,7 +94,7 @@ var deploymentEntitySchema = definitionSchema.extend({
     environment: shortText
   })
 });
-definitionSchema.extend({
+var documentationEntitySchema = definitionSchema.extend({
   apiVersion: botpressApiVersion,
   kind: z.literal('Documentation')["default"]('Documentation'),
   spec: z.object({
@@ -207,6 +207,14 @@ var entityFunctions = function entityFunctions(entity) {
      */
     ref: function ref() {
       return entity.metadata.reference;
+    },
+
+    /**
+     * doc path for this entity. This is used to generate the techdocs entity reference
+     * @returns string used by the techdocs entity reference
+     */
+    doc: function doc() {
+      return "".concat(entity.metadata.namespace, "/").concat(entity.kind, "/").concat(entity.metadata.name).toLowerCase();
     },
 
     /**
@@ -379,6 +387,14 @@ var Website = function Website(props) {
   return entityFunctions(entity);
 };
 
+var Documentation = function Documentation(props) {
+  var entity = Entity(documentationEntitySchema, props, {
+    owner: props.owner
+  });
+  entity.metadata.annotations['backstage.io/techdocs-ref'] = "url:/api/techdocs/static/docs/".concat(entity.metadata.namespace, "/").concat(entity.kind, "/").concat(entity.metadata.name).toLowerCase();
+  return entityFunctions(entity);
+};
+
 var teams = z["enum"](['sre', 'nlp', 'developer-apps', 'business-apps']);
 var systems = z["enum"](['cloud', 'nlp', 'monitoring']);
 var baseSchema = z.object({
@@ -386,17 +402,23 @@ var baseSchema = z.object({
   name: validName.describe('name of the project'),
   description: longText.describe('short description of the project'),
   team: teams.describe('team that owns this project'),
-  system: systems.describe('system that this project is part of')
+  docs: z.string().describe('path to the documentation file or directory (ex: README.md). Relative to the backstage configuration file.').optional()
 });
 
 var serviceV1Schema = baseSchema.extend({
-  type: z.literal('service@v1')
+  type: z.literal('service@v1'),
+  system: systems.describe('system that this service is part of')
 });
 
 var websiteV1Schema = baseSchema.extend({
-  type: z.literal('website@v1')
+  type: z.literal('website@v1'),
+  system: systems.describe('system that this service is part of')
 });
 
-var schema = z.union([serviceV1Schema, websiteV1Schema]);
+var documentationV1Schema = baseSchema.extend({
+  type: z.literal('documentation@v1')
+});
 
-export { Api, Deployment, Organization, Service, System, Team, User, Website, schema, serviceV1Schema, websiteV1Schema };
+var schema = z.union([serviceV1Schema, websiteV1Schema, documentationV1Schema]);
+
+export { Api, Deployment, Documentation, Organization, Service, System, Team, User, Website, documentationV1Schema, schema, serviceV1Schema, websiteV1Schema };

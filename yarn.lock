@@ -3197,6 +3197,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@ngneat/falso@npm:^4.0.0":
+  version: 4.0.0
+  resolution: "@ngneat/falso@npm:4.0.0"
+  dependencies:
+    seedrandom: 3.0.5
+    uuid: 8.3.2
+  checksum: 1c3340a714769b3521bcc6e7546ab28fb8a53290fed53ddf702019920ba1044d777097ead2b2a09f68046b6a5749314bf4a3515153fc5d8a8d27552e27465c69
+  languageName: node
+  linkType: hard
+
 "@nodelib/fs.scandir@npm:2.1.5":
   version: 2.1.5
   resolution: "@nodelib/fs.scandir@npm:2.1.5"
@@ -4359,9 +4369,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"backstage@workspace:backstage/entities":
+"backstage@workspace:backstage/entity":
   version: 0.0.0-use.local
-  resolution: "backstage@workspace:backstage/entities"
+  resolution: "backstage@workspace:backstage/entity"
   dependencies:
     "@actions/core": ^1.6.0
     "@actions/github": ^5.0.1
@@ -8297,6 +8307,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"nanoid@npm:^3.3.2":
+  version: 3.3.2
+  resolution: "nanoid@npm:3.3.2"
+  bin:
+    nanoid: bin/nanoid.cjs
+  checksum: 376717f0685251fad77850bd84c6b8d57837c71eeb1c05be7c742140cc1835a5a2953562add05166d6dbc8fb65f3fdffa356213037b967a470e1691dc3e7b9cc
+  languageName: node
+  linkType: hard
+
 "natural-compare@npm:^1.4.0":
   version: 1.4.0
   resolution: "natural-compare@npm:1.4.0"
@@ -9985,9 +10004,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"techdocs@workspace:techdocs":
+"techdocs@workspace:backstage/techdocs-setup":
   version: 0.0.0-use.local
-  resolution: "techdocs@workspace:techdocs"
+  resolution: "techdocs@workspace:backstage/techdocs-setup"
+  dependencies:
+    "@actions/core": ^1.6.0
+    "@actions/github": ^5.0.1
+    "@ngneat/falso": ^4.0.0
+    "@vercel/ncc": ^0.33.3
+    chalk: ^5.0.1
+    nanoid: ^3.3.2
   languageName: unknown
   linkType: soft
 
