@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+declare const apiTypes: z.ZodDefault<z.ZodEnum<["openapi", "asyncapi", "graphql", "grpc"]>>;
 declare const metadataSchema: z.ZodObject<{
     name: z.ZodString;
     namespace: z.ZodDefault<z.ZodEnum<["default"]>>;
@@ -123,10 +124,12 @@ declare const entityFunctions: <T extends {
 };
 declare type BaseEntity = ReturnType<typeof entityFunctions>;
 
+declare type ApiTypes = z.infer<typeof apiTypes>;
 interface Props$7 {
     owner: string;
     system: string;
     definition: string;
+    type: ApiTypes;
 }
 declare const Api: (props: Props$7 & MetadataProps) => {
     get: () => {
@@ -1095,13 +1098,13 @@ declare const serviceV1Schema: z.ZodObject<z.extendShape<{
     type: z.ZodLiteral<"service@v1">;
     system: z.ZodEnum<["cloud", "nlp", "monitoring"]>;
     api: z.ZodOptional<z.ZodObject<{
-        type: z.ZodEnum<["openapi", "asyncapi", "graphql", "grpc"]>;
+        type: z.ZodDefault<z.ZodEnum<["openapi", "asyncapi", "graphql", "grpc"]>>;
         source: z.ZodString;
     }, "strip", z.ZodTypeAny, {
         type: "openapi" | "asyncapi" | "graphql" | "grpc";
         source: string;
     }, {
-        type: "openapi" | "asyncapi" | "graphql" | "grpc";
+        type?: "openapi" | "asyncapi" | "graphql" | "grpc" | undefined;
         source: string;
     }>>;
 }>, "strip", z.ZodTypeAny, {
@@ -1119,7 +1122,7 @@ declare const serviceV1Schema: z.ZodObject<z.extendShape<{
 }, {
     docs?: string | undefined;
     api?: {
-        type: "openapi" | "asyncapi" | "graphql" | "grpc";
+        type?: "openapi" | "asyncapi" | "graphql" | "grpc" | undefined;
         source: string;
     } | undefined;
     name: string;
@@ -1194,13 +1197,13 @@ declare const schema: z.ZodUnion<[z.ZodObject<z.extendShape<{
     type: z.ZodLiteral<"service@v1">;
     system: z.ZodEnum<["cloud", "nlp", "monitoring"]>;
     api: z.ZodOptional<z.ZodObject<{
-        type: z.ZodEnum<["openapi", "asyncapi", "graphql", "grpc"]>;
+        type: z.ZodDefault<z.ZodEnum<["openapi", "asyncapi", "graphql", "grpc"]>>;
         source: z.ZodString;
     }, "strip", z.ZodTypeAny, {
         type: "openapi" | "asyncapi" | "graphql" | "grpc";
         source: string;
     }, {
-        type: "openapi" | "asyncapi" | "graphql" | "grpc";
+        type?: "openapi" | "asyncapi" | "graphql" | "grpc" | undefined;
         source: string;
     }>>;
 }>, "strip", z.ZodTypeAny, {
@@ -1218,7 +1221,7 @@ declare const schema: z.ZodUnion<[z.ZodObject<z.extendShape<{
 }, {
     docs?: string | undefined;
     api?: {
-        type: "openapi" | "asyncapi" | "graphql" | "grpc";
+        type?: "openapi" | "asyncapi" | "graphql" | "grpc" | undefined;
         source: string;
     } | undefined;
     name: string;

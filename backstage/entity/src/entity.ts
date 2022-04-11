@@ -1,19 +1,21 @@
 import * as github from '@actions/github'
 import * as backstage from '@botpress/backstage'
 import chalk from 'chalk'
+import { readFileSync } from 'fs'
+import { dirname, join } from 'path'
 
-export const decode = (data: any): [backstage.SchemaType, backstage.BaseEntity[]] => {
+export const decode = (data: any, source: string): [backstage.SchemaType, backstage.BaseEntity[]] => {
   const config = backstage.schema.safeParse(data)
 
   if (!config.success) {
     throw Error(`Unable to parse entity ${config.error}`)
   }
 
-  const entities = convert(config.data)
+  const entities = convert(config.data, source)
 
   entities.forEach((entity) => addLinks(entity))
 
-  return [config.data, convert(config.data)]
+  return [config.data, entities]
 }
 
 const addLinks = (entity: backstage.BaseEntity) => {
@@ -24,12 +26,12 @@ const addLinks = (entity: backstage.BaseEntity) => {
   })
 }
 
-const convert = (schema: backstage.SchemaType): backstage.BaseEntity[] => {
+const convert = (schema: backstage.SchemaType, source: string): backstage.BaseEntity[] => {
   const type = schema.type
 
   switch (type) {
     case 'service@v1':
-      return convertServiceV1(schema)
+      return convertServiceV1(schema, source)
     case 'website@v1':
       return convertWebsiteV1(schema)
     case 'documentation@v1':
@@ -57,36 +59,49 @@ const getMetadata = (schema: backstage.SchemaType, titleSuffix: string) => {
   }
 }
 
-const convertServiceV1 = (schema: backstage.ServiceV1SchemaType) => {
-  const meta = getMetadata(schema, 'Service')
+const convertServiceV1 = (schema: backstage.ServiceV1SchemaType, source: string) => {
+  const entities = []
 
-  const entity = backstage.Service({
-    description: meta.description,
-    github: meta.github,
-    name: meta.name,
-    owner: meta.owner,
-    system: `system:default/${schema.system}`,
-    title: meta.title,
-    docs: meta.docs,
+  const system = `system:default/${schema.system}`
+  const providesApis = []
 
+  if (schema.api) {
+    const apiMeta = getMetadata(schema, 'Api')
+
+    const directory = dirname(source)
+    const definition = readFileSync(join(directory, schema.api.source)).toString()
+
+    const apiEntity = backstage.Api({
+      ...apiMeta,
+      system,
+      definition,
+      type: schema.api.type,
+    })
+
+    entities.push(apiEntity)
+
+    providesApis.push(apiEntity.ref())
+  }
+
+  const serviceMeta = getMetadata(schema, 'Service')
+  const serviceEntity = backstage.Service({
+    ...serviceMeta,
+    system,
     dependsOn: [],
-    providesApis: [],
+    providesApis,
   })
 
-  return [entity]
+  entities.push(serviceEntity)
+
+  return entities
 }
 
 const convertWebsiteV1 = (schema: backstage.WebsiteV1SchemaType) => {
   const meta = getMetadata(schema, 'Website')
 
   const entity = backstage.Website({
-    description: meta.description,
-    github: meta.github,
-    name: meta.name,
-    owner: meta.owner,
+    ...meta,
     system: `system:default/${schema.system}`,
-    title: meta.title,
-    docs: meta.docs,
   })
 
   return [entity]
@@ -95,12 +110,7 @@ const convertWebsiteV1 = (schema: backstage.WebsiteV1SchemaType) => {
 const convertDocumentationV1 = (schema: backstage.DocumentationV1SchemaType) => {
   const meta = getMetadata(schema, 'Documentation')
 
-  const entity = backstage.Documentation({
-    description: meta.description,
-    name: meta.name,
-    owner: meta.owner,
-    title: meta.title,
-  })
+  const entity = backstage.Documentation(meta)
 
   return [entity]
 }

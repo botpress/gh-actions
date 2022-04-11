@@ -15,6 +15,7 @@ var apiReference = z.string().regex(/^api:([a-zA-Z0-9_-]{1,64})\/([a-zA-Z0-9_-]{
 var backstageApiVersion = z.literal('backstage.io/v1alpha1')["default"]('backstage.io/v1alpha1');
 var botpressApiVersion = z.literal('botpress.com/v1alpha1')["default"]('botpress.com/v1alpha1');
 var lifecycle = z["enum"](['production', 'deprecated', 'experimental'])["default"]('production');
+var apiTypes = z["enum"](['openapi', 'asyncapi', 'graphql', 'grpc'])["default"]('openapi');
 var metadataSchema = z.object({
   name: validName,
   namespace: z["enum"](['default'])["default"]('default'),
@@ -81,7 +82,7 @@ var apiEntitySchema = definitionSchema.extend({
   spec: z.object({
     owner: groupReference,
     system: systemReference,
-    type: z["enum"](['openapi', 'asyncapi', 'graphql', 'grpc']),
+    type: apiTypes,
     lifecycle: lifecycle,
     definition: z.string()
   })
@@ -253,12 +254,13 @@ var addTechDocs = function addTechDocs(entity) {
 var Api = function Api(props) {
   var system = props.system,
       owner = props.owner,
-      definition = props.definition;
+      definition = props.definition,
+      type = props.type;
   var entity = Entity(apiEntitySchema, props, {
     owner: owner,
     system: system,
     definition: definition,
-    type: 'openapi',
+    type: type,
     lifecycle: 'production'
   });
   return entityFunctions(entity);
@@ -412,7 +414,7 @@ var serviceV1Schema = baseSchema.extend({
   type: z.literal('service@v1'),
   system: systems.describe('system that this service is part of'),
   api: z.object({
-    type: z["enum"](['openapi', 'asyncapi', 'graphql', 'grpc']),
+    type: apiTypes,
     source: z.string()
   }).optional()
 });

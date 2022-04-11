@@ -14,7 +14,7 @@ const main = async () => {
   const data = readFile(source)
 
   core.info('Decoding backstage source file')
-  const [schema, entities] = decode(data)
+  const [schema, entities] = decode(data, source)
 
   for (const entity of entities) {
     const key = `catalog/${entity.path()}`
