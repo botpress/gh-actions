@@ -57364,7 +57364,7 @@ const convertServiceV1 = (schema) => {
         name: meta.name,
         owner: meta.owner,
         system: meta.system,
-        title: meta.system,
+        title: meta.title,
         docs: {},
         dependsOn: [],
         providesApis: [],
@@ -57379,7 +57379,7 @@ const convertWebsiteV1 = (schema) => {
         name: meta.name,
         owner: meta.owner,
         system: meta.system,
-        title: meta.system,
+        title: meta.title,
         docs: {},
     });
     return [entity];

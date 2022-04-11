@@ -52,7 +52,7 @@ const convertServiceV1 = (schema: backstage.ServiceV1SchemaType) => {
     name: meta.name,
     owner: meta.owner,
     system: meta.system,
-    title: meta.system,
+    title: meta.title,
 
     docs: {},
     dependsOn: [],
@@ -71,7 +71,7 @@ const convertWebsiteV1 = (schema: backstage.WebsiteV1SchemaType) => {
     name: meta.name,
     owner: meta.owner,
     system: meta.system,
-    title: meta.system,
+    title: meta.title,
 
     docs: {},
   })
