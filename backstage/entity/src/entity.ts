@@ -37,6 +37,7 @@ const getMetadata = (schema: backstage.SchemaType, titleSuffix: string) => {
     description: schema.description,
     owner: `group:default/${schema.team}`,
     title: `${titleName} ${titleSuffix}`,
+    docs: schema.docs ? {} : undefined,
     github: {
       organization: github.context.repo.owner,
       repository: github.context.repo.repo,
@@ -54,8 +55,8 @@ const convertServiceV1 = (schema: backstage.ServiceV1SchemaType) => {
     owner: meta.owner,
     system: `system:default/${schema.system}`,
     title: meta.title,
+    docs: meta.docs,
 
-    docs: {},
     dependsOn: [],
     providesApis: [],
   })
@@ -73,15 +74,14 @@ const convertWebsiteV1 = (schema: backstage.WebsiteV1SchemaType) => {
     owner: meta.owner,
     system: `system:default/${schema.system}`,
     title: meta.title,
-
-    docs: {},
+    docs: meta.docs,
   })
 
   return [entity]
 }
 
 const convertDocumentationV1 = (schema: backstage.DocumentationV1SchemaType) => {
-  const meta = getMetadata(schema, 'Website')
+  const meta = getMetadata(schema, 'Documentation')
 
   const entity = backstage.Documentation({
     description: meta.description,
