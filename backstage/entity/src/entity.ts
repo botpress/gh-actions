@@ -27,7 +27,7 @@ const convert = (schema: backstage.SchemaType): backstage.BaseEntity[] => {
   }
 }
 
-const capitalizeWords = (value: string) => value.split(' ').map(v => v.charAt(0).toUpperCase() + v.substring(1).toLowerCase())
+const capitalizeWords = (value: string) => value.split(' ').map(v => v.charAt(0).toUpperCase() + v.substring(1).toLowerCase()).join(' ')
 
 const getMetadata = (schema: backstage.SchemaType, titleSuffix: string) => {
   const titleName = capitalizeWords(schema.name.replace(/-/g, ' '))
