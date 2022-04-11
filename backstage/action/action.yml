@@ -36,14 +36,10 @@ runs:
       id: techdocs-setup
       with:
         source: ${{ steps.entity.outputs.docs-source }}
-    - uses: botpress/gh-actions/backstage/techdocs-generation@mm-backstage
+    - uses: botpress/gh-actions/backstage/techdocs@mm-backstage
       if: ${{ steps.entity.outputs.docs-source != '' }}
       with:
         source: ${{ steps.techdocs-setup.outputs.source }}
         output: ${{ steps.techdocs-setup.outputs.output }}
-    - shell: sh
-      if: ${{ steps.entity.outputs.docs-source != '' }}
-      run: |
-        cat mkdocs.yml
-        ls 
-        ls ${{ steps.techdocs-setup.outputs.output }}
+        bucket: ${{ inputs.bucket }}
+        reference: ${{ steps.entity.outputs.docs-reference }}
