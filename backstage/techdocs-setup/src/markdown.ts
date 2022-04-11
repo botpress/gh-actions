@@ -5,16 +5,30 @@ import { exists, copyFile } from './fs'
 
 const imgRegex = /!\[.*\]\(((.+)\.(svg|gif|png|jpe?g))\)/g
 
-export const listImgs = (content: string, directory: string) => {
-  const matches = imgRegex.exec(content)
+const getImages = (content: string) => {
+  const images = []
+  const imgRegex = /!\[(.*?)\]\((.*?)\)/g
 
-  if (!matches) {
-    return []
+  while (true) {
+    const matches = imgRegex.exec(content)
+
+    if (!matches) {
+      return images
+    }
+
+    images.push(matches[2])
+
+    if (matches.index === imgRegex.lastIndex) {
+      imgRegex.lastIndex++
+    }
   }
+}
 
-  return matches
-    .map((_, __, groups) => groups[0])
-    .filter(imgPath => {
+export const listImgs = (content: string, directory: string) => {
+  const images = getImages(content)
+
+
+  return images.filter(imgPath => {
       const filePath = path.join(directory, imgPath)
 
       const fileExists = exists(filePath)
