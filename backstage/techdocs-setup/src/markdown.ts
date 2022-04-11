@@ -27,24 +27,23 @@ const getImages = (content: string) => {
 export const listImgs = (content: string, directory: string) => {
   const images = getImages(content)
 
+  return images.filter((imgPath) => {
+    const filePath = path.join(directory, imgPath)
 
-  return images.filter(imgPath => {
-      const filePath = path.join(directory, imgPath)
+    const fileExists = exists(filePath)
 
-      const fileExists = exists(filePath)
+    if (fileExists) {
+      core.info(`Image file exist locally ${chalk.blue(filePath)}`)
+    } else {
+      core.info(`Image file doesn't exist locally ${chalk.yellow(filePath)}`)
+    }
 
-      if (fileExists) {
-        core.info(`Image file exist locally ${chalk.blue(filePath)}`)
-      } else {
-        core.info(`Image file doesn't exist locally ${chalk.yellow(filePath)}`)
-      }
-
-      return fileExists
-    })
+    return fileExists
+  })
 }
 
 export const copyImgs = (imgPaths: string[], sourceDir: string, destDir: string) => {
-  imgPaths.forEach(imgPath => {
+  imgPaths.forEach((imgPath) => {
     const source = path.join(sourceDir, imgPath)
     const dest = path.join(destDir, imgPath)
     core.info(`Copying image from ${source} to ${dest}`)

@@ -41,7 +41,11 @@ const convert = (schema: backstage.SchemaType, source: string): backstage.BaseEn
   }
 }
 
-const capitalizeWords = (value: string) => value.split(' ').map(v => v.charAt(0).toUpperCase() + v.substring(1).toLowerCase()).join(' ')
+const capitalizeWords = (value: string) =>
+  value
+    .split(' ')
+    .map((v) => v.charAt(0).toUpperCase() + v.substring(1).toLowerCase())
+    .join(' ')
 
 const getMetadata = (schema: backstage.SchemaType, titleSuffix: string) => {
   const titleName = capitalizeWords(schema.name.replace(/-/g, ' '))
@@ -54,8 +58,8 @@ const getMetadata = (schema: backstage.SchemaType, titleSuffix: string) => {
     docs: !!schema.docs,
     github: {
       organization: github.context.repo.owner,
-      repository: github.context.repo.repo,
-    },
+      repository: github.context.repo.repo
+    }
   }
 }
 
@@ -75,7 +79,7 @@ const convertServiceV1 = (schema: backstage.ServiceV1SchemaType, source: string)
       ...apiMeta,
       system,
       definition,
-      type: schema.api.type,
+      type: schema.api.type
     })
 
     entities.push(apiEntity)
@@ -88,7 +92,7 @@ const convertServiceV1 = (schema: backstage.ServiceV1SchemaType, source: string)
     ...serviceMeta,
     system,
     dependsOn: [],
-    providesApis,
+    providesApis
   })
 
   entities.push(serviceEntity)
@@ -101,7 +105,7 @@ const convertWebsiteV1 = (schema: backstage.WebsiteV1SchemaType) => {
 
   const entity = backstage.Website({
     ...meta,
-    system: `system:default/${schema.system}`,
+    system: `system:default/${schema.system}`
   })
 
   return [entity]

@@ -33,7 +33,11 @@ export const readMkdocsConfig = (mkdocsFile: string) => {
   const config = load(content) as any
 
   if (!config) {
-    core.warning(`Unable to parse mkdocs config file ${chalk.yellow(mkdocsFile)} make sure the ${chalk.blue('yaml')} format is valid `)
+    core.warning(
+      `Unable to parse mkdocs config file ${chalk.yellow(mkdocsFile)} make sure the ${chalk.blue(
+        'yaml'
+      )} format is valid `
+    )
     return {}
   }
 

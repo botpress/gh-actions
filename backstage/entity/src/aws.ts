@@ -5,6 +5,6 @@ export const putObject = async (bucket: string, key: string, data: string) => {
   await s3.putObject({
     Bucket: bucket,
     Key: key,
-    Body: data,
+    Body: data
   })
 }

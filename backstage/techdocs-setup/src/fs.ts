@@ -4,7 +4,7 @@ import { dirname, sep } from 'path'
 export enum FileStat {
   UNKNOWN = 'UNKNOWN',
   FILE = 'FILE',
-  DIRECTORY = 'DIRECTORY',
+  DIRECTORY = 'DIRECTORY'
 }
 
 export const stat = (filePath: string) => {
@@ -51,4 +51,4 @@ export const parentDir = (source: string) => {
   return parts.join(sep)
 }
 
-const removeSuffixSeparator = (path: string) => path.endsWith(sep) ? path.slice(0, -1) : path
+const removeSuffixSeparator = (path: string) => (path.endsWith(sep) ? path.slice(0, -1) : path)
