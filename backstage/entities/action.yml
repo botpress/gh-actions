@@ -1,0 +1,12 @@
+name: "backstage"
+description: "Backstage Botpress utility"
+inputs:
+  source:
+    description: "Basckstage definition file"
+    required: true
+  bucket:
+    description: "name of the S3 bucket to deploy to"
+    required: true
+runs:
+  using: "node16"
+  main: "dist/index.js"

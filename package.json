@@ -18,7 +18,8 @@
     "fetch_release_changelogs",
     "close_pull_request_issues",
     "set_ssh_key",
-    "backstage",
+    "backstage/commons",
+    "backstage/entities",
     "techdocs",
     "extract_info"
   ],
