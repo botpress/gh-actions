@@ -14,9 +14,11 @@ export const setup = (source: string) => {
 
   switch (type) {
     case FileStat.FILE:
+      core.info(`Techdocs source is a file ${chalk.blue(source)}`)
       setupFile(source)
       break
     case FileStat.DIRECTORY:
+      core.info(`Techdocs source is a directory ${chalk.blue(source)}`)
       setupDirectory(source)
       break
     default:
@@ -30,7 +32,9 @@ const setupFile = (source: string) => {
 
   const markdownContent = readFileSync(source).toString()
 
-  createFile(markdownContent, join(outputDirectory, 'index.md'))
+  const indexFile = join(outputDirectory, 'index.md')
+  core.info(`Creating index file of documentation ${chalk.blue(indexFile)}`)
+  createFile(markdownContent, indexFile)
 
   const imgPaths = listImgs(markdownContent, sourceDirectory)
   copyImgs(imgPaths, sourceDirectory, outputDirectory)

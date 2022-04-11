@@ -19660,7 +19660,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core = __importStar(__nccwpck_require__(7117));
 const setup_1 = __nccwpck_require__(7286);
 const main = async () => {
-    const source = core.getInput('source');
+    const source = core.getInput('source', { required: true });
     (0, setup_1.setup)(source);
 };
 main().catch(core.setFailed);
@@ -19673,11 +19673,36 @@ main().catch(core.setFailed);
 
 "use strict";
 
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.copyImgs = exports.listImgs = void 0;
+const core = __importStar(__nccwpck_require__(7117));
+const chalk_1 = __importDefault(__nccwpck_require__(1006));
 const path_1 = __importDefault(__nccwpck_require__(1017));
 const fs_1 = __nccwpck_require__(2743);
 const imgRegex = /!\[.*\]\(((.+)\.(svg|gif|png|jpe?g))\)/g;
@@ -19688,13 +19713,24 @@ const listImgs = (content, directory) => {
     }
     return matches
         .map((_, __, groups) => groups[0])
-        .filter(imgPath => (0, fs_1.exists)(path_1.default.join(directory, imgPath)));
+        .filter(imgPath => {
+        const filePath = path_1.default.join(directory, imgPath);
+        const fileExists = (0, fs_1.exists)(filePath);
+        if (fileExists) {
+            core.info(`Image file exist locally ${chalk_1.default.blue(filePath)}`);
+        }
+        else {
+            core.info(`Image file doesn't exist locally ${chalk_1.default.yellow(filePath)}`);
+        }
+        return fileExists;
+    });
 };
 exports.listImgs = listImgs;
 const copyImgs = (imgPaths, sourceDir, destDir) => {
     imgPaths.forEach(imgPath => {
         const source = path_1.default.join(sourceDir, imgPath);
         const dest = path_1.default.join(destDir, imgPath);
+        core.info(`Copying image from ${source} to ${dest}`);
         (0, fs_1.copyFile)(source, dest);
     });
 };
@@ -19731,9 +19767,14 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.readMkdocsConfig = exports.generateMkdocsConfigFile = void 0;
+const core = __importStar(__nccwpck_require__(7117));
 const github = __importStar(__nccwpck_require__(5861));
+const chalk_1 = __importDefault(__nccwpck_require__(1006));
 const fs_1 = __nccwpck_require__(7147);
 const js_yaml_1 = __nccwpck_require__(6264);
 const nanoid_1 = __nccwpck_require__(9240);
@@ -19745,14 +19786,20 @@ const generateMkdocsConfigFile = (source, mkdocsFile) => {
         site_dir: (0, nanoid_1.nanoid)(),
         plugins: ['techdocs-core']
     };
+    core.info(`Creating mkdocs file ${chalk_1.default.blue(mkdocsFile)}`);
     (0, fs_2.createFile)((0, js_yaml_1.dump)(mkdocs), mkdocsFile);
     return mkdocs;
 };
 exports.generateMkdocsConfigFile = generateMkdocsConfigFile;
 const readMkdocsConfig = (mkdocsFile) => {
+    core.info(`Reading existing mkdocs file ${chalk_1.default.blue(mkdocsFile)}`);
     const content = (0, fs_1.readFileSync)(mkdocsFile).toString();
     const config = (0, js_yaml_1.load)(content);
-    return config !== null && config !== void 0 ? config : {};
+    if (!config) {
+        core.warning(`Unable to parse mkdocs config file ${chalk_1.default.yellow(mkdocsFile)} make sure the ${chalk_1.default.blue('yaml')} format is valid `);
+        return {};
+    }
+    return config;
 };
 exports.readMkdocsConfig = readMkdocsConfig;
 
@@ -19805,9 +19852,11 @@ const setup = (source) => {
     const type = (0, fs_2.stat)(source);
     switch (type) {
         case fs_2.FileStat.FILE:
+            core.info(`Techdocs source is a file ${chalk_1.default.blue(source)}`);
             setupFile(source);
             break;
         case fs_2.FileStat.DIRECTORY:
+            core.info(`Techdocs source is a directory ${chalk_1.default.blue(source)}`);
             setupDirectory(source);
             break;
         default:
@@ -19819,7 +19868,9 @@ const setupFile = (source) => {
     const sourceDirectory = (0, path_1.dirname)(source);
     const outputDirectory = (0, nanoid_1.nanoid)();
     const markdownContent = (0, fs_1.readFileSync)(source).toString();
-    (0, fs_2.createFile)(markdownContent, (0, path_1.join)(outputDirectory, 'index.md'));
+    const indexFile = (0, path_1.join)(outputDirectory, 'index.md');
+    core.info(`Creating index file of documentation ${chalk_1.default.blue(indexFile)}`);
+    (0, fs_2.createFile)(markdownContent, indexFile);
     const imgPaths = (0, markdown_1.listImgs)(markdownContent, sourceDirectory);
     (0, markdown_1.copyImgs)(imgPaths, sourceDirectory, outputDirectory);
     const config = (0, mkdocs_1.generateMkdocsConfigFile)(outputDirectory, mkdocsFilename);

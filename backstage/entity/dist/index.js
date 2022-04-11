@@ -57351,6 +57351,7 @@ const getMetadata = (schema, titleSuffix) => {
         description: schema.description,
         owner: `group:default/${schema.team}`,
         title: `${titleName} ${titleSuffix}`,
+        docs: schema.docs ? {} : undefined,
         github: {
             organization: github.context.repo.owner,
             repository: github.context.repo.repo,
@@ -57366,7 +57367,7 @@ const convertServiceV1 = (schema) => {
         owner: meta.owner,
         system: `system:default/${schema.system}`,
         title: meta.title,
-        docs: {},
+        docs: meta.docs,
         dependsOn: [],
         providesApis: [],
     });
@@ -57381,12 +57382,12 @@ const convertWebsiteV1 = (schema) => {
         owner: meta.owner,
         system: `system:default/${schema.system}`,
         title: meta.title,
-        docs: {},
+        docs: meta.docs,
     });
     return [entity];
 };
 const convertDocumentationV1 = (schema) => {
-    const meta = getMetadata(schema, 'Website');
+    const meta = getMetadata(schema, 'Documentation');
     const entity = backstage.Documentation({
         description: meta.description,
         name: meta.name,
@@ -57459,19 +57460,27 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core = __importStar(__nccwpck_require__(37117));
+const chalk_1 = __importDefault(__nccwpck_require__(91006));
 const path_1 = __nccwpck_require__(71017);
 const aws_1 = __nccwpck_require__(40914);
 const entity_1 = __nccwpck_require__(70999);
 const file_1 = __nccwpck_require__(19518);
 const main = async () => {
-    const source = core.getInput('source');
-    const bucket = core.getInput('bucket');
+    const source = core.getInput('source', { required: true });
+    const bucket = core.getInput('bucket', { required: true });
+    core.info(`Reading backstage source file ${chalk_1.default.blue(source)}`);
     const data = (0, file_1.readFile)(source);
+    core.info('Decoding backstage source file');
     const [schema, entities] = (0, entity_1.decode)(data);
     for (const entity of entities) {
-        await (0, aws_1.putObject)(bucket, `catalog/${entity.path()}`, entity.yaml());
+        const key = `catalog/${entity.path()}`;
+        core.info(`Uploading entity ${chalk_1.default.blue(entity.ref())} to key ${chalk_1.default.blue(key)}`);
+        await (0, aws_1.putObject)(bucket, key, entity.yaml());
     }
     const sourceDirectory = (0, path_1.dirname)(source);
     core.setOutput('docs-source', schema.docs ? (0, path_1.join)(sourceDirectory, schema.docs) : '');
