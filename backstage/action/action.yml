@@ -26,7 +26,7 @@ runs:
         role-session-name: upload_dev_portal_entities
         role-to-assume: ${{ inputs.aws-role }}
         aws-region: ${{ inputs.aws-region }}
-    - uses: botpress/gh-actions/backstage@mm-backstage
+    - uses: botpress/gh-actions/backstage/entities@mm-backstage
       with:
         bucket: ${{ inputs.bucket }}
         source: ${{ inputs.source }}
