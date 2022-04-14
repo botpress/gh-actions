@@ -1,7 +1,7 @@
 name: Docker to ECR
 description: Push Docker image to ECR
 inputs:
-  push: 
+  push:
     description: "push to registry"
     required: true
     default: "true"
@@ -12,6 +12,9 @@ inputs:
     description: "Docker context for the build"
     required: true
     default: "."
+  build-args:
+    description: "Docker build-time variables for the build (newline delimited, key=value)"
+    required: false
   dockerfile:
     description: "path to Dockerfile"
     required: true
@@ -63,6 +66,7 @@ runs:
         DOCKER_BUILDKIT: "1"
       with:
         context: ${{ inputs.context }}
+        build-args: ${{ inputs.build-args }}
         file: ${{ inputs.dockerfile }}
         push: ${{ inputs.push }}
         cache-from: type=gha
