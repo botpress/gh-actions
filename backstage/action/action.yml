@@ -1,0 +1,45 @@
+name: Dev Portal
+description: Create a dev portal entity using a schema file
+inputs:
+  source:
+    description: 'Basckstage definition file'
+    default: 'backstage.json'
+    required: true
+  bucket:
+    description: 'name of the S3 bucket to deploy to'
+    required: true
+    default: dev-portal-devportalbucket80956956-1fcubaek73l69
+  aws-role:
+    description: 'aws role name'
+    required: true
+    default: arn:aws:iam::986677156374:role/actions/deploy/s3_dev-portal-devportalbucket80956956-1fcubaek73l69_botpress
+  aws-region:
+    description: 'aws region'
+    required: true
+    default: us-east-1
+
+runs:
+  using: 'composite'
+  steps:
+    - uses: aws-actions/configure-aws-credentials@v1
+      with:
+        role-session-name: upload_dev_portal_entity
+        role-to-assume: ${{ inputs.aws-role }}
+        aws-region: ${{ inputs.aws-region }}
+    - uses: botpress/gh-actions/backstage/entity@v2
+      id: entity
+      with:
+        bucket: ${{ inputs.bucket }}
+        source: ${{ inputs.source }}
+    - uses: botpress/gh-actions/backstage/techdocs-setup@v2
+      if: ${{ steps.entity.outputs.docs-source != '' }}
+      id: techdocs-setup
+      with:
+        source: ${{ steps.entity.outputs.docs-source }}
+    - uses: botpress/gh-actions/backstage/techdocs@v2
+      if: ${{ steps.entity.outputs.docs-source != '' }}
+      with:
+        source: ${{ steps.techdocs-setup.outputs.source }}
+        output: ${{ steps.techdocs-setup.outputs.output }}
+        bucket: ${{ inputs.bucket }}
+        reference: ${{ steps.entity.outputs.docs-reference }}

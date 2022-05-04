@@ -7,6 +7,7 @@
   "scripts": {
     "eslint": "eslint '**/*.ts' --ext .ts",
     "prettier": "prettier --check '**/*.ts' '!**/*.d.ts'",
+    "prettier:fix": "prettier --write '**/*.ts' '!**/*.d.ts'",
     "build": "yarn clean && yarn workspaces foreach -ptiv run build",
     "clean": "yarn workspaces foreach -pti run clean",
     "test": "jest",
@@ -18,6 +19,9 @@
     "fetch_release_changelogs",
     "close_pull_request_issues",
     "set_ssh_key",
+    "backstage/commons",
+    "backstage/entity",
+    "backstage/techdocs-setup",
     "extract_info"
   ],
   "devDependencies": {

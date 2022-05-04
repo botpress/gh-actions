@@ -1,0 +1,18 @@
+name: "Techdocs Generation"
+description: "Generate the mkdocs using Backstage Techdocs cli"
+runs:
+  using: "docker"
+  image: "Dockerfile"
+inputs:
+  source:
+    description: "Source directory containing mkdocs.yml"
+    required: true
+  output:
+    description: "Output directory of the generated documentation"
+    required: true
+  bucket:
+    description: "name of the S3 bucket to deploy to"
+    required: true
+  reference:
+    description: "entity reference in the Techdocs format (NAMESPACE/KIND/NAME)"
+    required: true

@@ -1,0 +1,14 @@
+name: "Techdocs Setup"
+description: "Botpress utility to setup Techdocs"
+inputs:
+  source:
+    description: "Techdocs source path. The source can be a folder or a mardown file."
+    required: true
+outputs:
+  source:
+    description: "Source of the generated Techdocs configuration"
+  output:
+    description: "Output of the generated Techdocs"
+runs:
+  using: "node16"
+  main: "dist/index.js"
