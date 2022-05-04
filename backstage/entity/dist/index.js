@@ -57278,7 +57278,7 @@ const putObject = async (bucket, key, data) => {
     await s3.putObject({
         Bucket: bucket,
         Key: key,
-        Body: data,
+        Body: data
     });
 };
 exports.putObject = putObject;
@@ -57354,7 +57354,10 @@ const convert = (schema, source) => {
             throw Error(`Invalid schema type ${chalk_1.default.blue(type)}`);
     }
 };
-const capitalizeWords = (value) => value.split(' ').map(v => v.charAt(0).toUpperCase() + v.substring(1).toLowerCase()).join(' ');
+const capitalizeWords = (value) => value
+    .split(' ')
+    .map((v) => v.charAt(0).toUpperCase() + v.substring(1).toLowerCase())
+    .join(' ');
 const getMetadata = (schema, titleSuffix) => {
     const titleName = capitalizeWords(schema.name.replace(/-/g, ' '));
     return {
@@ -57365,8 +57368,8 @@ const getMetadata = (schema, titleSuffix) => {
         docs: !!schema.docs,
         github: {
             organization: github.context.repo.owner,
-            repository: github.context.repo.repo,
-        },
+            repository: github.context.repo.repo
+        }
     };
 };
 const convertServiceV1 = (schema, source) => {
@@ -57381,7 +57384,7 @@ const convertServiceV1 = (schema, source) => {
             ...apiMeta,
             system,
             definition,
-            type: schema.api.type,
+            type: schema.api.type
         });
         entities.push(apiEntity);
         providesApis.push(apiEntity.ref());
@@ -57391,7 +57394,7 @@ const convertServiceV1 = (schema, source) => {
         ...serviceMeta,
         system,
         dependsOn: [],
-        providesApis,
+        providesApis
     });
     entities.push(serviceEntity);
     return entities;
@@ -57400,7 +57403,7 @@ const convertWebsiteV1 = (schema) => {
     const meta = getMetadata(schema, 'Website');
     const entity = backstage.Website({
         ...meta,
-        system: `system:default/${schema.system}`,
+        system: `system:default/${schema.system}`
     });
     return [entity];
 };

@@ -12,7 +12,7 @@
   ],
   "scripts": {
     "generate": "node --experimental-specifier-resolution=node --loader ts-node/esm ./src/gen.ts",
-    "build": "rollup -c",
+    "build": "echo nobuild",
     "test": "jest"
   },
   "dependencies": {

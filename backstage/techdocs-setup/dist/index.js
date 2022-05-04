@@ -19623,7 +19623,7 @@ const parentDir = (source) => {
     return parts.join(path_1.sep);
 };
 exports.parentDir = parentDir;
-const removeSuffixSeparator = (path) => path.endsWith(path_1.sep) ? path.slice(0, -1) : path;
+const removeSuffixSeparator = (path) => (path.endsWith(path_1.sep) ? path.slice(0, -1) : path);
 
 
 /***/ }),
@@ -19722,7 +19722,7 @@ const getImages = (content) => {
 };
 const listImgs = (content, directory) => {
     const images = getImages(content);
-    return images.filter(imgPath => {
+    return images.filter((imgPath) => {
         const filePath = path_1.default.join(directory, imgPath);
         const fileExists = (0, fs_1.exists)(filePath);
         if (fileExists) {
@@ -19736,7 +19736,7 @@ const listImgs = (content, directory) => {
 };
 exports.listImgs = listImgs;
 const copyImgs = (imgPaths, sourceDir, destDir) => {
-    imgPaths.forEach(imgPath => {
+    imgPaths.forEach((imgPath) => {
         const source = path_1.default.join(sourceDir, imgPath);
         const dest = path_1.default.join(destDir, imgPath);
         core.info(`Copying image from ${source} to ${dest}`);
