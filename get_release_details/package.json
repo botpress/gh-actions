@@ -8,7 +8,7 @@
     "clean": "yarn run -T rimraf dist"
   },
   "dependencies": {
-    "@actions/core": "^1.6.0",
+    "@actions/core": "^1.9.1",
     "@actions/github": "^5.0.0",
     "@octokit/rest": "^18.12.0",
     "conventional-changelog": "^3.1.25",
