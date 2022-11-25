@@ -1,13 +1,6 @@
 name: AWS Deploy S3 Files
 description: Deploy files to an s3 bucket
 inputs:
-  source:
-    description: 'source directory to upload into the s3 bucket'
-    required: true
-    default: './dist'
-  destination:
-    description: 'S3URI destination for the s3 sync command, e.g. s3://mybucket-name/some/prefix'
-    required: true
   aws-role:
     description: 'aws role name'
     required: true
@@ -15,16 +8,24 @@ inputs:
     description: 'aws region'
     required: true
     default: us-east-1
-  cloudfront-distribution:
-    description: 'cloudfront distribution id (required for the input invalidate-cloudfront)'
+  source:
+    description: 'source directory to upload into the s3 bucket'
+    required: true
+    default: './dist'
+  destination:
+    description: 'S3URI destination for the s3 sync command, e.g. s3://mybucket-name/some/prefix'
+    required: true
   delete-s3-files:
     description: 'adds the --delete flag to the s3 sync command'
     required: false
     default: 'false'
+  cloudfront-distribution-id:
+    description: 'cloudfront distribution id (required for the input cloudfront-invalidation-prefix)'
+    required: true
   cloudfront-invalidation-prefix:
     description: 'prefix for the CloudFront invalidation'
     required: false
-    default: ''
+    default: '/*'
 
 runs:
   using: 'composite'
@@ -64,6 +65,5 @@ runs:
       shell: bash
       run: aws s3 sync ${{ inputs.source }} ${{ inputs.destination }} ${{ steps.delete-s3-files-val.outputs.value }}
     - name: Invalidate Cloudfront
-      if: ${{ inputs.invalidate-cloudfront != '' }}
       shell: bash
-      run: aws cloudfront create-invalidation --distribution-id ${{ inputs.cloudfront-distribution }} --paths "${{ inputs.cloudfront-invalidation-prefix }}"
+      run: aws cloudfront create-invalidation --distribution-id ${{ inputs.cloudfront-distribution-id }} --paths "${{ inputs.cloudfront-invalidation-prefix }}"
