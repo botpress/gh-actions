@@ -29,26 +29,26 @@ inputs:
 runs:
   using: 'composite'
   steps:
-      - uses: actions/github-script@v6
-        name: validate-cloudfront-invalidation-prefix
-        with:
-          script: |
-            /**
-            * @param destination: S3URI, e.g. s3://my-bucket-name/some/prefix
-            * @returns the prefix, e.g. some/prefix
-            */
-            const extractPrefix = (destination) => {
-              const parts = destination.split('/')
-              parts.splice(0, 3) // removes 's3:', '', 'my-bucket-name'
-              return parts.join('/') // returns 'some/prefix'
-            }
+    - uses: actions/github-script@v6
+      name: validate-cloudfront-invalidation-prefix
+      with:
+        script: |
+          /**
+          * @param destination: S3URI, e.g. s3://my-bucket-name/some/prefix
+          * @returns the prefix, e.g. some/prefix
+          */
+          const extractPrefix = (destination) => {
+            const parts = destination.split('/')
+            parts.splice(0, 3) // removes 's3:', '', 'my-bucket-name'
+            return parts.join('/') // returns 'some/prefix'
+          }
 
-            const destination = '${{ inputs.destination }}'
-            const invalidation = '${{ inputs.cloudfront-invalidation-prefix }}'
-            const prefixWithSlash = '/' + extractPrefix(destination)
-            if (!invalidation.startsWith(prefixWithSlash)) {
-              throw new Error(`Invalidation ${invalidation} does not start with ${prefixWithSlash}`)
-            }
+          const destination = '${{ inputs.destination }}'
+          const invalidation = '${{ inputs.cloudfront-invalidation-prefix }}'
+          const prefixWithSlash = '/' + extractPrefix(destination)
+          if (!invalidation.startsWith(prefixWithSlash)) {
+            throw new Error(`Invalidation ${invalidation} does not start with ${prefixWithSlash}`)
+          }
     - uses: aws-actions/configure-aws-credentials@v1
       with:
         role-session-name: s3_upload
