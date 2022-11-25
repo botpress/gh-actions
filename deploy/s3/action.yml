@@ -5,12 +5,8 @@ inputs:
     description: 'source directory to upload into the s3 bucket'
     required: true
     default: './dist'
-  bucket:
-    description: 'name of the S3 bucket to deploy to'
-    required: true
-  prefix:
-    description: 'prefix where to upload files in bucket (upload path ex. "path/to/my/folder")'
-    default: ''
+  destination:
+    description: 'S3URI destination for the s3 sync command, e.g. s3://mybucket-name/some/prefix'
     required: true
   aws-role:
     description: 'aws role name'
@@ -19,25 +15,55 @@ inputs:
     description: 'aws region'
     required: true
     default: us-east-1
-  invalidate-cloudfront:
-    description: 'invalidate cloudfront distribution (requires the input cloudfront-distribution)'
-    required: true
-    default: 'false'
   cloudfront-distribution:
     description: 'cloudfront distribution id (required for the input invalidate-cloudfront)'
+  delete-s3-files:
+    description: 'adds the --delete flag to the s3 sync command'
+    required: false
+    default: 'false'
+  cloudfront-invalidation-prefix:
+    description: 'prefix for the CloudFront invalidation'
+    required: false
+    default: ''
 
 runs:
   using: 'composite'
   steps:
+      - uses: actions/github-script@v6
+        name: validate-cloudfront-invalidation-prefix
+        with:
+          script: |
+            /**
+            * @param destination: S3URI, e.g. s3://my-bucket-name/some/prefix
+            * @returns the prefix, e.g. some/prefix
+            */
+            const extractPrefix = (destination) => {
+              const parts = destination.split('/')
+              parts.splice(0, 3) // removes 's3:', '', 'my-bucket-name'
+              return parts.join('/') // returns 'some/prefix'
+            }
+
+            const destination = '${{ inputs.destination }}'
+            const invalidation = '${{ inputs.cloudfront-invalidation-prefix }}'
+            const prefixWithSlash = '/' + extractPrefix(destination)
+            if (!invalidation.startsWith(prefixWithSlash)) {
+              throw new Error(`Invalidation ${invalidation} does not start with ${prefixWithSlash}`)
+            }
     - uses: aws-actions/configure-aws-credentials@v1
       with:
         role-session-name: s3_upload
         role-to-assume: ${{ inputs.aws-role }}
         aws-region: ${{ inputs.aws-region }}
+    - uses: haya14busa/action-cond@v1
+      id: delete-s3-files-val
+      with:
+        cond: ${{ inputs.delete-s3-files == 'true' }}
+        if_true: '--delete'
+        if_false: ''
     - name: Deploy files to S3 bucket
       shell: bash
-      run: aws s3 sync ${{ inputs.source }} s3://${{ inputs.bucket }}/${{ inputs.prefix }} --delete
+      run: aws s3 sync ${{ inputs.source }} ${{ inputs.destination }} ${{ steps.delete-s3-files-val.outputs.value }}
     - name: Invalidate Cloudfront
-      if: ${{ inputs.invalidate-cloudfront == 'true' }}
+      if: ${{ inputs.invalidate-cloudfront != '' }}
       shell: bash
-      run: aws cloudfront create-invalidation --distribution-id ${{ inputs.cloudfront-distribution }} --paths "/${{ inputs.prefix }}/*"
+      run: aws cloudfront create-invalidation --distribution-id ${{ inputs.cloudfront-distribution }} --paths "${{ inputs.cloudfront-invalidation-prefix }}"
