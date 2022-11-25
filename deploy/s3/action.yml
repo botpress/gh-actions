@@ -24,8 +24,7 @@ inputs:
     required: true
   cloudfront-invalidation-prefix:
     description: 'prefix for the CloudFront invalidation'
-    required: false
-    default: '/*'
+    required: true
 
 runs:
   using: 'composite'
