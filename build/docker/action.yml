@@ -39,6 +39,9 @@ inputs:
   driver-opts:
     description: 'Set storage driver options for the RUN instructions during build'
     required: false
+  buildkitd-flags:
+    description: 'Set buildkitd flags for the RUN instructions during build'
+    required: false
 
 runs:
   using: 'composite'
@@ -46,6 +49,7 @@ runs:
     - uses: docker/setup-buildx-action@v2
       with:
         driver-opts: ${{ inputs.driver-opts }}
+        buildkitd-flags: ${{ inputs.buildkitd-flags }}
     - uses: aws-actions/configure-aws-credentials@v1
       with:
         role-session-name: container_pusher
