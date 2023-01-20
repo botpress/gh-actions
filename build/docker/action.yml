@@ -36,11 +36,16 @@ inputs:
   add-hosts:
     description: 'Add a custom host-to-IP mapping (host:ip)'
     required: false
+  driver-opts:
+    description: 'Set storage driver options for the RUN instructions during build'
+    required: false
 
 runs:
   using: 'composite'
   steps:
     - uses: docker/setup-buildx-action@v2
+      with:
+        driver-opts: ${{ inputs.driver-opts }}
     - uses: aws-actions/configure-aws-credentials@v1
       with:
         role-session-name: container_pusher
