@@ -12,12 +12,6 @@ inputs:
     description: 'Docker context for the build'
     required: true
     default: '.'
-  build-args:
-    description: 'Docker build-time variables for the build (newline delimited, key=value)'
-    required: false
-  network:
-    description: 'Set the networking mode for the RUN instructions during build'
-    required: false
   dockerfile:
     description: 'path to Dockerfile'
     required: true
@@ -30,6 +24,15 @@ inputs:
     description: 'aws region'
     required: true
     default: us-east-1
+  allow:
+    description: 'Allow extra privileged entitlements, e.g. network.host'
+    required: false
+  build-args:
+    description: 'Docker build-time variables for the build (newline delimited, key=value)'
+    required: false
+  network:
+    description: 'Set the networking mode for the RUN instructions during build'
+    required: false
 
 runs:
   using: 'composite'
@@ -64,7 +67,7 @@ runs:
     # The cache is using an experimental feature from Github
     # If there is any issues see the follow link
     # https://github.com/docker/build-push-action/blob/master/docs/advanced/cache.md
-    - uses: docker/build-push-action@v2
+    - uses: docker/build-push-action@v3
       env:
         DOCKER_BUILDKIT: '1'
       with:
@@ -77,3 +80,4 @@ runs:
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
         network: ${{ inputs.network }}
+        allow: ${{ inputs.allow }}
