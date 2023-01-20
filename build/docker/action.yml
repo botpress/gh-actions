@@ -2,36 +2,54 @@ name: Docker to ECR
 description: Push Docker image to ECR
 inputs:
   push:
-    description: "push to registry"
+    description: 'push to registry'
     required: true
-    default: "true"
+    default: 'true'
   repository:
-    description: "repository name created inside ecr"
+    description: 'repository name created inside ecr'
     required: true
   context:
-    description: "Docker context for the build"
+    description: 'Docker context for the build'
     required: true
-    default: "."
-  build-args:
-    description: "Docker build-time variables for the build (newline delimited, key=value)"
-    required: false
+    default: '.'
   dockerfile:
-    description: "path to Dockerfile"
+    description: 'path to Dockerfile'
     required: true
-    default: ""
+    default: ''
   aws-role:
-    description: "aws role name"
+    description: 'aws role name'
     required: true
     default: arn:aws:iam::986677156374:role/actions/build/container_pusher
   aws-region:
-    description: "aws region"
+    description: 'aws region'
     required: true
     default: us-east-1
+  allow:
+    description: 'Allow extra privileged entitlements, e.g. network.host'
+    required: false
+  build-args:
+    description: 'Docker build-time variables for the build (newline delimited, key=value)'
+    required: false
+  network:
+    description: 'Set the networking mode for the RUN instructions during build'
+    required: false
+  add-hosts:
+    description: 'Add a custom host-to-IP mapping (host:ip)'
+    required: false
+  driver-opts:
+    description: 'Set storage driver options for the RUN instructions during build'
+    required: false
+  buildkitd-flags:
+    description: 'Set buildkitd flags for the RUN instructions during build'
+    required: false
 
 runs:
-  using: "composite"
+  using: 'composite'
   steps:
-    - uses: docker/setup-buildx-action@v1
+    - uses: docker/setup-buildx-action@v2
+      with:
+        driver-opts: ${{ inputs.driver-opts }}
+        buildkitd-flags: ${{ inputs.buildkitd-flags }}
     - uses: aws-actions/configure-aws-credentials@v1
       with:
         role-session-name: container_pusher
@@ -39,7 +57,7 @@ runs:
         aws-region: ${{ inputs.aws-region }}
     - uses: aws-actions/amazon-ecr-login@v1
       id: ecr
-    - uses: docker/metadata-action@v3
+    - uses: docker/metadata-action@v4
       id: meta
       with:
         images: ${{ steps.ecr.outputs.registry }}/${{ inputs.repository }}
@@ -61,9 +79,9 @@ runs:
     # The cache is using an experimental feature from Github
     # If there is any issues see the follow link
     # https://github.com/docker/build-push-action/blob/master/docs/advanced/cache.md
-    - uses: docker/build-push-action@v2
+    - uses: docker/build-push-action@v3
       env:
-        DOCKER_BUILDKIT: "1"
+        DOCKER_BUILDKIT: '1'
       with:
         context: ${{ inputs.context }}
         build-args: ${{ inputs.build-args }}
@@ -73,3 +91,6 @@ runs:
         cache-to: type=gha,mode=max
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
+        network: ${{ inputs.network }}
+        allow: ${{ inputs.allow }}
+        add-hosts: ${{ inputs.add-hosts }}
