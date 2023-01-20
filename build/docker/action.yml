@@ -33,6 +33,9 @@ inputs:
   network:
     description: 'Set the networking mode for the RUN instructions during build'
     required: false
+  add-hosts:
+    description: 'Add a custom host-to-IP mapping (host:ip)'
+    required: false
 
 runs:
   using: 'composite'
@@ -81,3 +84,4 @@ runs:
         labels: ${{ steps.meta.outputs.labels }}
         network: ${{ inputs.network }}
         allow: ${{ inputs.allow }}
+        add-hosts: ${{ inputs.add-hosts }}
