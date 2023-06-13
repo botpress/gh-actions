@@ -25,8 +25,8 @@ runs:
       run: |
         file_content=$(cat ${{ inputs.path }}/package.json)
 
-        name=$(ehco $file_content | jq -r ".name")
-        version=$(ehco $file_content | jq -r ".version")
+        name=$(echo $file_content | jq -r ".name")
+        version=$(echo $file_content | jq -r ".version")
 
         echo "name: $name"
         echo "version: $version"
