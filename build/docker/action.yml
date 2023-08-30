@@ -43,6 +43,10 @@ inputs:
     description: 'Set buildkitd flags for the RUN instructions during build'
     required: false
 
+secrets:
+  token:
+    required: true
+
 runs:
   using: 'composite'
   steps:
@@ -61,7 +65,7 @@ runs:
       with:
         registry: ghcr.io
         username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
+        password: ${{ secrets.token }}
     - uses: docker/metadata-action@v4
       id: meta
       with:
