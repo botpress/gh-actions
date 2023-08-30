@@ -69,7 +69,6 @@ runs:
       with:
         images: |
           ${{ steps.ecr.outputs.registry }}/${{ inputs.repository }}
-          ghcr.io/${{ github.repository }}
         flavor: |
           latest=false
         tags: |
