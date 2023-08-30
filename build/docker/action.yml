@@ -59,6 +59,8 @@ runs:
         aws-region: ${{ inputs.aws-region }}
     - uses: aws-actions/amazon-ecr-login@v1
       id: ecr
+      with:
+        mask-password: true
     - uses: docker/metadata-action@v4
       id: meta
       with:
