@@ -67,9 +67,9 @@ runs:
     - uses: docker/metadata-action@v4
       id: meta
       with:
-        images: 
-          name=${{ steps.ecr.outputs.registry }}/${{ inputs.repository }}
-          name=ghcr.io/${{ github.repository }}
+        images: |
+          ${{ steps.ecr.outputs.registry }}/${{ inputs.repository }}
+          ghcr.io/${{ github.repository }}
         flavor: |
           latest=false
         tags: |
