@@ -60,7 +60,9 @@ runs:
     - uses: docker/metadata-action@v4
       id: meta
       with:
-        images: ${{ steps.ecr.outputs.registry }}/${{ inputs.repository }}
+        images: 
+          ${{ steps.ecr.outputs.registry }}/${{ inputs.repository }}
+          ghcr.io/${{ github.repository }}
         flavor: |
           latest=false
         tags: |
@@ -79,16 +81,14 @@ runs:
     # The cache is using an experimental feature from Github
     # If there is any issues see the follow link
     # https://github.com/docker/build-push-action/blob/master/docs/advanced/cache.md
-    - uses: docker/build-push-action@v3
-      env:
-        DOCKER_BUILDKIT: '1'
+    - uses: docker/build-push-action@v4
       with:
         context: ${{ inputs.context }}
         build-args: ${{ inputs.build-args }}
         file: ${{ inputs.dockerfile }}
         push: ${{ inputs.push }}
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
+        cache-from: type=registry,ref=ghcr.io/${{ github.repository }}:${{ hashFiles(inputs.dockerfile) }}
+        cache-to: type=registry,ref=ghcr.io/${{ github.repository }}:${{ hashFiles(inputs.dockerfile) }},mode=max
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
         network: ${{ inputs.network }}
