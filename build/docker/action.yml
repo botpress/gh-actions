@@ -59,17 +59,16 @@ runs:
         aws-region: ${{ inputs.aws-region }}
     - uses: aws-actions/amazon-ecr-login@v1
       id: ecr
-    - uses: docker/login-action@v2
-      with:
-        registry: ghcr.io
-        username: ${{ github.actor }}
-        password: ${{ inputs.repo-token }}
+    # - uses: docker/login-action@v2
+    #   with:
+    #     registry: ghcr.io
+    #     username: ${{ github.actor }}
+    #     password: ${{ inputs.repo-token }}
     - uses: docker/metadata-action@v4
       id: meta
       with:
         images: |
           ${{ steps.ecr.outputs.registry }}/${{ inputs.repository }}
-          ghcr.io/${{ github.repository }}
         flavor: |
           latest=false
         tags: |
@@ -94,8 +93,8 @@ runs:
         build-args: ${{ inputs.build-args }}
         file: ${{ inputs.dockerfile }}
         push: ${{ inputs.push }}
-        cache-from: type=registry,ref=ghcr.io/${{ github.repository }}:${{ hashFiles(inputs.dockerfile) }}
-        cache-to: type=registry,ref=ghcr.io/${{ github.repository }}:${{ hashFiles(inputs.dockerfile) }},mode=max
+        cache-from: type=registry,ref=${{ steps.ecr.outputs.registry }}/${{ inputs.repository }}:cache-${{ hashFiles(inputs.dockerfile) }}
+        cache-to: type=registry,ref=${{ steps.ecr.outputs.registry }}/${{ inputs.repository }}:cache-${{ hashFiles(inputs.dockerfile) }},mode=max
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
         network: ${{ inputs.network }}
