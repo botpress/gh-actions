@@ -68,8 +68,8 @@ runs:
       id: meta
       with:
         images: 
-          ${{ steps.ecr.outputs.registry }}/${{ inputs.repository }}
-          ghcr.io/${{ github.repository }}
+          name=${{ steps.ecr.outputs.registry }}/${{ inputs.repository }}
+          name=ghcr.io/${{ github.repository }}
         flavor: |
           latest=false
         tags: |
