@@ -52,7 +52,7 @@ runs:
       with:
         driver-opts: ${{ inputs.driver-opts }}
         buildkitd-flags: ${{ inputs.buildkitd-flags }}
-    - uses: aws-actions/configure-aws-credentials@v1
+    - uses: aws-actions/configure-aws-credentials@v3
       with:
         role-session-name: container_pusher
         role-to-assume: ${{ inputs.aws-role }}
