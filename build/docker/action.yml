@@ -94,8 +94,8 @@ runs:
         build-args: ${{ inputs.build-args }}
         file: ${{ inputs.dockerfile }}
         push: ${{ inputs.push }}
-        cache-from: type=registry,ref=ghcr.io/${{ github.repository }}:${{ hashFiles(inputs.dockerfile) }}
-        cache-to: type=registry,ref=ghcr.io/${{ github.repository }}:${{ hashFiles(inputs.dockerfile) }},mode=max
+        cache-from: type=registry,ref=ghcr.io/${{ github.repository }}:cache-${{ hashFiles(inputs.dockerfile) }}
+        cache-to: type=registry,ref=ghcr.io/${{ github.repository }}:cache-${{ hashFiles(inputs.dockerfile) }},mode=max
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
         network: ${{ inputs.network }}
