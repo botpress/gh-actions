@@ -42,8 +42,6 @@ inputs:
   buildkitd-flags:
     description: 'Set buildkitd flags for the RUN instructions during build'
     required: false
-  repo-token:
-    required: true
 
 runs:
   using: 'composite'
