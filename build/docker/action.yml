@@ -62,8 +62,7 @@ runs:
     - uses: docker/metadata-action@v4
       id: meta
       with:
-        images: |
-          ${{ steps.ecr.outputs.registry }}/${{ inputs.repository }}
+        images: ${{ steps.ecr.outputs.registry }}/${{ inputs.repository }}
         flavor: |
           latest=false
         tags: |
