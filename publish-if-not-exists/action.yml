@@ -10,6 +10,11 @@ inputs:
     description: NPM access token
     required: true
 
+  package_manager:
+    description: Package manager to use for publishing. Can be 'npm' or 'pnpm'
+    required: false
+    default: 'npm'
+
 runs:
   using: 'composite'
   steps:
@@ -32,10 +37,18 @@ runs:
         echo "version: $version"
 
         package_ref="$name@$version"
+
+        if [[ ${{ inputs.package_manager }} != "pnpm" && "${{ inputs.package_manager }}" != "npm" ]]; then
+          echo "Unsupported package manager: ${{ inputs.package_manager }}"
+          exit 1
+        fi
+        
         if npm view $package_ref > /dev/null 2>&1 ; then
           echo "Package $package_ref already published"
           exit 0
         fi
 
-        echo "Publishing version $package_ref"
-        cd ${{ inputs.path }} && npm publish --access public
+
+        echo "Publishing version ${{ package_ref }}"
+        echo "Using ${{ inputs.package_manager }} as package manager"
+        cd ${{ inputs.path }} && ${{ inputs.package_manager }} publish --access public
