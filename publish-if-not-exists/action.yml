@@ -48,5 +48,5 @@ runs:
         fi
 
         echo "Publishing version $package_ref"
-        echo "Using $inputs.package_manager as package manager"
+        echo "Using ${{ inputs.package_manager }} as package manager"
         cd ${{ inputs.path }} && ${{ inputs.package_manager }} publish --access public
