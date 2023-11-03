@@ -43,10 +43,10 @@ runs:
           exit 1
         fi
         
-        if npm view $package_ref > /dev/null 2>&1 ; then
-          echo "Package $package_ref already published"
-          exit 0
-        fi
+        # if npm view $package_ref > /dev/null 2>&1 ; then
+        #   echo "Package $package_ref already published"
+        #   exit 0
+        # fi
 
 
         echo "Publishing version ${{ package_ref }}"
