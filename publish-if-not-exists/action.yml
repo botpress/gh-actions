@@ -44,11 +44,11 @@ runs:
         fi
         
         if npm view $package_ref > /dev/null 2>&1 ; then
-          echo "Package $package_ref already published"
+          echo "Package ${{ package_ref }} already published"
           exit 0
         fi
 
 
-        echo Publishing version $package_ref
-        echo Using $inputs.package_manager as package manager
+        echo "Publishing version ${{ package_ref }}"
+        echo "Using ${{ inputs.package_manager }} as package manager"
         cd ${{ inputs.path }} && ${{ inputs.package_manager }} publish --access public
