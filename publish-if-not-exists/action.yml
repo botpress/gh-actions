@@ -42,7 +42,7 @@ runs:
           echo "Unsupported package manager: ${{ inputs.package_manager }}"
           exit 1
         fi
-        
+
         if npm view $package_ref > /dev/null 2>&1 ; then
           echo "Package $package_ref already published"
           exit 0
@@ -51,4 +51,4 @@ runs:
 
         echo "Publishing version $package_ref"
         echo "Using ${{ inputs.package_manager }} as package manager"
-        cd ${{ inputs.path }} && ${{ inputs.package_manager }} publish --access public
+        cd ${{ inputs.path }} && ${{ inputs.package_manager }} publish --access public --publish-branch ${{ github.ref_name }}
