@@ -99,8 +99,7 @@ runs:
     - uses: aws-actions/configure-aws-credentials@v3
       with:
         role-session-name: ${{ inputs.role-ecs-update }}
-        role-to-assume: |
-          ${{ inputs.environment == 'staging' && 'arn:aws:iam::236194216641:role/${{ inputs.role-ecs-update }}' || 'arn:aws:iam::981662312449:role/${{ inputs.role-ecs-update }}' }}
+        role-to-assume: ${{ inputs.environment == 'staging' && format('arn:aws:iam::236194216641:role/{0}', inputs.role-ecs-update) || format('arn:aws:iam::981662312449:role/{0}', inputs.role-ecs-update) }}
         aws-region: us-east-1
 
     # This determines the full cluster ARN starting with the prefix since we use the same prefix in staging and prod
