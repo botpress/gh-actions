@@ -5,6 +5,11 @@ on:
       tag-name:
         required: true
         description: Tag name to push (e.g., v1.2.3)
+      force:
+        required: false
+        default: 'false'
+        type: boolean
+        description: Force push the tag if it already exists
 
 permissions:
   contents: write
@@ -26,6 +31,12 @@ jobs:
       - name: Create and push tag
         env:
           TAG_NAME: ${{ inputs.tag-name }}
+          FORCE_PUSH: ${{ inputs.force }}
         run: |
-          git tag "$TAG_NAME"
-          git push origin "$TAG_NAME"
+          git tag -f "$TAG_NAME"
+
+          if [ "$FORCE_PUSH" = "true" ]; then
+            git push origin "$TAG_NAME" --force
+          else
+            git push origin "$TAG_NAME"
+          fi
