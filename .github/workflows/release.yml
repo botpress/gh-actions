@@ -5,6 +5,10 @@ on:
       tag-name:
         required: true
         description: Tag name to push (e.g., v1.2.3)
+
+permissions:
+  contents: write
+
 jobs:
   release:
     name: Release
