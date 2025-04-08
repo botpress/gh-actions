@@ -4,30 +4,24 @@ on:
     inputs:
       tag-name:
         required: true
-        description: tag name to push
+        description: Tag name to push (e.g., v1.2.3)
 jobs:
   release:
     name: Release
-    runs-on: 'ubuntu-latest'
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@master
-      #- uses: actions/setup-node@v2
-      #  with:
-      #    node-version: '12.18.1'
-      #    cache: 'yarn'
+        uses: actions/checkout@v4
 
-      #- name: Fetch Node Packages
-      #  run: |
-      #    yarn --immutable
-
-      #- name: Build Actions
-      #  run: yarn build
-
-      - name: Push Release
-        shell: bash
+      - name: Configure Git
         run: |
-          .github/workflows/code/release.sh
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+
+      - name: Create and push tag
         env:
-          TAG_NAME: ${{ github.event.inputs.tag-name }}
+          TAG_NAME: ${{ inputs.tag-name }}
+        run: |
+          git tag "$TAG_NAME"
+          git push origin "$TAG_NAME"

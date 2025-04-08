@@ -8,9 +8,9 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@master
-      - uses: actions/setup-node@v2
+      - uses: actions/setup-node@v4
         with:
-          node-version: '12.18.1'
+          node-version: '18.x'
           cache: 'yarn'
       - name: Fetch Node Packages
         run: |
@@ -26,9 +26,9 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@master
-      - uses: actions/setup-node@v2
+      - uses: actions/setup-node@v4
         with:
-          node-version: '12.18.1'
+          node-version: '18.x'
 
       - name: Get Release Details
         id: release_details
