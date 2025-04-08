@@ -1,0 +1,220 @@
+name: Tag and Deploy
+
+inputs:
+  service:
+    description: 'Name of the service to deploy'
+    required: true
+    type: string
+  image-tag:
+    description: 'The Docker image tag to promote to stable'
+    required: true
+    type: string
+  environment:
+    description: 'Environment to deploy (staging or production)'
+    required: true
+    type: choice
+    options: ['staging', 'production']
+  skip-ecs-update:
+    description: 'Build, tag and push the image, but skip updating the ECS services'
+    required: false
+    type: boolean
+    default: false
+  role-ecs-update:
+    description: 'Role for the infra update'
+    required: false
+    type: string
+    default: 'skynet_infra_update'
+
+runs:
+  using: 'composite'
+  steps:
+    - uses: actions/checkout@v4
+
+    # Get the partial arn for cluster name/services for the selected service
+    - name: Load Service Configuration
+      shell: bash
+      id: config
+      run: |
+        SERVICE_FILE="${{ github.workspace }}/services.json"
+        SELECTED_SERVICE="${{ inputs.service }}"
+
+        if ! CONFIG=$(jq -c --arg service "$SELECTED_SERVICE" '.[$service]' "$SERVICE_FILE"); then
+          echo "Error parsing $SERVICE_FILE or service $SELECTED_SERVICE not found."
+          exit 1
+        fi
+
+        if [ "$CONFIG" == "null" ]; then
+          echo "Service $SELECTED_SERVICE not found in $SERVICE_FILE"
+          exit 1
+        fi
+
+        if [ -z "$(echo "$CONFIG" | jq -r '.repository // empty')" ]; then
+          echo "Error: 'repository' field missing in service configuration."
+          exit 1
+        fi
+
+        if [ -z "$(echo "$CONFIG" | jq -r '.cluster // empty')" ]; then
+          echo "Error: 'cluster' field missing in service configuration."
+          exit 1
+        fi
+
+        echo "Service '$SELECTED_SERVICE' is valid."
+        echo "CONFIG=$CONFIG" >> $GITHUB_ENV
+
+    # Configure credentials
+    - uses: aws-actions/configure-aws-credentials@v3
+      with:
+        role-session-name: container_pusher
+        role-to-assume: arn:aws:iam::986677156374:role/actions/build/container_pusher
+        aws-region: us-east-1
+
+    - name: Login to Amazon ECR
+      id: ecr
+      uses: aws-actions/amazon-ecr-login@v1
+
+    - name: Tag Image for Environment
+      shell: bash
+      run: |
+        ECR_REGISTRY="${{ steps.ecr.outputs.registry }}"
+        IMAGE_NAME="$ECR_REGISTRY/${{ fromJson(env.CONFIG).repository }}"
+        IMAGE_TAG="${{ inputs.image-tag }}"
+        ENVIRONMENT="${{ inputs.environment }}"
+
+        docker pull "$IMAGE_NAME:$ENVIRONMENT" || true
+        PREVIOUS_STABLE_TAG="${ENVIRONMENT}_stable"
+        echo "PREVIOUS_STABLE_TAG=$PREVIOUS_STABLE_TAG" >> $GITHUB_ENV
+
+        if docker pull "$IMAGE_NAME:$ENVIRONMENT"; then
+          echo "Previous image found, tagging as stable"
+          docker tag "$IMAGE_NAME:$ENVIRONMENT" "$IMAGE_NAME:$PREVIOUS_STABLE_TAG"
+          docker push "$IMAGE_NAME:$PREVIOUS_STABLE_TAG"
+        else
+          echo "No previous image for $ENVIRONMENT, skipping stable tagging"
+        fi
+
+        docker pull "$IMAGE_NAME:$IMAGE_TAG"
+        docker tag "$IMAGE_NAME:$IMAGE_TAG" "$IMAGE_NAME:$ENVIRONMENT"
+        docker push "$IMAGE_NAME:$ENVIRONMENT"
+
+    - uses: aws-actions/configure-aws-credentials@v3
+      with:
+        role-session-name: ${{ inputs.role-ecs-update }}
+        role-to-assume: |
+          ${{ inputs.environment == 'staging' && 'arn:aws:iam::236194216641:role/${{ inputs.role-ecs-update }}' || 'arn:aws:iam::981662312449:role/${{ inputs.role-ecs-update }}' }}
+        aws-region: us-east-1
+
+    # This determines the full cluster ARN starting with the prefix since we use the same prefix in staging and prod
+    - name: Find Cluster by Prefix
+      shell: bash
+      id: cluster
+      run: |
+        CLUSTER_ARN=$(aws ecs list-clusters \
+          --query "clusterArns[?contains(@, '${{ fromJson(env.CONFIG).cluster }}')]" \
+          --output text)
+
+        if [ -z "$CLUSTER_ARN" ]; then
+          echo "No cluster found matching prefix: ${{ fromJson(env.CONFIG).cluster }}"
+          exit 1
+        fi
+
+        echo "Cluster found: $CLUSTER_ARN"
+        echo "CLUSTER_ARN=$CLUSTER_ARN" >> $GITHUB_ENV
+
+    # Updates each services with the new image
+    - name: Deploy Services
+      shell: bash
+      run: |
+        IFS=',' read -r -a SERVICES <<< "${{ join(fromJson(env.CONFIG).services, ',') }}"
+        for SERVICE_PREFIX in "${SERVICES[@]}"; do
+          SERVICE_ARN=$(aws ecs list-services \
+            --cluster "$CLUSTER_ARN" \
+            --query "serviceArns[?contains(@, '$SERVICE_PREFIX')]" \
+            --output text)
+
+          if [ -z "$SERVICE_ARN" ]; then
+            echo "No service found for prefix: $SERVICE_PREFIX"
+            exit 1
+          fi
+
+          echo "Service to update: $SERVICE_ARN"
+
+          if [[ "${{ inputs.skip-ecs-update }}" == "false" ]]; then
+            echo "Updating service: $SERVICE_ARN"
+            aws ecs update-service \
+              --cluster "$CLUSTER_ARN" \
+              --service "$SERVICE_ARN" \
+              --force-new-deployment
+          fi
+        done
+
+    - name: Wait for Services to Stabilize
+      if: ${{ inputs.skip-ecs-update == 'false' }}
+      shell: bash
+      run: |
+        set +e  # allow this step to continue if 'aws ecs wait' fails
+        IFS=',' read -r -a SERVICES <<< "${{ join(fromJson(env.CONFIG).services, ',') }}"
+        SERVICE_ARNS=()
+        for SERVICE_PREFIX in "${SERVICES[@]}"; do
+          SERVICE_ARN=$(aws ecs list-services \
+            --cluster "$CLUSTER_ARN" \
+            --query "serviceArns[?contains(@, '$SERVICE_PREFIX')]" \
+            --output text)
+          if [ -z "$SERVICE_ARN" ]; then
+            echo "No service found for prefix: $SERVICE_PREFIX"
+            exit 1
+          fi
+          SERVICE_ARNS+=($SERVICE_ARN)
+        done
+
+        echo "Waiting for service(s) to stabilize: ${SERVICE_ARNS[*]}"
+        aws ecs wait services-stable \
+          --cluster "$CLUSTER_ARN" \
+          --services "${SERVICE_ARNS[@]}"
+
+        WAIT_EXIT_CODE=$?
+
+        if [ $WAIT_EXIT_CODE -ne 0 ]; then
+          echo "Deployment failed to stabilize. Checking if tasks are crashing..."
+
+          STOPPED_COUNT=0
+          for ARN in "${SERVICE_ARNS[@]}"; do
+            RECENT_FAILURES=$(aws ecs list-tasks \
+              --cluster "$CLUSTER_ARN" \
+              --service-name "$ARN" \
+              --desired-status STOPPED \
+              --max-items 10 \
+              --query 'taskArns' \
+              --output text)
+
+            if [ -n "$RECENT_FAILURES" ]; then
+              echo "Recent stopped tasks found for $ARN: $RECENT_FAILURES"
+              STOPPED_COUNT=$((STOPPED_COUNT+1))
+            fi
+          done
+
+          if [ $STOPPED_COUNT -gt 0 ]; then
+            echo "Services are failing. Rolling back to previous stable image: $PREVIOUS_STABLE_TAG"
+
+            ECR_REGISTRY="${{ steps.ecr.outputs.registry }}"
+            IMAGE_NAME="$ECR_REGISTRY/${{ fromJson(env.CONFIG).repository }}"
+            ENVIRONMENT="${{ inputs.environment }}"
+
+            # Pull the previous good image and retag/push as $ENVIRONMENT
+            docker pull "$IMAGE_NAME:$PREVIOUS_STABLE_TAG"
+            docker tag "$IMAGE_NAME:$PREVIOUS_STABLE_TAG" "$IMAGE_NAME:$ENVIRONMENT"
+            docker push "$IMAGE_NAME:$ENVIRONMENT"
+
+            # Force an update with the previous good image
+            for ARN in "${SERVICE_ARNS[@]}"; do
+              echo "Rolling back service: $ARN"
+              aws ecs update-service \
+                --cluster "$CLUSTER_ARN" \
+                --service "$ARN" \
+                --force-new-deployment
+            done
+          fi
+
+          exit 1
+        else
+          echo "Services stabilized successfully."
+        fi
