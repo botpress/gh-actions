@@ -137,7 +137,7 @@ runs:
 
           echo "Service to update: $SERVICE_ARN"
 
-          if [[ "${{ inputs.skip-ecs-update }}" == "false" ]]; then
+          if [[ "${{ inputs.skip-ecs-update }}" != "true" ]]; then
             echo "Updating service: $SERVICE_ARN"
             aws ecs update-service \
               --cluster "$CLUSTER_ARN" \
@@ -147,7 +147,7 @@ runs:
         done
 
     - name: Wait for Services to Stabilize
-      if: ${{ inputs.skip-ecs-update == 'false' }}
+      if: ${{ inputs.skip-ecs-update != 'true' }}
       shell: bash
       run: |
         set +e  # allow this step to continue if 'aws ecs wait' fails
