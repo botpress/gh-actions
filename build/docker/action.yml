@@ -57,7 +57,9 @@ runs:
     - name: Set BUILD_DATE
       id: meta_date
       shell: bash
-      run: echo "timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")" >> "$GITHUB_OUTPUT"
+      run: |
+        export TZ=America/Toronto
+        echo "timestamp=$(date +"%Y-%m-%d %H:%M:%S")" >> "$GITHUB_OUTPUT"
 
     - name: Create ECR Registry
       shell: bash
