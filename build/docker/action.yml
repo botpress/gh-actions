@@ -54,6 +54,11 @@ runs:
           type=semver,pattern={{version}}
           type=sha,enable=${{ !startsWith(github.ref, 'refs/tags') }},prefix=,format=long
 
+    - name: Set BUILD_DATE
+      id: meta_date
+      shell: bash
+      run: echo "timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")" >> "$GITHUB_OUTPUT"
+
     - name: Create ECR Registry
       shell: bash
       env:
@@ -78,3 +83,4 @@ runs:
         labels: ${{ steps.meta.outputs.labels }}
         build-args: |
           DOCKER_TAG=${{ inputs.tag }}
+          BUILD_DATE=${{ steps.meta_date.outputs.timestamp }}
