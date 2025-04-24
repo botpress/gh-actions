@@ -40,6 +40,10 @@ inputs:
     description: 'AWS Region'
     required: true
     default: us-east-1
+  depot-project:
+    description: 'Depot project name'
+    required: true
+    default: ''
 
 runs:
   using: 'composite'
@@ -101,3 +105,4 @@ runs:
         push: ${{ inputs.push }}
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
+        project: ${{ inputs.depot-project }}
