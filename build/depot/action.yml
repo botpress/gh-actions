@@ -1,5 +1,5 @@
-name: Docker to ECR
-description: Push Docker image to ECR
+name: Docker Build using Depot
+
 inputs:
   # Build
   context:
@@ -44,8 +44,6 @@ inputs:
 runs:
   using: 'composite'
   steps:
-    - uses: docker/setup-buildx-action@v2
-
     - uses: aws-actions/configure-aws-credentials@v3
       with:
         role-session-name: container_pusher
@@ -86,9 +84,10 @@ runs:
         aws ssm get-parameter --name '/cloud/container-registry/ecr-policy-document' --query 'Parameter.Value' | jq -r > repository-policy.json
         aws ecr set-repository-policy --repository-name $ECR_REPOSITORY --policy-text file://repository-policy.json &> /dev/null
 
-    - uses: docker/build-push-action@v4
-      env:
-        DOCKER_BUILDKIT: '1'
+    - name: Set up Depot CLI
+      uses: depot/setup-action@v1
+
+    - uses: depot/build-push-action@v1
       with:
         build-args: |
           SENTRY_AUTH_TOKEN=${{ inputs.sentry-auth-token }}
@@ -100,7 +99,5 @@ runs:
         file: ${{ inputs.dockerfile }}
         context: ${{ inputs.context }}
         push: ${{ inputs.push }}
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
