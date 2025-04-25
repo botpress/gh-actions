@@ -1,0 +1,89 @@
+name: 'Full Service Deploy'
+description: 'Checks out code, gets commit SHA, optionally tags, builds image and deploys to ECS'
+
+inputs:
+  # Checkout
+  ref:
+    required: false
+    default: ''
+    description: 'Git ref to checkout (branch, commit, tag). default is the current SHA'
+
+  # Build
+  dockerfile:
+    description: 'Path to Dockerfile'
+    required: true
+  context:
+    description: 'Docker context for the build'
+    required: true
+    default: '.'
+  repository:
+    description: 'ECR repository name'
+    required: true
+  environment:
+    description: 'Environment to deploy (staging or production)'
+    required: true
+  create-tag:
+    description: 'Create a tag for the service with the date/time (ex: when deploying to prod)'
+    required: false
+    default: 'false'
+  sentry-auth-token:
+    description: 'Sentry auth token (optional)'
+    required: false
+
+  # Deploy
+  service:
+    description: 'Name of the ECS service to deploy (must be in services.json in the repository)'
+    required: true
+  role-ecs-update:
+    description: 'Role for the ECS update (skynet_infra_update, sauron_infra_update, realtime_infra_update)'
+    required: true
+  skip-ecs-update:
+    description: 'Build, tag and push the image, but skip updating the ECS services'
+    required: false
+    default: 'false'
+
+outputs:
+  sha:
+    description: 'Checked out commit SHA'
+    value: ${{ steps.commit.outputs.sha }}
+
+runs:
+  using: 'composite'
+  steps:
+    - uses: actions/checkout@v4
+      with:
+        ref: ${{ inputs.ref != '' && inputs.ref || github.sha }}
+
+    - name: Get checked out commit SHA
+      id: commit
+      run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      shell: bash
+
+    - name: Create and push service tag
+      if: ${{ inputs.create-tag == 'true' }}
+      run: |
+        export TZ="America/New_York"
+        tag_name="${{ inputs.service }}-$(date +"%Y-%m-%d_%H-%M-%S")"
+        git config user.name "github-actions"
+        git config user.email "github-actions@github.com"
+        git tag "$tag_name" ${{ steps.commit.outputs.sha }}
+        git push origin "$tag_name"
+      shell: bash
+
+    - name: Build and Push Docker Image
+      uses: botpress/gh-actions/build/docker@v3
+      with:
+        dockerfile: ${{ inputs.dockerfile }}
+        repository: ${{ inputs.repository }}
+        tag: ${{ steps.commit.outputs.sha }}
+        push: true
+        sentry-auth-token: ${{ inputs.sentry-auth-token }}
+
+    - name: Deploy to ECS
+      uses: botpress/gh-actions/tag-and-deploy@v3
+      with:
+        service: ${{ inputs.service }}
+        role-ecs-update: ${{ inputs.role-ecs-update }}
+        image-tag: ${{ steps.commit.outputs.sha }}
+        environment: ${{ inputs.environment }}
+        skip-ecs-update: ${{ inputs.skip-ecs-update }}
