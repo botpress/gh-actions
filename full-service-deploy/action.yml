@@ -100,7 +100,7 @@ runs:
         context: ${{ inputs.context }}
         tag: ${{ steps.commit.outputs.sha }}
         sentry-auth-token: ${{ inputs.sentry-auth-token }}
-        project: ${{ inputs.depot-project }}
+        depot-project: ${{ inputs.depot-project }}
         push: true
 
     - name: Deploy to ECS
