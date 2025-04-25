@@ -11,10 +11,11 @@ inputs:
   # Build
   dockerfile:
     description: 'Path to Dockerfile'
-    required: true
+    required: false
+    default: 'Dockerfile'
   context:
     description: 'Docker context for the build'
-    required: true
+    required: false
     default: '.'
   repository:
     description: 'ECR repository name'
@@ -29,6 +30,15 @@ inputs:
   sentry-auth-token:
     description: 'Sentry auth token (optional)'
     required: false
+
+  builder:
+    description: 'Name of the builder to use: docker (default), depot'
+    required: false
+    default: 'docker'
+  depot-project:
+    description: 'Depot project name.'
+    required: false
+    default: ''
 
   # Deploy
   service:
@@ -70,17 +80,31 @@ runs:
         git push origin "$tag_name"
       shell: bash
 
-    - name: Build and Push Docker Image
-      uses: botpress/gh-actions/build/docker@v3
+    - name: Build and Push Image (Docker)
+      if: ${{ inputs.builder == 'docker' }}
+      uses: botpress/gh-actions/build/docker@v3.1
       with:
         dockerfile: ${{ inputs.dockerfile }}
         repository: ${{ inputs.repository }}
+        context: ${{ inputs.context }}
         tag: ${{ steps.commit.outputs.sha }}
-        push: true
         sentry-auth-token: ${{ inputs.sentry-auth-token }}
+        push: true
+
+    - name: Build and Push Image (Depot)
+      if: ${{ inputs.builder == 'depot' }}
+      uses: botpress/gh-actions/build/depot@v3.1
+      with:
+        dockerfile: ${{ inputs.dockerfile }}
+        repository: ${{ inputs.repository }}
+        context: ${{ inputs.context }}
+        tag: ${{ steps.commit.outputs.sha }}
+        sentry-auth-token: ${{ inputs.sentry-auth-token }}
+        project: ${{ inputs.depot-project }}
+        push: true
 
     - name: Deploy to ECS
-      uses: botpress/gh-actions/tag-and-deploy@v3
+      uses: botpress/gh-actions/tag-and-deploy@v3.1
       with:
         service: ${{ inputs.service }}
         role-ecs-update: ${{ inputs.role-ecs-update }}
