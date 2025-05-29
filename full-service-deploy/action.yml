@@ -64,7 +64,7 @@ runs:
       run: |
         echo "::group::Inputs"
         echo "ref=${{ inputs.ref }}"
-        echo "resolvedRef"=${{ inputs.ref != '' && inputs.ref || github.sha }}"
+        echo "resolvedRef=${{ inputs.ref != '' && inputs.ref || github.sha }}"
         echo "dockerfile=${{ inputs.dockerfile }}"
         echo "context=${{ inputs.context }}"
         echo "repository=${{ inputs.repository }}"
