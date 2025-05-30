@@ -60,6 +60,25 @@ outputs:
 runs:
   using: 'composite'
   steps:
+    - name: Print all inputs
+      run: |
+        echo "::group::Inputs"
+        echo "ref=${{ inputs.ref }}"
+        echo "resolvedRef=${{ inputs.ref != '' && inputs.ref || github.sha }}"
+        echo "dockerfile=${{ inputs.dockerfile }}"
+        echo "context=${{ inputs.context }}"
+        echo "repository=${{ inputs.repository }}"
+        echo "environment=${{ inputs.environment }}"
+        echo "create-tag=${{ inputs['create-tag'] }}"
+        echo "sentry-auth-token=${{ inputs['sentry-auth-token'] }}"
+        echo "builder=${{ inputs.builder }}"
+        echo "depot-project=${{ inputs['depot-project'] }}"
+        echo "service=${{ inputs.service }}"
+        echo "role-ecs-update=${{ inputs['role-ecs-update'] }}"
+        echo "skip-ecs-update=${{ inputs['skip-ecs-update'] }}"
+        echo "::endgroup::"
+      shell: bash
+
     - uses: actions/checkout@v4
       with:
         ref: ${{ inputs.ref != '' && inputs.ref || github.sha }}
