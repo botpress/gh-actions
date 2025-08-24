@@ -109,15 +109,13 @@ const moduleWrapper = tsserver => {
         return process.platform === `win32`
           ? str.replace(/^.*zipfile:\//, ``)
           : str.replace(/^.*zipfile:/, ``);
-      } break;
-
+      }
       case `vscode`:
       default: {
         return process.platform === `win32`
           ? str.replace(/^\^?(zip:|\/zip)\/+/, ``)
           : str.replace(/^\^?(zip:|\/zip)\/+/, `/`);
-      } break;
-    }
+      }    }
   }
 
   // Force enable 'allowLocalPluginLoads'
@@ -175,7 +173,7 @@ const moduleWrapper = tsserver => {
 
 if (existsSync(absPnpApiPath)) {
   if (!process.versions.pnp) {
-    // Setup the environment to be able to require typescript/lib/tsserver.js
+    // Set up the environment to be able to require typescript/lib/tsserver.js
     require(absPnpApiPath).setup();
   }
 }
