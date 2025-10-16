@@ -7,8 +7,9 @@ inputs:
     required: true
 
   token:
-    description: NPM access token
-    required: true
+    description: NPM access token. Omit to use OIDC login (Trusted Publisher)
+    required: false
+    default: ''
 
   package_manager:
     description: Package manager to use for publishing. Can be 'npm' or 'pnpm'
@@ -22,6 +23,7 @@ runs:
       shell: bash
       run: sudo apt-get install jq
     - name: Login
+      if: inputs.token != ''
       shell: bash
       run: |
         echo "//registry.npmjs.org/:_authToken=${{ inputs.token }}" > ~/.npmrc
