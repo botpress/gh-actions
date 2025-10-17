@@ -22,11 +22,46 @@ runs:
     - name: Install JQ
       shell: bash
       run: sudo apt-get install jq
-    - name: Login
+
+    - name: '[OIDC] Check whether Node needs to be updated'
+      if: inputs.token == ''
+      shell: bash
+      run: |
+        current=$(node --version | sed 's/v//')
+        
+        if [ "$(printf '%s\n' "22.9.0" "$current" | sort -V | head -n1)" = "22.9.0" ]; then
+          echo "Node $current is sufficient for npm 11.5.1"
+        else
+          echo "Node $current is below 22.9.0, upgrading"
+          echo "UPGRADE_NODE=true" >> $GITHUB_ENV
+        fi
+
+    - name: '[OIDC] Install Node 22.x'
+      if: inputs.token == '' && env.UPGRADE_NODE == 'true'
+      uses: actions/setup-node@v6
+      with:
+        node-version: '^22.9.0'
+        registry-url: 'https://registry.npmjs.org'
+
+    - name: '[OIDC] Ensure NPM 11.5.1+ is installed'
+      if: inputs.token == ''
+      shell: bash
+      run: |
+        current_npm=$(npm --version)
+        
+        if [ "$(printf '%s\n' "11.5.1" "$current_npm" | sort -V | head -n1)" = "11.5.1" ]; then
+          echo "npm $current_npm is sufficient"
+        else
+          echo "npm $current_npm is below 11.5.1, upgrading"
+          npm install -g npm@^11.5.1
+        fi
+
+    - name: '[API Token] Login'
       if: inputs.token != ''
       shell: bash
       run: |
         echo "//registry.npmjs.org/:_authToken=${{ inputs.token }}" > ~/.npmrc
+
     - name: Publish
       shell: bash
       run: |
