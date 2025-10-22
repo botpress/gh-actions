@@ -19,6 +19,13 @@ inputs:
     required: false
     type: boolean
     default: false
+  target:
+    description: 'Deployment Target (blue or green)'
+    required: false
+    type: choice
+    options:
+      - blue
+      - green
   role-ecs-update:
     description: 'Role for the infra update'
     required: false
@@ -79,22 +86,31 @@ runs:
         IMAGE_NAME="$ECR_REGISTRY/${{ fromJson(env.CONFIG).repository }}"
         IMAGE_TAG="${{ inputs.image-tag }}"
         ENVIRONMENT="${{ inputs.environment }}"
+        TARGET="${{ inputs.target }}"
 
-        docker pull "$IMAGE_NAME:$ENVIRONMENT" || true
-        PREVIOUS_STABLE_TAG="${ENVIRONMENT}_stable"
+        # Determine the tag name based on target
+        if [ "$TARGET" == "blue" ] || [ "$TARGET" == "green" ]; then
+          TAG_NAME="${TARGET}_${ENVIRONMENT}"
+        else
+          TAG_NAME="$ENVIRONMENT"
+        fi
+        echo "TAG_NAME=$TAG_NAME" >> $GITHUB_ENV
+
+        docker pull "$IMAGE_NAME:$TAG_NAME" || true
+        PREVIOUS_STABLE_TAG="${TAG_NAME}_stable"
         echo "PREVIOUS_STABLE_TAG=$PREVIOUS_STABLE_TAG" >> $GITHUB_ENV
 
-        if docker pull "$IMAGE_NAME:$ENVIRONMENT"; then
+        if docker pull "$IMAGE_NAME:$TAG_NAME"; then
           echo "Previous image found, tagging as stable"
-          docker tag "$IMAGE_NAME:$ENVIRONMENT" "$IMAGE_NAME:$PREVIOUS_STABLE_TAG"
+          docker tag "$IMAGE_NAME:$TAG_NAME" "$IMAGE_NAME:$PREVIOUS_STABLE_TAG"
           docker push "$IMAGE_NAME:$PREVIOUS_STABLE_TAG"
         else
-          echo "No previous image for $ENVIRONMENT, skipping stable tagging"
+          echo "No previous image for $TAG_NAME, skipping stable tagging"
         fi
 
         docker pull "$IMAGE_NAME:$IMAGE_TAG"
-        docker tag "$IMAGE_NAME:$IMAGE_TAG" "$IMAGE_NAME:$ENVIRONMENT"
-        docker push "$IMAGE_NAME:$ENVIRONMENT"
+        docker tag "$IMAGE_NAME:$IMAGE_TAG" "$IMAGE_NAME:$TAG_NAME"
+        docker push "$IMAGE_NAME:$TAG_NAME"
 
     - uses: aws-actions/configure-aws-credentials@v3
       with:
@@ -123,6 +139,7 @@ runs:
     - name: Deploy Services
       shell: bash
       run: |
+        TARGET="${{ inputs.target }}"
         IFS=',' read -r -a SERVICES <<< "${{ join(fromJson(env.CONFIG).services, ',') }}"
         for SERVICE_PREFIX in "${SERVICES[@]}"; do
           SERVICE_ARN=$(aws ecs list-services \
@@ -133,6 +150,16 @@ runs:
           if [ -z "$SERVICE_ARN" ]; then
             echo "No service found for prefix: $SERVICE_PREFIX"
             exit 1
+          fi
+
+          if [ "$TARGET" == "blue" ] && [[ ! "$SERVICE_ARN" =~ [Bb]lue ]]; then
+            echo "Skipping non-blue service: $SERVICE_ARN"
+            continue
+          fi
+          
+          if [ "$TARGET" == "green" ] && [[ ! "$SERVICE_ARN" =~ [Gg]reen ]]; then
+            echo "Skipping non-green service: $SERVICE_ARN"
+            continue
           fi
 
           echo "Service to update: $SERVICE_ARN"
@@ -151,6 +178,7 @@ runs:
       shell: bash
       run: |
         set +e  # allow this step to continue if 'aws ecs wait' fails
+        TARGET="${{ inputs.target }}"
         IFS=',' read -r -a SERVICES <<< "${{ join(fromJson(env.CONFIG).services, ',') }}"
         SERVICE_ARNS=()
         for SERVICE_PREFIX in "${SERVICES[@]}"; do
@@ -162,6 +190,17 @@ runs:
             echo "No service found for prefix: $SERVICE_PREFIX"
             exit 1
           fi
+          
+          if [ "$TARGET" == "blue" ] && [[ ! "$SERVICE_ARN" =~ [Bb]lue ]]; then
+            echo "Skipping non-blue service: $SERVICE_ARN"
+            continue
+          fi
+          
+          if [ "$TARGET" == "green" ] && [[ ! "$SERVICE_ARN" =~ [Gg]reen ]]; then
+            echo "Skipping non-green service: $SERVICE_ARN"
+            continue
+          fi
+          
           SERVICE_ARNS+=($SERVICE_ARN)
         done
 
@@ -196,12 +235,11 @@ runs:
 
             ECR_REGISTRY="${{ steps.ecr.outputs.registry }}"
             IMAGE_NAME="$ECR_REGISTRY/${{ fromJson(env.CONFIG).repository }}"
-            ENVIRONMENT="${{ inputs.environment }}"
 
-            # Pull the previous good image and retag/push as $ENVIRONMENT
+            # Pull the previous good image and retag/push as $TAG_NAME
             docker pull "$IMAGE_NAME:$PREVIOUS_STABLE_TAG"
-            docker tag "$IMAGE_NAME:$PREVIOUS_STABLE_TAG" "$IMAGE_NAME:$ENVIRONMENT"
-            docker push "$IMAGE_NAME:$ENVIRONMENT"
+            docker tag "$IMAGE_NAME:$PREVIOUS_STABLE_TAG" "$IMAGE_NAME:$TAG_NAME"
+            docker push "$IMAGE_NAME:$TAG_NAME"
 
             # Force an update with the previous good image
             for ARN in "${SERVICE_ARNS[@]}"; do

@@ -51,6 +51,13 @@ inputs:
     description: 'Build, tag and push the image, but skip updating the ECS services'
     required: false
     default: 'false'
+  target:
+    description: 'Deployment Target (blue or green)'
+    required: false
+    type: choice
+    options:
+      - blue
+      - green
 
 outputs:
   sha:
@@ -123,10 +130,11 @@ runs:
         push: true
 
     - name: Deploy to ECS
-      uses: botpress/gh-actions/tag-and-deploy@v3.1
+      uses: botpress/gh-actions/tag-and-deploy@v3.2
       with:
         service: ${{ inputs.service }}
         role-ecs-update: ${{ inputs.role-ecs-update }}
         image-tag: ${{ steps.commit.outputs.sha }}
         environment: ${{ inputs.environment }}
         skip-ecs-update: ${{ inputs.skip-ecs-update }}
+        target: ${{ inputs.target }}
