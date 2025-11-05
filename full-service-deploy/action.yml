@@ -52,12 +52,9 @@ inputs:
     required: false
     default: 'false'
   target:
-    description: 'Deployment Target (blue or green)'
+    description: 'Deployment Target (main=default image, blue=blue env, green=green env, all=update all)'
     required: false
-    type: choice
-    options:
-      - blue
-      - green
+    default: 'main'
 
 outputs:
   sha:
