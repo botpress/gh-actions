@@ -19,6 +19,11 @@ inputs:
     required: false
     type: boolean
     default: false
+  target:
+    description: 'Deployment Target'
+    required: false
+    type: string
+    default: 'main'
   role-ecs-update:
     description: 'Role for the infra update'
     required: false
@@ -79,22 +84,54 @@ runs:
         IMAGE_NAME="$ECR_REGISTRY/${{ fromJson(env.CONFIG).repository }}"
         IMAGE_TAG="${{ inputs.image-tag }}"
         ENVIRONMENT="${{ inputs.environment }}"
-
-        docker pull "$IMAGE_NAME:$ENVIRONMENT" || true
-        PREVIOUS_STABLE_TAG="${ENVIRONMENT}_stable"
-        echo "PREVIOUS_STABLE_TAG=$PREVIOUS_STABLE_TAG" >> $GITHUB_ENV
-
-        if docker pull "$IMAGE_NAME:$ENVIRONMENT"; then
-          echo "Previous image found, tagging as stable"
-          docker tag "$IMAGE_NAME:$ENVIRONMENT" "$IMAGE_NAME:$PREVIOUS_STABLE_TAG"
-          docker push "$IMAGE_NAME:$PREVIOUS_STABLE_TAG"
-        else
-          echo "No previous image for $ENVIRONMENT, skipping stable tagging"
-        fi
+        TARGET="${{ inputs.target }}"
 
         docker pull "$IMAGE_NAME:$IMAGE_TAG"
-        docker tag "$IMAGE_NAME:$IMAGE_TAG" "$IMAGE_NAME:$ENVIRONMENT"
-        docker push "$IMAGE_NAME:$ENVIRONMENT"
+
+        tag_and_push() {
+          local TAG_NAME=$1
+          echo "Processing tag: $TAG_NAME"
+          
+          PREVIOUS_STABLE_TAG="${TAG_NAME}_stable"
+          
+          if docker pull "$IMAGE_NAME:$TAG_NAME" 2>/dev/null; then
+            echo "Previous image found, tagging as stable"
+            docker tag "$IMAGE_NAME:$TAG_NAME" "$IMAGE_NAME:$PREVIOUS_STABLE_TAG"
+            docker push "$IMAGE_NAME:$PREVIOUS_STABLE_TAG"
+          else
+            echo "No previous image for $TAG_NAME, skipping stable tagging"
+          fi
+          
+          docker tag "$IMAGE_NAME:$IMAGE_TAG" "$IMAGE_NAME:$TAG_NAME"
+          docker push "$IMAGE_NAME:$TAG_NAME"
+          
+          echo "PREVIOUS_STABLE_TAG_${TAG_NAME}=$PREVIOUS_STABLE_TAG" >> $GITHUB_ENV
+        }
+
+        case "$TARGET" in
+          main)
+            tag_and_push "$ENVIRONMENT"
+            echo "TAG_NAME=$ENVIRONMENT" >> $GITHUB_ENV
+            ;;
+          blue)
+            tag_and_push "blue_${ENVIRONMENT}"
+            echo "TAG_NAME=blue_${ENVIRONMENT}" >> $GITHUB_ENV
+            ;;
+          green)
+            tag_and_push "green_${ENVIRONMENT}"
+            echo "TAG_NAME=green_${ENVIRONMENT}" >> $GITHUB_ENV
+            ;;
+          all)
+            tag_and_push "$ENVIRONMENT"
+            tag_and_push "blue_${ENVIRONMENT}"
+            tag_and_push "green_${ENVIRONMENT}"
+            echo "TAG_NAME=$ENVIRONMENT,blue_${ENVIRONMENT},green_${ENVIRONMENT}" >> $GITHUB_ENV
+            ;;
+          *)
+            echo "Invalid target: $TARGET"
+            exit 1
+            ;;
+        esac
 
     - uses: aws-actions/configure-aws-credentials@v3
       with:
@@ -123,6 +160,7 @@ runs:
     - name: Deploy Services
       shell: bash
       run: |
+        TARGET="${{ inputs.target }}"
         IFS=',' read -r -a SERVICES <<< "${{ join(fromJson(env.CONFIG).services, ',') }}"
         for SERVICE_PREFIX in "${SERVICES[@]}"; do
           SERVICE_ARN=$(aws ecs list-services \
@@ -133,6 +171,33 @@ runs:
           if [ -z "$SERVICE_ARN" ]; then
             echo "No service found for prefix: $SERVICE_PREFIX"
             exit 1
+          fi
+
+          SHOULD_DEPLOY=false
+          case "$TARGET" in
+            main)
+              if [[ ! "$SERVICE_ARN" =~ [Bb]lue ]] && [[ ! "$SERVICE_ARN" =~ [Gg]reen ]]; then
+                SHOULD_DEPLOY=true
+              fi
+              ;;
+            blue)
+              if [[ "$SERVICE_ARN" =~ [Bb]lue ]]; then
+                SHOULD_DEPLOY=true
+              fi
+              ;;
+            green)
+              if [[ "$SERVICE_ARN" =~ [Gg]reen ]]; then
+                SHOULD_DEPLOY=true
+              fi
+              ;;
+            all)
+              SHOULD_DEPLOY=true
+              ;;
+          esac
+
+          if [ "$SHOULD_DEPLOY" = false ]; then
+            echo "Skipping service (target=$TARGET): $SERVICE_ARN"
+            continue
           fi
 
           echo "Service to update: $SERVICE_ARN"
@@ -150,7 +215,8 @@ runs:
       if: ${{ inputs.skip-ecs-update != 'true' }}
       shell: bash
       run: |
-        set +e  # allow this step to continue if 'aws ecs wait' fails
+        set +e
+        TARGET="${{ inputs.target }}"
         IFS=',' read -r -a SERVICES <<< "${{ join(fromJson(env.CONFIG).services, ',') }}"
         SERVICE_ARNS=()
         for SERVICE_PREFIX in "${SERVICES[@]}"; do
@@ -162,7 +228,32 @@ runs:
             echo "No service found for prefix: $SERVICE_PREFIX"
             exit 1
           fi
-          SERVICE_ARNS+=($SERVICE_ARN)
+          
+          SHOULD_WAIT=false
+          case "$TARGET" in
+            main)
+              if [[ ! "$SERVICE_ARN" =~ [Bb]lue ]] && [[ ! "$SERVICE_ARN" =~ [Gg]reen ]]; then
+                SHOULD_WAIT=true
+              fi
+              ;;
+            blue)
+              if [[ "$SERVICE_ARN" =~ [Bb]lue ]]; then
+                SHOULD_WAIT=true
+              fi
+              ;;
+            green)
+              if [[ "$SERVICE_ARN" =~ [Gg]reen ]]; then
+                SHOULD_WAIT=true
+              fi
+              ;;
+            all)
+              SHOULD_WAIT=true
+              ;;
+          esac
+
+          if [ "$SHOULD_WAIT" = true ]; then
+            SERVICE_ARNS+=($SERVICE_ARN)
+          fi
         done
 
         echo "Waiting for service(s) to stabilize: ${SERVICE_ARNS[*]}"
@@ -192,18 +283,42 @@ runs:
           done
 
           if [ $STOPPED_COUNT -gt 0 ]; then
-            echo "Services are failing. Rolling back to previous stable image: $PREVIOUS_STABLE_TAG"
+            echo "Services are failing. Rolling back to previous stable images"
 
             ECR_REGISTRY="${{ steps.ecr.outputs.registry }}"
             IMAGE_NAME="$ECR_REGISTRY/${{ fromJson(env.CONFIG).repository }}"
             ENVIRONMENT="${{ inputs.environment }}"
 
-            # Pull the previous good image and retag/push as $ENVIRONMENT
-            docker pull "$IMAGE_NAME:$PREVIOUS_STABLE_TAG"
-            docker tag "$IMAGE_NAME:$PREVIOUS_STABLE_TAG" "$IMAGE_NAME:$ENVIRONMENT"
-            docker push "$IMAGE_NAME:$ENVIRONMENT"
+            rollback_tag() {
+              local TAG_NAME=$1
+              local STABLE_TAG="${TAG_NAME}_stable"
+              
+              if docker pull "$IMAGE_NAME:$STABLE_TAG" 2>/dev/null; then
+                echo "Rolling back $TAG_NAME to $STABLE_TAG"
+                docker tag "$IMAGE_NAME:$STABLE_TAG" "$IMAGE_NAME:$TAG_NAME"
+                docker push "$IMAGE_NAME:$TAG_NAME"
+              else
+                echo "No stable image found for $TAG_NAME"
+              fi
+            }
 
-            # Force an update with the previous good image
+            case "$TARGET" in
+              main)
+                rollback_tag "$ENVIRONMENT"
+                ;;
+              blue)
+                rollback_tag "blue_${ENVIRONMENT}"
+                ;;
+              green)
+                rollback_tag "green_${ENVIRONMENT}"
+                ;;
+              all)
+                rollback_tag "$ENVIRONMENT"
+                rollback_tag "blue_${ENVIRONMENT}"
+                rollback_tag "green_${ENVIRONMENT}"
+                ;;
+            esac
+
             for ARN in "${SERVICE_ARNS[@]}"; do
               echo "Rolling back service: $ARN"
               aws ecs update-service \
