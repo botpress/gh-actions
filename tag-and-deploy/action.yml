@@ -85,6 +85,7 @@ runs:
     - name: Tag Image for Environment
       shell: bash
       run: |
+        echo "::group::Pulling image"
         ECR_REGISTRY="${{ steps.ecr.outputs.registry }}"
         IMAGE_NAME="$ECR_REGISTRY/${{ fromJson(env.CONFIG).repository }}"
         IMAGE_TAG="${{ inputs.image-tag }}"
@@ -93,6 +94,7 @@ runs:
         SKIP_TAGGING_STABLE="${{ inputs.skip-tagging-stable }}"
 
         docker pull "$IMAGE_NAME:$IMAGE_TAG"
+        echo "::endgroup::"
 
         tag_and_push() {
           local TAG_NAME=$1
@@ -116,6 +118,7 @@ runs:
           echo "PREVIOUS_STABLE_TAG_${TAG_NAME}=$PREVIOUS_STABLE_TAG" >> $GITHUB_ENV
         }
 
+        echo "::group::Tagging and Pushing Images"
         case "$TARGET" in
           main)
             tag_and_push "$ENVIRONMENT"
@@ -140,6 +143,7 @@ runs:
             exit 1
             ;;
         esac
+        echo "::endgroup::"
 
     - uses: aws-actions/configure-aws-credentials@v3
       with:
@@ -211,11 +215,12 @@ runs:
           echo "Service to update: $SERVICE_ARN"
 
           if [[ "${{ inputs.skip-ecs-update }}" != "true" ]]; then
-            echo "Updating service: $SERVICE_ARN"
+            echo "::group::Updating service: $SERVICE_ARN"
             aws ecs update-service \
               --cluster "$CLUSTER_ARN" \
               --service "$SERVICE_ARN" \
               --force-new-deployment
+            echo "::endgroup::"
           fi
         done
 
