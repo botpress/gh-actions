@@ -24,6 +24,11 @@ inputs:
     required: false
     type: string
     default: 'main'
+  skip-tagging-stable:
+    description: 'Skip tagging previous image as stable'
+    required: false
+    type: boolean
+    default: false
   role-ecs-update:
     description: 'Role for the infra update'
     required: false
@@ -85,6 +90,7 @@ runs:
         IMAGE_TAG="${{ inputs.image-tag }}"
         ENVIRONMENT="${{ inputs.environment }}"
         TARGET="${{ inputs.target }}"
+        SKIP_TAGGING_STABLE="${{ inputs.skip-tagging-stable }}"
 
         docker pull "$IMAGE_NAME:$IMAGE_TAG"
 
@@ -94,7 +100,9 @@ runs:
           
           PREVIOUS_STABLE_TAG="${TAG_NAME}_stable"
           
-          if docker pull "$IMAGE_NAME:$TAG_NAME" 2>/dev/null; then
+          if [ "$SKIP_TAGGING_STABLE" = "true" ]; then
+            echo "Skipping tagging previous image as stable"
+          elif docker pull "$IMAGE_NAME:$TAG_NAME" 2>/dev/null; then
             echo "Previous image found, tagging as stable"
             docker tag "$IMAGE_NAME:$TAG_NAME" "$IMAGE_NAME:$PREVIOUS_STABLE_TAG"
             docker push "$IMAGE_NAME:$PREVIOUS_STABLE_TAG"
