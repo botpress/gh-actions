@@ -5,7 +5,7 @@ inputs:
     description: 'Comment to use when closing an issue'
     required: false
   token:
-    description: 'Github Token'
+    description: 'GitHub Token'
     required: false
     default: ${{ github.token }}
 runs:
