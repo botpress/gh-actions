@@ -21,9 +21,6 @@ inputs:
   provenance:
     description: 'Enable/disable provenance attestation'
     required: false
-  sbom:
-    description: 'Enable/disable SBOM generation'
-    required: false
 
   # Custom variables
   sentry-auth-token:
@@ -111,4 +108,3 @@ runs:
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
         provenance: ${{ inputs.provenance }}
-        sbom: ${{ inputs.sbom }}
