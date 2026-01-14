@@ -18,6 +18,9 @@ inputs:
     description: 'Optional Docker tag'
     required: false
     default: ''
+  provenance:
+    description: 'Enable/disable provenance attestation'
+    required: false
 
   # Custom variables
   sentry-auth-token:
@@ -104,3 +107,4 @@ runs:
         cache-to: type=gha,mode=max
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
+        provenance: ${{ inputs.provenance }}
