@@ -38,6 +38,10 @@ inputs:
 runs:
   using: 'composite'
   steps:
+    - name: Start Deploy Timer
+      id: deploy-start
+      run: echo "START_TIME=$(date +%s)" >> $GITHUB_OUTPUT
+      shell: bash
     - uses: actions/checkout@v4
 
     # Get the partial arn for cluster name/services for the selected service
@@ -226,6 +230,7 @@ runs:
 
     - name: Wait for Services to Stabilize
       if: ${{ inputs.skip-ecs-update != 'true' }}
+      id: stabilize
       shell: bash
       run: |
         set +e
@@ -275,6 +280,7 @@ runs:
           --services "${SERVICE_ARNS[@]}"
 
         WAIT_EXIT_CODE=$?
+        echo "ROLLED_BACK=false" >> $GITHUB_OUTPUT
 
         if [ $WAIT_EXIT_CODE -ne 0 ]; then
           echo "Deployment failed to stabilize. Checking if tasks are crashing..."
@@ -297,6 +303,7 @@ runs:
 
           if [ $STOPPED_COUNT -gt 0 ]; then
             echo "Services are failing. Rolling back to previous stable images"
+            echo "ROLLED_BACK=true" >> $GITHUB_OUTPUT
 
             ECR_REGISTRY="${{ steps.ecr.outputs.registry }}"
             IMAGE_NAME="$ECR_REGISTRY/${{ fromJson(env.CONFIG).repository }}"
@@ -345,3 +352,39 @@ runs:
         else
           echo "Services stabilized successfully."
         fi
+
+    - name: Deploy Summary
+      if: always()
+      id: deploy-timing
+      run: |
+        END_TIME=$(date +%s)
+        DURATION=$((END_TIME - ${{ steps.deploy-start.outputs.START_TIME }}))
+        ROLLED_BACK="${{ steps.stabilize.outputs.ROLLED_BACK || 'false' }}"
+        DEPLOY_STATUS="${{ steps.stabilize.outcome }}"
+
+        format_duration() {
+          local total_seconds=$1
+          local minutes=$((total_seconds / 60))
+          local seconds=$((total_seconds % 60))
+          if [ $minutes -gt 0 ]; then
+            echo "${minutes}m ${seconds}s"
+          else
+            echo "${seconds}s"
+          fi
+        }
+
+        DEPLOY_FORMATTED=$(format_duration $DURATION)
+
+        if [ "$DEPLOY_STATUS" = "success" ]; then
+          STATUS_ICON="✅"
+        else
+          STATUS_ICON="❌"
+        fi
+
+        echo "**Deploy:** ${DEPLOY_FORMATTED} ${STATUS_ICON}" >> $GITHUB_STEP_SUMMARY
+
+        if [ "$ROLLED_BACK" = "true" ]; then
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "⚠️ **Rolled back** - tasks were crashing, check service logs" >> $GITHUB_STEP_SUMMARY
+        fi
+      shell: bash

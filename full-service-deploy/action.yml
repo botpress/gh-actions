@@ -92,6 +92,31 @@ runs:
       run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
       shell: bash
 
+    - name: Deployment Information
+      id: deployment-info
+      run: |
+        SHA_SHORT=$(echo "${{ steps.commit.outputs.sha }}" | cut -c1-8)
+        echo "BUILD_START=$(date +%s)" >> $GITHUB_OUTPUT
+        echo "SHA_SHORT=${SHA_SHORT}" >> $GITHUB_OUTPUT
+
+        REF_INPUT="${{ inputs.ref }}"
+        if [ -n "$REF_INPUT" ]; then
+          REF_ROW="| Ref | \`${REF_INPUT}\` |"
+        else
+          REF_ROW=""
+        fi
+
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
+        echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
+        if [ -n "$REF_ROW" ]; then
+          echo "$REF_ROW" >> $GITHUB_STEP_SUMMARY
+        fi
+        echo "| Commit | [\`${SHA_SHORT}\`](https://github.com/${{ github.repository }}/commit/${{ steps.commit.outputs.sha }}) |" >> $GITHUB_STEP_SUMMARY
+        echo "| Target | \`${{ inputs.target }}\` |" >> $GITHUB_STEP_SUMMARY
+        echo "| Builder | \`${{ inputs.builder }}\` |" >> $GITHUB_STEP_SUMMARY
+      shell: bash
+
     - name: Create and push service tag
       if: ${{ inputs.create-tag == 'true' }}
       run: |
@@ -105,6 +130,7 @@ runs:
 
     - name: Build and Push Image (Docker)
       if: ${{ inputs.builder == 'docker' }}
+      id: build-docker
       uses: botpress/gh-actions/build/docker@v3.1
       with:
         dockerfile: ${{ inputs.dockerfile }}
@@ -116,6 +142,7 @@ runs:
 
     - name: Build and Push Image (Depot)
       if: ${{ inputs.builder == 'depot' }}
+      id: build-depot
       uses: botpress/gh-actions/build/depot@v3.1
       with:
         dockerfile: ${{ inputs.dockerfile }}
@@ -126,7 +153,31 @@ runs:
         depot-project: ${{ inputs.depot-project }}
         push: true
 
+    - name: Build Summary
+      id: build-summary
+      run: |
+        BUILD_END=$(date +%s)
+        BUILD_DURATION=$((BUILD_END - ${{ steps.deployment-info.outputs.BUILD_START }}))
+
+        format_duration() {
+          local total_seconds=$1
+          local minutes=$((total_seconds / 60))
+          local seconds=$((total_seconds % 60))
+          if [ $minutes -gt 0 ]; then
+            echo "${minutes}m ${seconds}s"
+          else
+            echo "${seconds}s"
+          fi
+        }
+
+        BUILD_FORMATTED=$(format_duration $BUILD_DURATION)
+
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Build:** ${BUILD_FORMATTED} ✅" >> $GITHUB_STEP_SUMMARY
+      shell: bash
+
     - name: Deploy to ECS
+      id: deploy
       uses: botpress/gh-actions/tag-and-deploy@v3.3
       with:
         service: ${{ inputs.service }}
