@@ -11,7 +11,7 @@ const absRequire = (createRequire || createRequireFromPath)(absPnpApiPath);
 
 if (existsSync(absPnpApiPath)) {
   if (!process.versions.pnp) {
-    // Setup the environment to be able to require eslint
+    // Set up the environment to be able to require eslint
     require(absPnpApiPath).setup();
   }
 }
