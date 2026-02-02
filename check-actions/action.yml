@@ -1,0 +1,57 @@
+name: Check GitHub Actions Scripts
+description: Check shell scripts in GitHub Actions workflows and actions
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Install yq and shellcheck
+      shell: bash
+      run: |
+        sudo apt update
+        sudo apt install -y yq shellcheck
+
+        check_script() {
+          # SC2148: script missing shebang
+          # SC2296: github variables expansion: ${\{something}}
+          shellcheck - -e SC2148 -e SC2296
+        }
+
+    - name: Check actions
+      shell: bash
+      run: |
+        ACTION_FILES="$(find . -type f -name action.yml)"
+
+        for action in $ACTION_FILES; do
+          echo "Checking action file: $action"
+
+          yq -c '.runs.steps[]? | select(has("run"))' "$action" |
+          while IFS= read -r step; do
+
+            NAME=$(echo "$step" | yq -r '.name // "Unnamed"')
+            echo "\tChecking step: $NAME"
+
+            printf '%s\n' "$step" | yq -r '.run' | check_script
+
+          done
+
+        done
+
+    - name: Check workflows
+      shell: bash
+      run: |
+        WORKFLOW_FILES="$(find .github/workflows -type f -name '*.yml')"
+
+        for workflow in $WORKFLOW_FILES; do
+          echo "Checking workflow file: $workflow"
+
+          yq -c '.jobs[]?.steps[]? | select(has("run"))' "$workflow" |
+          while IFS= read -r step; do
+
+            NAME=$(echo "$step" | yq -r '.name // "Unnamed"')
+            echo "\tChecking step: $NAME"
+
+            printf '%s\n' "$step" | yq -r '.run' | check_script
+
+          done
+
+        done
