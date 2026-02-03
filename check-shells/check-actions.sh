@@ -17,9 +17,11 @@ for action in $ACTION_FILES; do
 
     # SC2148: script missing shebang
     # SC2296: github variables expansion: ${ {something} }
-    printf '%s\n' "$step" | yq -r '.run' | shellcheck - -e SC2148 -e SC2296 \
-      && echo "No issues found." \
-      || ((ERRORS++))
+    if (printf '%s\n' "$step" | yq -r '.run' | shellcheck - -e SC2148 -e SC2296); then
+      echo "No issues found."
+    else
+      ((ERRORS++))
+    fi
 
   done < <(yq '.runs.steps[]? | select(has("run"))' "$action" | jq -c '.')
 

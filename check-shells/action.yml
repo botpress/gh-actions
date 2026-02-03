@@ -32,9 +32,9 @@ runs:
     - name: Checks
       shell: bash
       run: |
-        CHECK_SCRIPTS=${{ inputs.check_scripts }}
-        CHECK_ACTIONS=${{ inputs.check_actions }}
-        CHECK_WORKFLOWS=${{ inputs.check_workflows }}
+        CHECK_SCRIPTS="${{ inputs.check_scripts }}"
+        CHECK_ACTIONS="${{ inputs.check_actions }}"
+        CHECK_WORKFLOWS="${{ inputs.check_workflows }}"
 
         SUCCESS=true
 
