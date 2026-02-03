@@ -14,42 +14,56 @@ runs:
       shell: bash
       run: |
         ACTION_FILES="$(find . -type f -name action.yml)"
+        CHECK_FAILED=false
 
         for action in $ACTION_FILES; do
-          echo "Checking action file: $action"
+          echo "::group::Checking action file: $action"
 
           yq -c '.runs.steps[]? | select(has("run"))' "$action" |
           while IFS= read -r step; do
 
             NAME=$(echo "$step" | yq -r '.name // "Unnamed"')
-            echo "\tChecking step: $NAME"
+            echo "Checking step: $NAME"
 
             # SC2148: script missing shebang
             # SC2296: github variables expansion: ${\{something}}
-            printf '%s\n' "$step" | yq -r '.run' | shellcheck - -e SC2148 -e SC2296
+            printf '%s\n' "$step" | yq -r '.run' | shellcheck - -e SC2148 -e SC2296 || export CHECK_FAILED=true
 
           done
 
+          echo "::endgroup::"
         done
+
+        if [ "$CHECK_FAILED" = true ]; then
+          echo "One or more shell scripts have issues."
+          exit 1
+        fi
 
     - name: Check workflows
       shell: bash
       run: |
         WORKFLOW_FILES="$(find .github/workflows -type f -name '*.yml')"
+        CHECK_FAILED=false
 
         for workflow in $WORKFLOW_FILES; do
-          echo "Checking workflow file: $workflow"
+          echo "::group::Checking workflow file: $workflow"
 
           yq -c '.jobs[]?.steps[]? | select(has("run"))' "$workflow" |
           while IFS= read -r step; do
 
             NAME=$(echo "$step" | yq -r '.name // "Unnamed"')
-            echo "\tChecking step: $NAME"
+            echo "Checking step: $NAME"
 
             # SC2148: script missing shebang
             # SC2296: github variables expansion: ${\{something}}
-            printf '%s\n' "$step" | yq -r '.run' | shellcheck - -e SC2148 -e SC2296
+            printf '%s\n' "$step" | yq -r '.run' | shellcheck - -e SC2148 -e SC2296 || export CHECK_FAILED=true
 
           done
 
+          echo "::endgroup::"
         done
+
+        if [ "$CHECK_FAILED" = true ]; then
+          echo "One or more shell scripts have issues."
+          exit 1
+        fi
