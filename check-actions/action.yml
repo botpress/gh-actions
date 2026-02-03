@@ -10,12 +10,6 @@ runs:
         sudo apt update
         sudo apt install -y yq shellcheck
 
-        check_script() {
-          # SC2148: script missing shebang
-          # SC2296: github variables expansion: ${\{something}}
-          shellcheck - -e SC2148 -e SC2296
-        }
-
     - name: Check actions
       shell: bash
       run: |
@@ -30,7 +24,9 @@ runs:
             NAME=$(echo "$step" | yq -r '.name // "Unnamed"')
             echo "\tChecking step: $NAME"
 
-            printf '%s\n' "$step" | yq -r '.run' | check_script
+            # SC2148: script missing shebang
+            # SC2296: github variables expansion: ${\{something}}
+            printf '%s\n' "$step" | yq -r '.run' | shellcheck - -e SC2148 -e SC2296
 
           done
 
@@ -50,7 +46,9 @@ runs:
             NAME=$(echo "$step" | yq -r '.name // "Unnamed"')
             echo "\tChecking step: $NAME"
 
-            printf '%s\n' "$step" | yq -r '.run' | check_script
+            # SC2148: script missing shebang
+            # SC2296: github variables expansion: ${\{something}}
+            printf '%s\n' "$step" | yq -r '.run' | shellcheck - -e SC2148 -e SC2296
 
           done
 
