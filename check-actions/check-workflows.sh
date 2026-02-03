@@ -28,5 +28,5 @@ if [ "$ERRORS" -gt 0 ]; then
   echo "There are $ERRORS issues."
   exit 1
 else
-  echo "No issues found."
+  echo "No workflow issues found."
 fi

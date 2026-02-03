@@ -18,13 +18,18 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: Install yq and shellcheck
+    - name: Install shellcheck and yq
       shell: bash
       run: |
+        echo "::group::Installing shellcheck and yq"
         sudo apt update
-        sudo apt install -y yq shellcheck
+        sudo apt install -y shellcheck yq jq
+        echo "::endgroup::"
+        shellcheck --version
+        yq --version
+        jq --version
 
-    - name: Check ${{ inputs.check_scripts && 'shell scripts, ' || '' }}${{ inputs.check_actions && 'actions, ' || '' }}${{ inputs.check_workflows && 'workflows' || '' }}"
+    - name: Checks
       shell: bash
       run: |
         CHECK_SCRIPTS=${{ inputs.check_scripts }}
