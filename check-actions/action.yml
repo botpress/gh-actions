@@ -2,7 +2,7 @@ name: Check GitHub Actions Scripts
 description: Check shell scripts in GitHub Actions workflows and actions
 
 runs:
-  using: 'composite'
+  using: composite
   steps:
     - name: Install yq and shellcheck
       shell: bash
@@ -12,12 +12,15 @@ runs:
 
     - name: Check scripts
       shell: bash
-      run: ./check-scripts.sh
+      run: |
+        "$GITHUB_ACTION_PATH/check-scripts.sh"
 
     - name: Check actions
       shell: bash
-      run: ./check-actions.sh
+      run: |
+        "$GITHUB_ACTION_PATH/check-actions.sh"
 
     - name: Check workflows
       shell: bash
-      run: ./check-workflows.sh
+      run: |
+        "$GITHUB_ACTION_PATH/check-workflows.sh"
