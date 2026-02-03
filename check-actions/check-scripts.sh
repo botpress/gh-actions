@@ -6,7 +6,9 @@ ERRORS=0
 for script in $SCRIPT_FILES; do
   echo "::group::Checking script file: $script"
 
-  shellcheck "$script" || ((ERRORS++))
+  shellcheck "$script" \
+    && echo "No issues found." \
+    || ((ERRORS++))
 
   echo "::endgroup::"
 done
