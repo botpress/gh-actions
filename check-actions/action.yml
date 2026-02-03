@@ -1,6 +1,20 @@
 name: Check GitHub Actions Scripts
 description: Check shell scripts in GitHub Actions workflows and actions
 
+inputs:
+  check_scripts:
+    type: boolean
+    required: false
+    default: true
+  check_actions:
+    type: boolean
+    required: false
+    default: true
+  check_workflows:
+    type: boolean
+    required: false
+    default: true
+
 runs:
   using: composite
   steps:
@@ -10,17 +24,25 @@ runs:
         sudo apt update
         sudo apt install -y yq shellcheck
 
-    - name: Check scripts
+    - name: Check ${{ inputs.check_scripts && 'shell scripts, ' || '' }}${{ inputs.check_actions && 'actions, ' || '' }}${{ inputs.check_workflows && 'workflows' || '' }}"
       shell: bash
       run: |
-        "$GITHUB_ACTION_PATH/check-scripts.sh"
+        CHECK_SCRIPTS=${{ inputs.check_scripts }}
+        CHECK_ACTIONS=${{ inputs.check_actions }}
+        CHECK_WORKFLOWS=${{ inputs.check_workflows }}
 
-    - name: Check actions
-      shell: bash
-      run: |
-        "$GITHUB_ACTION_PATH/check-actions.sh"
+        SUCCESS=true
 
-    - name: Check workflows
-      shell: bash
-      run: |
-        "$GITHUB_ACTION_PATH/check-workflows.sh"
+        if [ "$CHECK_SCRIPTS" = "true" ]; then
+          "$GITHUB_ACTION_PATH/check-scripts.sh" || SUCCESS=false
+        fi
+        if [ "$CHECK_ACTIONS" = "true" ]; then
+          "$GITHUB_ACTION_PATH/check-actions.sh" || SUCCESS=false
+        fi
+        if [ "$CHECK_WORKFLOWS" = "true" ]; then
+          "$GITHUB_ACTION_PATH/check-workflows.sh" || SUCCESS=false
+        fi
+
+        if [ "$SUCCESS" = "false" ]; then
+          exit 1
+        fi
