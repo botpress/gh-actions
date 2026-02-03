@@ -12,7 +12,7 @@ for workflow in $WORKFLOW_FILES; do
     echo "Checking step: $NAME"
 
     # SC2148: script missing shebang
-    # SC2296: github variables expansion: ${ {something} }
+    # SC2296: github variables expansion: ${{something}}
     if (printf '%s\n' "$step" | yq -r '.run' | shellcheck - -e SC2148 -e SC2296); then
       echo "No issues found."
     else
