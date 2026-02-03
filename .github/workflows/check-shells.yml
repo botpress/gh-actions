@@ -12,3 +12,5 @@ jobs:
         uses: actions/checkout@v4
       - name: Check shell scripts
         uses: ./check-shells
+        with:
+          actions_dir: .

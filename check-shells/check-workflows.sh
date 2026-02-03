@@ -1,6 +1,14 @@
 #!/bin/bash
 
-WORKFLOW_FILES="$(find .github/workflows -type f -name '*.yml')"
+ROOT_DIR="${1:-.github/workflows}"
+
+
+if [ ! -d "$ROOT_DIR" ]; then
+  echo "Error: Directory '$ROOT_DIR' does not exist."
+  exit 1
+fi
+
+WORKFLOW_FILES="$(find "$ROOT_DIR" -type f -name '*.yml')"
 ERRORS=0
 
 for workflow in $WORKFLOW_FILES; do

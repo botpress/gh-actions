@@ -1,6 +1,13 @@
 #!/bin/bash
 
-SCRIPT_FILES="$(find . -type f -name '*.sh')"
+ROOT_DIR="${1:-.}"
+
+if [ ! -d "$ROOT_DIR" ]; then
+  echo "Error: Directory '$ROOT_DIR' does not exist."
+  exit 1
+fi
+
+SCRIPT_FILES="$(find "$ROOT_DIR" -type f -name '*.sh')"
 ERRORS=0
 
 for script in $SCRIPT_FILES; do

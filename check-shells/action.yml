@@ -6,14 +6,26 @@ inputs:
     type: boolean
     required: false
     default: true
+  scripts_dir:
+    type: string
+    required: false
+    default: .
   check_actions:
     type: boolean
     required: false
     default: true
+  actions_dir:
+    type: string
+    required: false
+    default: .github/actions
   check_workflows:
     type: boolean
     required: false
     default: true
+  workflows_dir:
+    type: string
+    required: false
+    default: .github/workflows
 
 runs:
   using: composite
@@ -39,13 +51,13 @@ runs:
         SUCCESS=true
 
         if [ "$CHECK_SCRIPTS" = "true" ]; then
-          "$GITHUB_ACTION_PATH/check-scripts.sh" || SUCCESS=false
+          "$GITHUB_ACTION_PATH/check-scripts.sh" "${{ inputs.scripts_dir }}" || SUCCESS=false
         fi
         if [ "$CHECK_ACTIONS" = "true" ]; then
-          "$GITHUB_ACTION_PATH/check-actions.sh" || SUCCESS=false
+          "$GITHUB_ACTION_PATH/check-actions.sh" "${{ inputs.actions_dir }}" || SUCCESS=false
         fi
         if [ "$CHECK_WORKFLOWS" = "true" ]; then
-          "$GITHUB_ACTION_PATH/check-workflows.sh" || SUCCESS=false
+          "$GITHUB_ACTION_PATH/check-workflows.sh" "${{ inputs.workflows_dir }}" || SUCCESS=false
         fi
 
         if [ "$SUCCESS" = "false" ]; then

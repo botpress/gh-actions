@@ -1,6 +1,13 @@
 #!/bin/bash
 
-ACTION_FILES="$(find . -type f -name action.yml)"
+ROOT_DIR="${1:-.github/actions}"
+
+if [ ! -d "$ROOT_DIR" ]; then
+  echo "Error: Directory '$ROOT_DIR' does not exist."
+  exit 1
+fi
+
+ACTION_FILES="$(find "$ROOT_DIR" -type f -name action.yml)"
 ERRORS=0
 
 for action in $ACTION_FILES; do
