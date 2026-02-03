@@ -19,7 +19,7 @@ for action in $ACTION_FILES; do
     # SC2296: github variables expansion: ${ {something} }
     printf '%s\n' "$step" | yq -r '.run' | shellcheck - -e SC2148 -e SC2296 || ((ERRORS++))
 
-  done < <(yq -o=json -I=0 '.runs.steps[]? | select(has("run"))' "$action")
+  done < <(yq '.runs.steps[]? | select(has("run"))' "$action" | jq -c '.')
 
   echo "::endgroup::"
 done

@@ -4,22 +4,18 @@ WORKFLOW_FILES="$(find .github/workflows -type f -name '*.yml')"
 ERRORS=0
 
 for workflow in $WORKFLOW_FILES; do
-  if [ "$(yq -c '.jobs | has("steps")' "$workflow")" != "true" ]; then
-    continue
-  fi
-
   echo "::group::Checking workflow file: $workflow"
 
   while IFS= read -r step; do
 
-    NAME=$(echo "$step" | yq -r '.name // "Unnamed"')
+    NAME=$(echo "$step" | yq -r '.name // .run' | head -1)
     echo "Checking step: $NAME"
 
     # SC2148: script missing shebang
     # SC2296: github variables expansion: ${ {something} }
     printf '%s\n' "$step" | yq -r '.run' | shellcheck - -e SC2148 -e SC2296 || ((ERRORS++))
 
-  done < <(yq -o=json -I=0 '.jobs[]?.steps[]? | select(has("run"))' "$workflow")
+  done < <(yq '.jobs[]?.steps[]? | select(has("run"))' "$workflow" | jq -c '.')
 
   echo "::endgroup::"
 done
