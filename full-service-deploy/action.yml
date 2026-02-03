@@ -124,7 +124,7 @@ runs:
         tag_name="${{ inputs.service }}-$(date +"%Y-%m-%d_%H-%M-%S")"
         git config user.name "github-actions"
         git config user.email "github-actions@github.com"
-        git tag "$tag_name" ${{ steps.commit.outputs.sha }}
+        git tag "$tag_name" "${{ steps.commit.outputs.sha }}"
         git push origin "$tag_name"
       shell: bash
 

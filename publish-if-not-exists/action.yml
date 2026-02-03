@@ -33,7 +33,7 @@ runs:
           echo "Node $current is sufficient for npm 11.5.1"
         else
           echo "Node $current is below 22.9.0, upgrading"
-          echo "UPGRADE_NODE=true" >> $GITHUB_ENV
+          echo "UPGRADE_NODE=true" >> "$GITHUB_ENV"
         fi
 
     - name: '[OIDC] Install Node 22.x'
@@ -65,34 +65,35 @@ runs:
     - name: Publish
       shell: bash
       run: |
-        file_content=$(cat ${{ inputs.path }}/package.json)
+        file_content=$(cat "${{ inputs.path }}/package.json")
 
-        name=$(echo $file_content | jq -r ".name")
-        version=$(echo $file_content | jq -r ".version")
+        name=$(echo "$file_content" | jq -r ".name")
+        version=$(echo "$file_content" | jq -r ".version")
 
         echo "name: $name"
         echo "version: $version"
 
         package_ref="$name@$version"
 
-        if [[ "${{ inputs.package_manager }}" != "pnpm" && "${{ inputs.package_manager }}" != "npm" ]]; then
-          echo "Unsupported package manager: ${{ inputs.package_manager }}"
+        package_manager="${{ inputs.package_manager }}"
+        if [[ "$package_manager" != "pnpm" && "$package_manager" != "npm" ]]; then
+          echo "Unsupported package manager: $package_manager"
           exit 1
         fi
 
-        if npm view $package_ref > /dev/null 2>&1 ; then
+        if npm view "$package_ref" > /dev/null 2>&1 ; then
           echo "Package $package_ref already published"
           exit 0
         fi
 
 
         echo "Publishing version $package_ref"
-        echo "Using ${{ inputs.package_manager }} as package manager"
+        echo "Using $package_manager as package manager"
 
-        cd ${{ inputs.path }}
-        cmd="${{ inputs.package_manager }} publish --access public"
+        cd "${{ inputs.path }}" || exit 1
+        cmd="$package_manager publish --access public"
 
-        if [ "${{ inputs.package_manager }}" = "pnpm" ]; then
+        if [ "$package_manager" = "pnpm" ]; then
           cmd="$cmd --publish-branch ${{ github.ref_name }}"
         fi
 

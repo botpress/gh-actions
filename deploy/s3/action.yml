@@ -36,8 +36,8 @@ runs:
         aws-region: ${{ inputs.aws-region }}
     - name: Deploy files to S3 bucket
       shell: bash
-      run: aws s3 sync ${{ inputs.source }} s3://${{ inputs.bucket }}/${{ inputs.prefix }} --delete
+      run: aws s3 sync "${{ inputs.source }}" "s3://${{ inputs.bucket }}/${{ inputs.prefix }}" --delete
     - name: Invalidate Cloudfront
       if: ${{ inputs.invalidate-cloudfront == 'true' }}
       shell: bash
-      run: aws cloudfront create-invalidation --distribution-id ${{ inputs.cloudfront-distribution }} --paths "/${{ inputs.prefix }}/*"
+      run: aws cloudfront create-invalidation --distribution-id "${{ inputs.cloudfront-distribution }}" --paths "/${{ inputs.prefix }}/*"
