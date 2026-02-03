@@ -16,7 +16,7 @@ for script in $SCRIPT_FILES; do
 done
 
 if [ "$ERRORS" -gt 0 ]; then
-  echo "There are $ERRORS issues."
+  echo "There are $ERRORS script issues."
   exit 1
 else
   echo "No script issues found."

@@ -25,7 +25,7 @@ for workflow in $WORKFLOW_FILES; do
 done
 
 if [ "$ERRORS" -gt 0 ]; then
-  echo "There are $ERRORS issues."
+  echo "There are $ERRORS workflow issues."
   exit 1
 else
   echo "No workflow issues found."

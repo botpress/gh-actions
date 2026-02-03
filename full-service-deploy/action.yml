@@ -96,8 +96,8 @@ runs:
       id: deployment-info
       run: |
         SHA_SHORT=$(echo "${{ steps.commit.outputs.sha }}" | cut -c1-8)
-        echo "BUILD_START=$(date +%s)" >> $GITHUB_OUTPUT
-        echo "SHA_SHORT=${SHA_SHORT}" >> $GITHUB_OUTPUT
+        echo "BUILD_START=$(date +%s)" >> "$GITHUB_OUTPUT"
+        echo "SHA_SHORT=${SHA_SHORT}" >> "$GITHUB_OUTPUT"
 
         REF_INPUT="${{ inputs.ref }}"
         if [ -n "$REF_INPUT" ]; then
@@ -106,15 +106,17 @@ runs:
           REF_ROW=""
         fi
 
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
-        echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
-        if [ -n "$REF_ROW" ]; then
-          echo "$REF_ROW" >> $GITHUB_STEP_SUMMARY
-        fi
-        echo "| Commit | [\`${SHA_SHORT}\`](https://github.com/${{ github.repository }}/commit/${{ steps.commit.outputs.sha }}) |" >> $GITHUB_STEP_SUMMARY
-        echo "| Target | \`${{ inputs.target }}\` |" >> $GITHUB_STEP_SUMMARY
-        echo "| Builder | \`${{ inputs.builder }}\` |" >> $GITHUB_STEP_SUMMARY
+        {
+          echo ""
+          echo "| Property | Value |"
+          echo "|----------|-------|"
+          if [ -n "$REF_ROW" ]; then
+            echo "$REF_ROW"
+          fi
+          echo "| Commit | [\`${SHA_SHORT}\`](https://github.com/${{ github.repository }}/commit/${{ steps.commit.outputs.sha }}) |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Target | \`${{ inputs.target }}\` |"
+          echo "| Builder | \`${{ inputs.builder }}\` |"
+        } >> "$GITHUB_STEP_SUMMARY"
       shell: bash
 
     - name: Create and push service tag
@@ -157,7 +159,7 @@ runs:
       id: build-summary
       run: |
         BUILD_END=$(date +%s)
-        BUILD_DURATION=$((BUILD_END - ${{ steps.deployment-info.outputs.BUILD_START }}))
+        BUILD_DURATION=$((BUILD_END - "${{ steps.deployment-info.outputs.BUILD_START }}"))
 
         format_duration() {
           local total_seconds=$1
@@ -170,10 +172,10 @@ runs:
           fi
         }
 
-        BUILD_FORMATTED=$(format_duration $BUILD_DURATION)
+        BUILD_FORMATTED=$(format_duration "$BUILD_DURATION")
 
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "**Build:** ${BUILD_FORMATTED} ✅" >> $GITHUB_STEP_SUMMARY
+        echo "" >> "$GITHUB_STEP_SUMMARY"
+        echo "**Build:** ${BUILD_FORMATTED} ✅" >> "$GITHUB_STEP_SUMMARY"
       shell: bash
 
     - name: Deploy to ECS

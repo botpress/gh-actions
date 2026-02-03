@@ -40,7 +40,7 @@ runs:
   steps:
     - name: Start Deploy Timer
       id: deploy-start
-      run: echo "START_TIME=$(date +%s)" >> $GITHUB_OUTPUT
+      run: echo "START_TIME=$(date +%s)" >> "$GITHUB_OUTPUT"
       shell: bash
     - uses: actions/checkout@v4
 
@@ -281,7 +281,7 @@ runs:
           --services "${SERVICE_ARNS[@]}"
 
         WAIT_EXIT_CODE=$?
-        echo "ROLLED_BACK=false" >> $GITHUB_OUTPUT
+        echo "ROLLED_BACK=false" >> "$GITHUB_OUTPUT"
 
         if [ $WAIT_EXIT_CODE -ne 0 ]; then
           echo "Deployment failed to stabilize. Checking if tasks are crashing..."
@@ -304,7 +304,7 @@ runs:
 
           if [ $STOPPED_COUNT -gt 0 ]; then
             echo "Services are failing. Rolling back to previous stable images"
-            echo "ROLLED_BACK=true" >> $GITHUB_OUTPUT
+            echo "ROLLED_BACK=true" >> "$GITHUB_OUTPUT"
 
             ECR_REGISTRY="${{ steps.ecr.outputs.registry }}"
             IMAGE_NAME="$ECR_REGISTRY/${{ fromJson(env.CONFIG).repository }}"
@@ -359,7 +359,7 @@ runs:
       id: deploy-timing
       run: |
         END_TIME=$(date +%s)
-        DURATION=$((END_TIME - ${{ steps.deploy-start.outputs.START_TIME }}))
+        DURATION=$((END_TIME - "${{ steps.deploy-start.outputs.START_TIME }}"))
         ROLLED_BACK="${{ steps.stabilize.outputs.ROLLED_BACK || 'false' }}"
         DEPLOY_STATUS="${{ steps.stabilize.outcome }}"
 
@@ -382,10 +382,10 @@ runs:
           STATUS_ICON="❌"
         fi
 
-        echo "**Deploy:** ${DEPLOY_FORMATTED} ${STATUS_ICON}" >> $GITHUB_STEP_SUMMARY
+        echo "**Deploy:** ${DEPLOY_FORMATTED} ${STATUS_ICON}" >> "$GITHUB_STEP_SUMMARY"
 
         if [ "$ROLLED_BACK" = "true" ]; then
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "⚠️ **Rolled back** - tasks were crashing, check service logs" >> $GITHUB_STEP_SUMMARY
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "⚠️ **Rolled back** - tasks were crashing, check service logs" >> "$GITHUB_STEP_SUMMARY"
         fi
       shell: bash
