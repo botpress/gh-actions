@@ -33,4 +33,3 @@ jobs:
       - name: Run ESLint
         run: |
           yarn eslint
-          echo $0

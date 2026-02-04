@@ -1,4 +1,3 @@
-
 #!/bin/bash
 set -o pipefail
 set -eux
@@ -10,6 +9,3 @@ git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
 # git commit -m "Release $TAG_NAME"
 git tag -f "$TAG_NAME"
 git push origin "$TAG_NAME"
-
-if true; then
-  echo $A
