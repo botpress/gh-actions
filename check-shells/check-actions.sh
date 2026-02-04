@@ -8,7 +8,7 @@ fi
 
 source "$(dirname "$0")/common.sh"
 
-ACTION_FILES="$(find "$ROOT_DIR" -type f -name action.yml)"
+ACTION_FILES="$(find "$ROOT_DIR" -type f -name action.yml | sed 's|^\./||')"
 ERRORS_COUNT=0
 
 for file in $ACTION_FILES; do

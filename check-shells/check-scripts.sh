@@ -9,7 +9,7 @@ fi
 
 source "$(dirname "$0")/common.sh"
 
-SCRIPT_FILES="$(find "$ROOT_DIR" -type f -name '*.sh')"
+SCRIPT_FILES="$(find "$ROOT_DIR" -type f -name '*.sh' | sed 's|^\./||')"
 ERRORS_COUNT=0
 
 for file in $SCRIPT_FILES; do

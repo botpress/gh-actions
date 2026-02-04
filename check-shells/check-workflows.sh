@@ -8,7 +8,7 @@ fi
 
 source "$(dirname "$0")/common.sh"
 
-WORKFLOW_FILES="$(find "$ROOT_DIR" -type f -name '*.yml')"
+WORKFLOW_FILES="$(find "$ROOT_DIR" -type f -name '*.yml' | sed 's|^\./||')"
 ERRORS_COUNT=0
 
 for file in $WORKFLOW_FILES; do
@@ -30,7 +30,7 @@ for file in $WORKFLOW_FILES; do
     
     ((ERRORS_COUNT+=$(echo "$errors" | yq 'length')))
 
-  done < <(yq -o=json -I=0 '.jobs[]?.steps[]? | select(has("run"))' "$file")
+  done < <(yq -o=json -I=0 '.jobs[]?.steps[]? | select(has("run")) | {"line": (.run | line), "name": .name, "run": .run}' "$file")
 
   echo "${END_GROUP}"
 done
