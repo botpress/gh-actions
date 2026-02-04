@@ -30,7 +30,7 @@ for action in $ACTION_FILES; do
       ((ERRORS++))
     fi
 
-  done < <(yq '.runs.steps[]? | select(has("run"))' "$action" | jq -c '.')
+  done < <(yq -o=json -I=0 '.runs.steps[]? | select(has("run"))' "$action")
 
   echo "::endgroup::"
 done

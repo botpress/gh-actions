@@ -30,16 +30,25 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: Install shellcheck and yq
+    - name: Install shellcheck
       shell: bash
       run: |
-        echo "::group::Installing shellcheck and yq"
+        echo "::group::Installing shellcheck"
         sudo apt update
-        sudo apt install -y shellcheck yq jq
+        sudo apt install -y shellcheck
         echo "::endgroup::"
         shellcheck --version
+
+    - name: Install yq
+      shell: bash
+      run: |
+        echo "::group::Installing yq"
+        sudo apt install -y wget
+        VERSION="v4.52.2"
+        PLATFORM="linux_amd64"
+        wget -qO- https://github.com/mikefarah/yq/releases/download/${VERSION}/yq_${PLATFORM}.tar.gz | tar xz && sudo mv yq_${PLATFORM} /usr/local/bin/yq
+        echo "::endgroup::"
         yq --version
-        jq --version
 
     - name: Checks
       shell: bash

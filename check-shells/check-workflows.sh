@@ -27,7 +27,7 @@ for workflow in $WORKFLOW_FILES; do
       ((ERRORS++))
     fi
 
-  done < <(yq '.jobs[]?.steps[]? | select(has("run"))' "$workflow" | jq -c '.')
+  done < <(yq -o=json -I=0 '.jobs[]?.steps[]? | select(has("run"))' "$workflow")
 
   echo "::endgroup::"
 done
