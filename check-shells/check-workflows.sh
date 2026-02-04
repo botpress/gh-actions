@@ -1,39 +1,42 @@
 #!/bin/bash
 
 ROOT_DIR="${1:-.github/workflows}"
-
-
 if [ ! -d "$ROOT_DIR" ]; then
   echo "Error: Directory '$ROOT_DIR' does not exist."
   exit 1
 fi
 
-WORKFLOW_FILES="$(find "$ROOT_DIR" -type f -name '*.yml')"
-ERRORS=0
+source "$(dirname "$0")/common.sh"
 
-for workflow in $WORKFLOW_FILES; do
-  echo "::group::Checking workflow file: $workflow"
+WORKFLOW_FILES="$(find "$ROOT_DIR" -type f -name '*.yml')"
+ERRORS_COUNT=0
+
+for file in $WORKFLOW_FILES; do
+  echo "${GROUP}Checking workflow file: $file"
 
   while IFS= read -r step; do
 
-    NAME=$(echo "$step" | yq -r '.name // .run' | head -1)
-    echo "Checking step: $NAME"
+    name=$(echo "$step" | yq -r '.name // .run' | head -1)
+    line=$(echo "$step" | yq -r '.line // ""')
+    script=$(echo "$step" | yq -r '.run')
+
+    echo "Checking step: $name ($file:$line)"
 
     # SC2148: script missing shebang
     # SC2296: github variables expansion: ${{something}}
-    if (printf '%s\n' "$step" | yq -r '.run' | shellcheck - -e SC2148 -e SC2296); then
-      echo "No issues found."
-    else
-      ((ERRORS++))
-    fi
+    errors=$(echo "$script" | shellcheck - -f json -x -e SC2148 -e SC2296)
 
-  done < <(yq -o=json -I=0 '.jobs[]?.steps[]? | select(has("run"))' "$workflow")
+    display_shellcheck_errors "$errors" "$script" "$file" "$line"
+    
+    ((ERRORS_COUNT+=$(echo "$errors" | yq 'length')))
 
-  echo "::endgroup::"
+  done < <(yq -o=json -I=0 '.jobs[]?.steps[]? | select(has("run"))' "$file")
+
+  echo "${END_GROUP}"
 done
 
-if [ "$ERRORS" -gt 0 ]; then
-  echo "There are $ERRORS workflow issues."
+if [ "$ERRORS_COUNT" -gt 0 ]; then
+  echo "There are $ERRORS_COUNT workflow issues."
   exit 1
 else
   echo "No workflow issues found."

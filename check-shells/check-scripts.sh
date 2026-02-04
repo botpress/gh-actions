@@ -7,23 +7,25 @@ if [ ! -d "$ROOT_DIR" ]; then
   exit 1
 fi
 
+source "$(dirname "$0")/common.sh"
+
 SCRIPT_FILES="$(find "$ROOT_DIR" -type f -name '*.sh')"
-ERRORS=0
+ERRORS_COUNT=0
 
-for script in $SCRIPT_FILES; do
-  echo "::group::Checking script file: $script"
+for file in $SCRIPT_FILES; do
+  echo "${GROUP}Checking script file: $file"
 
-  if (shellcheck "$script"); then
-    echo "No issues found."
-  else
-    ((ERRORS++))
-  fi
+  errors=$(shellcheck "$file" -f json -x -P "$(dirname "$file")")
+  
+  display_shellcheck_errors "$errors" "$(cat "$file")" "$file"
 
-  echo "::endgroup::"
+  ((ERRORS_COUNT+=$(echo "$errors" | yq 'length')))
+
+  echo "${END_GROUP}"
 done
 
-if [ "$ERRORS" -gt 0 ]; then
-  echo "There are $ERRORS script issues."
+if [ "$ERRORS_COUNT" -gt 0 ]; then
+  echo "There are $ERRORS_COUNT script issues."
   exit 1
 else
   echo "No script issues found."
