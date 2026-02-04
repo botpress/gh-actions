@@ -9,23 +9,28 @@ fi
 
 source "$(dirname "$0")/common.sh"
 
-SCRIPT_FILES="$(find "$ROOT_DIR" -type f -name '*.sh' | sed 's|^\./||')"
-ERRORS_COUNT=0
+files="$(find "$ROOT_DIR" -type f -name '*.sh' | sed 's|^\./||')"
+errors_count=0
 
-for file in $SCRIPT_FILES; do
-  echo "${GROUP}Checking script file: $file"
+for file in $files; do
+  group "Checking script file: $file"
+  file_errors_count=0
 
   errors=$(shellcheck "$file" -f json -x -P "$(dirname "$file")")
   
   display_shellcheck_errors "$errors" "$(cat "$file")" "$file"
 
-  ((ERRORS_COUNT+=$(echo "$errors" | yq 'length')))
+  ((file_errors_count += $(echo "$errors" | yq 'length')))
 
-  echo "${END_GROUP}"
+  end_group
+  if [ "$file_errors_count" -gt 0 ]; then
+    display_error "$file_errors_count issues found in $file."
+  fi
+  ((errors_count += file_errors_count))
 done
 
-if [ "$ERRORS_COUNT" -gt 0 ]; then
-  echo "There are $ERRORS_COUNT script issues."
+if [ "$errors_count" -gt 0 ]; then
+  display_error "There are $errors_count script issues."
   exit 1
 else
   echo "No script issues found."

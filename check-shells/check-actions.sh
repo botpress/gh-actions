@@ -8,15 +8,16 @@ fi
 
 source "$(dirname "$0")/common.sh"
 
-ACTION_FILES="$(find "$ROOT_DIR" -type f -name action.yml | sed 's|^\./||')"
-ERRORS_COUNT=0
+files="$(find "$ROOT_DIR" -type f -name action.yml | sed 's|^\./||')"
+errors_count=0
 
-for file in $ACTION_FILES; do
+for file in $files; do
   if [ "$(yq -c '.runs | has("steps")' "$file")" != "true" ]; then
     continue
   fi
 
-  echo "${GROUP}Checking action file: $file"
+  group "Checking action file: $file"
+  file_errors_count=0
 
   while IFS= read -r step; do
 
@@ -32,15 +33,19 @@ for file in $ACTION_FILES; do
 
     display_shellcheck_errors "$errors" "$script" "$file" "$line"
     
-    ((ERRORS_COUNT+=$(echo "$errors" | yq 'length')))
+    ((file_errors_count += $(echo "$errors" | yq 'length')))
 
   done < <(yq -o=json -I=0 '.runs.steps[]? | select(has("run")) | {"line": (.run | line), "name": .name, "run": .run}' "$file")
 
-  echo "${END_GROUP}"
+  end_group
+  if [ "$file_errors_count" -gt 0 ]; then
+    display_error "$file_errors_count issues found in $file."
+  fi
+  ((errors_count += file_errors_count))
 done
 
-if [ "$ERRORS_COUNT" -gt 0 ]; then
-  echo "There are $ERRORS_COUNT action issues."
+if [ "$errors_count" -gt 0 ]; then
+  display_error "There are $errors_count action issues."
   exit 1
 else
   echo "No action issues found."
