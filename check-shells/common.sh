@@ -4,9 +4,10 @@ if [ "$GITHUB_ACTIONS" = "true" ]; then
   GROUP="::group::"
   END_GROUP="::endgroup::"
   display_error() {
-    echo "::error file=${5},line=${6},endLine=${7},col=${8},endColumn=${9},title=${1}::SC${2}: ${3}"
+    echo "::error file=$5,line=$6,endLine=$7,col=$8,endColumn=$9,title=$1::SC$2: $3 ($5:$6-$7)"
     echo "::notice::https://www.shellcheck.net/wiki/SC$2"
-    echo "${4}"
+    # shellcheck disable=SC2001
+    echo "$4" | sed 's/^/\t/'
   }
 else
   # shellcheck disable=SC2034
