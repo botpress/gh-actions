@@ -40,7 +40,7 @@ runs:
   steps:
     - name: Start Deploy Timer
       id: deploy-start
-      run: echo "START_TIME=$(date +%s)" >> $GITHUB_OUTPUT
+      run: echo "START_TIME=$(date +%s)" >> "$GITHUB_OUTPUT"
       shell: bash
     - uses: actions/checkout@v4
 
@@ -73,7 +73,7 @@ runs:
         fi
 
         echo "Service '$SELECTED_SERVICE' is valid."
-        echo "CONFIG=$CONFIG" >> $GITHUB_ENV
+        echo "CONFIG=$CONFIG" >> "$GITHUB_ENV"
 
     # Configure credentials
     - uses: aws-actions/configure-aws-credentials@v3
@@ -119,28 +119,28 @@ runs:
           docker tag "$IMAGE_NAME:$IMAGE_TAG" "$IMAGE_NAME:$TAG_NAME"
           docker push "$IMAGE_NAME:$TAG_NAME"
           
-          echo "PREVIOUS_STABLE_TAG_${TAG_NAME}=$PREVIOUS_STABLE_TAG" >> $GITHUB_ENV
+          echo "PREVIOUS_STABLE_TAG_${TAG_NAME}=$PREVIOUS_STABLE_TAG" >> "$GITHUB_ENV"
         }
 
         echo "::group::Tagging and Pushing Images"
         case "$TARGET" in
           main)
             tag_and_push "$ENVIRONMENT"
-            echo "TAG_NAME=$ENVIRONMENT" >> $GITHUB_ENV
+            echo "TAG_NAME=$ENVIRONMENT" >> "$GITHUB_ENV"
             ;;
           blue)
             tag_and_push "blue_${ENVIRONMENT}"
-            echo "TAG_NAME=blue_${ENVIRONMENT}" >> $GITHUB_ENV
+            echo "TAG_NAME=blue_${ENVIRONMENT}" >> "$GITHUB_ENV"
             ;;
           green)
             tag_and_push "green_${ENVIRONMENT}"
-            echo "TAG_NAME=green_${ENVIRONMENT}" >> $GITHUB_ENV
+            echo "TAG_NAME=green_${ENVIRONMENT}" >> "$GITHUB_ENV"
             ;;
           all)
             tag_and_push "$ENVIRONMENT"
             tag_and_push "blue_${ENVIRONMENT}"
             tag_and_push "green_${ENVIRONMENT}"
-            echo "TAG_NAME=$ENVIRONMENT,blue_${ENVIRONMENT},green_${ENVIRONMENT}" >> $GITHUB_ENV
+            echo "TAG_NAME=$ENVIRONMENT,blue_${ENVIRONMENT},green_${ENVIRONMENT}" >> "$GITHUB_ENV"
             ;;
           *)
             echo "Invalid target: $TARGET"
@@ -170,13 +170,14 @@ runs:
         fi
 
         echo "Cluster found: $CLUSTER_ARN"
-        echo "CLUSTER_ARN=$CLUSTER_ARN" >> $GITHUB_ENV
+        echo "CLUSTER_ARN=$CLUSTER_ARN" >> "$GITHUB_ENV"
 
     # Updates each services with the new image
     - name: Deploy Services
       shell: bash
       run: |
         TARGET="${{ inputs.target }}"
+        SKIP_ECS_UPDATE="${{ inputs.skip-ecs-update }}"
         IFS=',' read -r -a SERVICES <<< "${{ join(fromJson(env.CONFIG).services, ',') }}"
         for SERVICE_PREFIX in "${SERVICES[@]}"; do
           SERVICE_ARN=$(aws ecs list-services \
@@ -218,7 +219,7 @@ runs:
 
           echo "Service to update: $SERVICE_ARN"
 
-          if [[ "${{ inputs.skip-ecs-update }}" != "true" ]]; then
+          if [[ "$SKIP_ECS_UPDATE" != "true" ]]; then
             echo "::group::Updating service: $SERVICE_ARN"
             aws ecs update-service \
               --cluster "$CLUSTER_ARN" \
@@ -270,7 +271,7 @@ runs:
           esac
 
           if [ "$SHOULD_WAIT" = true ]; then
-            SERVICE_ARNS+=($SERVICE_ARN)
+            SERVICE_ARNS+=("$SERVICE_ARN")
           fi
         done
 
@@ -280,7 +281,7 @@ runs:
           --services "${SERVICE_ARNS[@]}"
 
         WAIT_EXIT_CODE=$?
-        echo "ROLLED_BACK=false" >> $GITHUB_OUTPUT
+        echo "ROLLED_BACK=false" >> "$GITHUB_OUTPUT"
 
         if [ $WAIT_EXIT_CODE -ne 0 ]; then
           echo "Deployment failed to stabilize. Checking if tasks are crashing..."
@@ -303,7 +304,7 @@ runs:
 
           if [ $STOPPED_COUNT -gt 0 ]; then
             echo "Services are failing. Rolling back to previous stable images"
-            echo "ROLLED_BACK=true" >> $GITHUB_OUTPUT
+            echo "ROLLED_BACK=true" >> "$GITHUB_OUTPUT"
 
             ECR_REGISTRY="${{ steps.ecr.outputs.registry }}"
             IMAGE_NAME="$ECR_REGISTRY/${{ fromJson(env.CONFIG).repository }}"
@@ -358,7 +359,7 @@ runs:
       id: deploy-timing
       run: |
         END_TIME=$(date +%s)
-        DURATION=$((END_TIME - ${{ steps.deploy-start.outputs.START_TIME }}))
+        DURATION=$((END_TIME - "${{ steps.deploy-start.outputs.START_TIME }}"))
         ROLLED_BACK="${{ steps.stabilize.outputs.ROLLED_BACK || 'false' }}"
         DEPLOY_STATUS="${{ steps.stabilize.outcome }}"
 
@@ -381,10 +382,10 @@ runs:
           STATUS_ICON="❌"
         fi
 
-        echo "**Deploy:** ${DEPLOY_FORMATTED} ${STATUS_ICON}" >> $GITHUB_STEP_SUMMARY
+        echo "**Deploy:** ${DEPLOY_FORMATTED} ${STATUS_ICON}" >> "$GITHUB_STEP_SUMMARY"
 
         if [ "$ROLLED_BACK" = "true" ]; then
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "⚠️ **Rolled back** - tasks were crashing, check service logs" >> $GITHUB_STEP_SUMMARY
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "⚠️ **Rolled back** - tasks were crashing, check service logs" >> "$GITHUB_STEP_SUMMARY"
         fi
       shell: bash
