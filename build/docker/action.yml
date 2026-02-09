@@ -9,7 +9,6 @@ inputs:
   dockerfile:
     description: 'Path to Dockerfile'
     required: false
-    default: 'Dockerfile'
   push:
     description: 'Whether to push the image to the registry'
     required: true
