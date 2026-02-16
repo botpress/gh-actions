@@ -1,0 +1,245 @@
+name: Deploy Lambda
+description: Deploys a new version of an AWS Lambda function from a ECR image
+
+inputs:
+  stack:
+    description: CloudFormation stack name where the Lambda is deployed
+    required: true
+    type: string
+  lambda:
+    description: Beginning of the Lambda name
+    required: true
+    type: string
+  repository:
+    description: ECR repository name
+    required: true
+    type: string
+  image-tag:
+    description: Tag of the image in ECR to deploy
+    required: true
+    type: string
+  environment:
+    description: Environment to deploy (staging or production)
+    required: true
+    type: choice
+    options:
+      - staging
+      - production
+  role-lambda-update:
+    description: Role for the infra update
+    required: false
+    type: string
+    default: sso_infra_update
+
+runs:
+  using: composite
+  steps:
+
+    - name: Configure ECR credentials
+      uses: aws-actions/configure-aws-credentials@v6
+      with:
+        role-session-name: container_pusher
+        role-to-assume: arn:aws:iam::986677156374:role/actions/build/container_pusher
+        aws-region: us-east-1
+
+    - name: Tag Image for Environment
+      shell: bash
+      run: |
+        REPOSITORY="${{ inputs.repository }}"
+        ENVIRONMENT="${{ inputs.environment }}"
+        IMAGE_TAG="${{ inputs.image-tag }}"
+        SKIP_TAGGING_STABLE="${{ inputs.skip-tagging-stable }}"
+
+        if [ "$SKIP_TAGGING_STABLE" = "true" ]; then
+          echo "Skipping tagging previous image as stable"
+        else
+          echo "::group::Tagging previous image as stable..."
+          aws ecr batch-get-image \
+            --repository-name "$REPOSITORY" \
+            --image-ids imageTag="$ENVIRONMENT" \
+            --query 'images[0].imageManifest' \
+            --output text > previous-image-manifest.json
+          if [ "$(cat previous-image-manifest.json)" = "None" ]; then
+            echo "::endgroup::"
+            echo "No previous image found for environment ${ENVIRONMENT}, skipping stable tagging"
+          else
+            cat previous-image-manifest.json
+            aws ecr put-image \
+              --repository-name "$REPOSITORY" \
+              --image-tag "${ENVIRONMENT}_stable" \
+              --image-manifest file://previous-image-manifest.json
+            echo "::endgroup::"
+            echo "Tagged previous image as stable: ${ENVIRONMENT}_stable"
+          fi
+        fi
+
+        echo "::group::Tagging image $IMAGE_TAG as current for environment $ENVIRONMENT..."
+        aws ecr batch-get-image \
+          --repository-name "$REPOSITORY" \
+          --image-ids imageTag="$IMAGE_TAG" \
+          --query 'images[0].imageManifest' \
+          --output text > image-manifest.json
+        if [ "$(cat image-manifest.json)" = "None" ]; then
+          echo "::endgroup::"
+          echo "Failed to get image manifest for image tag $IMAGE_TAG in repository $REPOSITORY"
+          exit 1
+        fi
+        cat image-manifest.json
+        aws ecr put-image \
+          --repository-name "$REPOSITORY" \
+          --image-tag "$ENVIRONMENT" \
+          --image-manifest file://image-manifest.json
+        echo "::endgroup::"
+        echo "Tagged image $IMAGE_TAG as $ENVIRONMENT"
+
+        echo "PREVIOUS_STABLE_TAG_${ENVIRONMENT}=${ENVIRONMENT}_stable" >> "$GITHUB_ENV"
+        echo "TAG_NAME=$ENVIRONMENT" >> "$GITHUB_ENV"
+
+    - name: Configure ${{ inputs.environment }} credentials
+      uses: aws-actions/configure-aws-credentials@v6
+      with:
+        role-session-name: ${{ inputs.role-lambda-update }}
+        role-to-assume: ${{ inputs.environment == 'staging' && format('arn:aws:iam::236194216641:role/{0}', inputs.role-lambda-update) || format('arn:aws:iam::981662312449:role/{0}', inputs.role-lambda-update) }}
+        aws-region: us-east-1
+
+    # We search by prefix because the lambda is provisioned by CDK with random suffix at the end of the name, and we also search with cloudformation because we have too many lambdas to list them all efficiently
+    - name: Find lambda by prefix
+      id: lambda
+      shell: bash
+      run: |
+        STACK_NAME="${{ inputs.stack }}"
+        LAMBDA_ID="${{ inputs.lambda }}"
+
+        echo "Finding lambda name of lambda $LAMBDA_ID in stack $STACK_NAME..."
+        LAMBDA_NAME="$(aws cloudformation list-stack-resources \
+          --stack-name "$STACK_NAME" \
+          --query "StackResourceSummaries[?
+            ResourceType=='AWS::Lambda::Function' && 
+            starts_with(PhysicalResourceId, '$STACK_NAME-$LAMBDA_ID')
+          ].PhysicalResourceId" \
+          --output text)"
+
+        if [ -z "$LAMBDA_NAME" ]; then
+          echo "Lambda function name of lambda $LAMBDA_ID in stack $STACK_NAME not found"
+          exit 1
+        fi
+
+        echo "Found lambda name: $LAMBDA_NAME"
+        echo "lambda_name=$LAMBDA_NAME" >> "$GITHUB_OUTPUT"
+
+    - name: Update lambda function code
+      shell: bash
+      run: |
+        LAMBDA_NAME="${{ steps.lambda.outputs.lambda_name }}"
+
+        echo "Getting actual image URI from the lambda..."
+        FUNCTION_IMAGE_URI="$(aws lambda get-function \
+          --function-name "$LAMBDA_NAME" \
+          --query 'Code.ImageUri' \
+          --output text)"
+        echo "Current lambda function image URI: $FUNCTION_IMAGE_URI"
+
+        echo "::group::Updating lambda function code"
+        aws lambda update-function-code \
+          --function-name "$LAMBDA_NAME" \
+          --image-uri "$FUNCTION_IMAGE_URI"
+        echo "::endgroup::"
+
+        echo "Waiting for lambda function update to complete..."
+        aws lambda wait function-updated \
+          --function-name "$LAMBDA_NAME"
+        echo "Lambda function update completed"
+
+    - name: Check lambda
+      shell: bash
+      run: |
+        LAMBDA_NAME="${{ steps.lambda.outputs.lambda_name }}"
+
+        echo "::group::Invoking Lambda $LAMBDA_NAME to verify deployment..."
+        PAYLOAD=$(echo '{}' | base64)
+        STATUS_CODE="$(
+          aws lambda invoke \
+            --function-name "$LAMBDA_NAME" \
+            --qualifier "\$LATEST" \
+            --payload "$PAYLOAD" \
+            --query 'StatusCode' \
+            --output text \
+            /tmp/lambda_test_output.json
+        )"
+
+        if [ "$STATUS_CODE" -eq 200 ]; then
+          echo "::endgroup::"
+          echo "Lambda invocation succeeded with status code: $STATUS_CODE"
+          exit 0
+        else
+          echo "::endgroup::"
+        fi
+
+        echo "Lambda invocation failed with status code: $STATUS_CODE"
+        echo "::group::Lambda output:"
+        cat /tmp/lambda_test_output.json
+        echo "::endgroup::"
+
+        echo "Need rolling back to previous stable image..."
+        echo "need_rollback=true" >> "$GITHUB_ENV"
+      
+    - name: Configure ECR credentials
+      uses: aws-actions/configure-aws-credentials@v6
+      with:
+        role-session-name: container_pusher
+        role-to-assume: arn:aws:iam::986677156374:role/actions/build/container_pusher
+        aws-region: us-east-1
+
+    - name: Rollback (retag stable image)
+      if: env.need_rollback == 'true'
+      shell: bash
+      run: |
+        REPOSITORY="${{ inputs.repository }}"
+        ENVIRONMENT="${{ inputs.environment }}"
+
+        echo "::group::Retagging stable image as current for environment $ENVIRONMENT"
+        aws ecr batch-get-image \
+          --repository-name "$REPOSITORY" \
+          --image-ids imageTag="${ENVIRONMENT}_stable" \
+          --query 'images[0].imageManifest' \
+          --output text > stable-image-manifest.json
+        if [ "$(cat stable-image-manifest.json)" = "None" ]; then
+          echo "::endgroup::"
+          echo "Failed to get stable image manifest for tag ${ENVIRONMENT}_stable in repository $REPOSITORY"
+          exit 1
+        fi
+        cat stable-image-manifest.json
+        aws ecr put-image \
+          --repository-name "$REPOSITORY" \
+          --image-tag "$ENVIRONMENT" \
+          --image-manifest file://stable-image-manifest.json
+        echo "::endgroup::"
+        echo "Retagged stable image as current for environment $ENVIRONMENT"
+
+    - name: Configure ${{ inputs.environment }} credentials
+      uses: aws-actions/configure-aws-credentials@v6
+      with:
+        role-session-name: ${{ inputs.role-lambda-update }}
+        role-to-assume: ${{ inputs.environment == 'staging' && format('arn:aws:iam::236194216641:role/{0}', inputs.role-lambda-update) || format('arn:aws:iam::981662312449:role/{0}', inputs.role-lambda-update) }}
+        aws-region: us-east-1
+
+    - name: Rollback (reupdate lambda)
+      if: env.need_rollback == 'true'
+      shell: bash
+      run: |
+        LAMBDA_NAME="${{ steps.lambda.outputs.lambda_name }}"
+        
+        echo "Reupdate lambda function code to use stable image"
+        FUNCTION_IMAGE_URI="$(aws lambda get-function \
+          --function-name "$LAMBDA_NAME" \
+          --query 'Code.ImageUri' \
+          --output text)"
+        aws lambda update-function-code \
+          --function-name "$LAMBDA_NAME" \
+          --image-uri "$FUNCTION_IMAGE_URI"
+        echo "Waiting for lambda function update to complete..."
+        aws lambda wait function-updated \
+          --function-name "$LAMBDA_NAME"
+        echo "Rollback completed"
+
+        exit 1
