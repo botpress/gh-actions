@@ -85,6 +85,8 @@ runs:
     - name: Login to Amazon ECR
       id: ecr
       uses: aws-actions/amazon-ecr-login@v1
+      with:
+        mask-password: true
 
     - name: Tag Image for Environment
       shell: bash
