@@ -30,6 +30,10 @@ inputs:
   sentry-auth-token:
     description: 'Sentry auth token (optional)'
     required: false
+  force-build:
+    description: 'Whether to force the build if the image already exists'
+    type: boolean
+    default: false
 
   builder:
     description: 'Name of the builder to use: docker (default), depot'
@@ -139,6 +143,7 @@ runs:
         repository: ${{ inputs.repository }}
         context: ${{ inputs.context }}
         tag: ${{ steps.commit.outputs.sha }}
+        force: ${{ inputs.force-build }}
         sentry-auth-token: ${{ inputs.sentry-auth-token }}
         push: true
 
