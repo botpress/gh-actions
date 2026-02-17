@@ -1,4 +1,5 @@
 name: Docker Build using Depot
+description: Build and push Docker image to ECR using Depot
 
 inputs:
   # Build
@@ -9,7 +10,6 @@ inputs:
   dockerfile:
     description: 'Path to Dockerfile'
     required: false
-    default: 'Dockerfile'
   push:
     description: 'Whether to push the image to the registry'
     required: true
@@ -18,6 +18,13 @@ inputs:
     description: 'Optional Docker tag'
     required: false
     default: ''
+  provenance:
+    description: 'Enable/disable provenance attestation'
+    required: false
+  force:
+    description: 'Whether to force the build if it exists'
+    type: boolean
+    default: false
 
   # Custom variables
   sentry-auth-token:
@@ -54,13 +61,30 @@ runs:
         role-to-assume: ${{ inputs.aws-role }}
         aws-region: ${{ inputs.aws-region }}
 
+    - name: Check if image already exists
+      if: ${{ !inputs.force }}
+      shell: bash
+      env:
+        ECR_REGISTRY: ${{ steps.ecr.outputs.registry }}
+        ECR_REPOSITORY: ${{ inputs.repository }}
+        DOCKER_TAG: ${{ inputs.tag }}
+      run: |
+        if aws ecr describe-images --repository-name "$ECR_REPOSITORY" --image-ids imageTag="$DOCKER_TAG" &> /dev/null; then
+          echo "Image already exists, skipping build and push steps."
+          echo "exists=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "Image does not exist, proceeding with build and push steps."
+        fi
+
     - uses: aws-actions/amazon-ecr-login@v1
       id: ecr
+      if: ${{ steps.check.outputs.exists != 'true' }}
       with:
         mask-password: true
 
     - uses: docker/metadata-action@v4
       id: meta
+      if: ${{ steps.check.outputs.exists != 'true' }}
       with:
         images: ${{ steps.ecr.outputs.registry }}/${{ inputs.repository }}
         flavor: |
@@ -72,12 +96,14 @@ runs:
 
     - name: Set BUILD_DATE
       id: meta_date
+      if: ${{ steps.check.outputs.exists != 'true' }}
       shell: bash
       run: |
         export TZ=America/Toronto
         echo "timestamp=$(date +"%Y-%m-%d %H:%M:%S")" >> "$GITHUB_OUTPUT"
 
     - name: Create ECR Registry
+      if: ${{ steps.check.outputs.exists != 'true' }}
       shell: bash
       env:
         ECR_REPOSITORY: ${{ inputs.repository }}
@@ -89,9 +115,11 @@ runs:
         aws ecr set-repository-policy --repository-name "$ECR_REPOSITORY" --policy-text file://repository-policy.json &> /dev/null
 
     - name: Set up Depot CLI
+      if: ${{ steps.check.outputs.exists != 'true' }}
       uses: depot/setup-action@v1
 
     - uses: depot/build-push-action@v1
+      if: ${{ steps.check.outputs.exists != 'true' }}
       with:
         build-args: |
           SENTRY_AUTH_TOKEN=${{ inputs.sentry-auth-token }}
@@ -105,4 +133,5 @@ runs:
         push: ${{ inputs.push }}
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
+        provenance: ${{ inputs.provenance }}
         project: ${{ inputs.depot-project }}
