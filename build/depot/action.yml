@@ -62,6 +62,7 @@ runs:
         aws-region: ${{ inputs.aws-region }}
 
     - name: Check if image already exists
+      id: check
       if: ${{ inputs.force == 'false' }}
       shell: bash
       env:
