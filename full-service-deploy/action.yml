@@ -30,6 +30,10 @@ inputs:
   sentry-auth-token:
     description: 'Sentry auth token (optional)'
     required: false
+  force-build:
+    description: 'Whether to force the build if the image already exists'
+    type: boolean
+    default: false
 
   builder:
     description: 'Name of the builder to use: docker (default), depot'
@@ -133,24 +137,26 @@ runs:
     - name: Build and Push Image (Docker)
       if: ${{ inputs.builder == 'docker' }}
       id: build-docker
-      uses: botpress/gh-actions/build/docker@v3.1
+      uses: ./build/docker
       with:
         dockerfile: ${{ inputs.dockerfile }}
         repository: ${{ inputs.repository }}
         context: ${{ inputs.context }}
         tag: ${{ steps.commit.outputs.sha }}
+        force: ${{ inputs.force-build }}
         sentry-auth-token: ${{ inputs.sentry-auth-token }}
         push: true
 
     - name: Build and Push Image (Depot)
       if: ${{ inputs.builder == 'depot' }}
       id: build-depot
-      uses: botpress/gh-actions/build/depot@v3.1
+      uses: ./build/depot
       with:
         dockerfile: ${{ inputs.dockerfile }}
         repository: ${{ inputs.repository }}
         context: ${{ inputs.context }}
         tag: ${{ steps.commit.outputs.sha }}
+        force: ${{ inputs.force-build }}
         sentry-auth-token: ${{ inputs.sentry-auth-token }}
         depot-project: ${{ inputs.depot-project }}
         push: true
@@ -180,7 +186,7 @@ runs:
 
     - name: Deploy to ECS
       id: deploy
-      uses: botpress/gh-actions/tag-and-deploy@v3.3
+      uses: ./tag-and-deploy
       with:
         service: ${{ inputs.service }}
         role-ecs-update: ${{ inputs.role-ecs-update }}

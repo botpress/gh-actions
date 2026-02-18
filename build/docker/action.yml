@@ -1,5 +1,6 @@
 name: Docker to ECR
 description: Push Docker image to ECR
+
 inputs:
   # Build
   context:
@@ -20,6 +21,10 @@ inputs:
   provenance:
     description: 'Enable/disable provenance attestation'
     required: false
+  force:
+    description: 'Whether to force the build if it exists'
+    type: boolean
+    default: false
 
   # Custom variables
   sentry-auth-token:
@@ -30,7 +35,7 @@ inputs:
     required: false
     default: true
 
-  # Deploy
+  # Publish
   repository:
     description: 'Name of the ECR repository'
     required: true
@@ -46,21 +51,40 @@ inputs:
 runs:
   using: 'composite'
   steps:
-    - uses: docker/setup-buildx-action@v2
-
     - uses: aws-actions/configure-aws-credentials@v3
       with:
         role-session-name: container_pusher
         role-to-assume: ${{ inputs.aws-role }}
         aws-region: ${{ inputs.aws-region }}
 
+    - name: Check if image already exists
+      id: check
+      if: ${{ inputs.force == 'false' }}
+      shell: bash
+      env:
+        ECR_REGISTRY: ${{ steps.ecr.outputs.registry }}
+        ECR_REPOSITORY: ${{ inputs.repository }}
+        DOCKER_TAG: ${{ inputs.tag }}
+      run: |
+        if aws ecr describe-images --repository-name "$ECR_REPOSITORY" --image-ids imageTag="$DOCKER_TAG" &> /dev/null; then
+          echo "Image already exists, skipping build and push steps."
+          echo "exists=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "Image does not exist, proceeding with build and push steps."
+        fi
+
+    - uses: docker/setup-buildx-action@v2
+      if: ${{ steps.check.outputs.exists != 'true' }}
+
     - uses: aws-actions/amazon-ecr-login@v1
       id: ecr
+      if: ${{ steps.check.outputs.exists != 'true' }}
       with:
         mask-password: true
 
     - uses: docker/metadata-action@v4
       id: meta
+      if: ${{ steps.check.outputs.exists != 'true' }}
       with:
         images: ${{ steps.ecr.outputs.registry }}/${{ inputs.repository }}
         flavor: |
@@ -72,12 +96,14 @@ runs:
 
     - name: Set BUILD_DATE
       id: meta_date
+      if: ${{ steps.check.outputs.exists != 'true' }}
       shell: bash
       run: |
         export TZ=America/Toronto
         echo "timestamp=$(date +"%Y-%m-%d %H:%M:%S")" >> "$GITHUB_OUTPUT"
 
     - name: Create ECR Registry
+      if: ${{ steps.check.outputs.exists != 'true' }}
       shell: bash
       env:
         ECR_REPOSITORY: ${{ inputs.repository }}
@@ -89,6 +115,7 @@ runs:
         aws ecr set-repository-policy --repository-name "$ECR_REPOSITORY" --policy-text file://repository-policy.json &> /dev/null
 
     - uses: docker/build-push-action@v4
+      if: ${{ steps.check.outputs.exists != 'true' }}
       env:
         DOCKER_BUILDKIT: '1'
       with:
