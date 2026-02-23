@@ -5,7 +5,7 @@ inputs:
     description: 'The list of repos to retrieve changelogs from (must be valid JSON)'
     required: true
   token:
-    description: 'Github Token'
+    description: 'GitHub Token'
     required: false
     default: ${{ github.token }}
 outputs:

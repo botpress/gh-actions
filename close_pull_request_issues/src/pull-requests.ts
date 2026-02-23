@@ -75,7 +75,7 @@ export class PullRequest {
         const description = pr.data.body
         const author = pr.data.user?.login || ''
 
-        // Skip in case the PR description is empty, if it's a release PR,
+        // Skip if the PR description is empty, if it's a release PR,
         // or from integrations like dependabot
         if (
           !description ||
