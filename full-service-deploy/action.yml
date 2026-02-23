@@ -137,7 +137,7 @@ runs:
     - name: Build and Push Image (Docker)
       if: ${{ inputs.builder == 'docker' }}
       id: build-docker
-      uses: ./build/docker
+      uses: botpress/gh-actions/build/docker@v3
       with:
         dockerfile: ${{ inputs.dockerfile }}
         repository: ${{ inputs.repository }}
@@ -150,7 +150,7 @@ runs:
     - name: Build and Push Image (Depot)
       if: ${{ inputs.builder == 'depot' }}
       id: build-depot
-      uses: ./build/depot
+      uses: botpress/gh-actions/build/depot@v3
       with:
         dockerfile: ${{ inputs.dockerfile }}
         repository: ${{ inputs.repository }}
@@ -186,7 +186,7 @@ runs:
 
     - name: Deploy to ECS
       id: deploy
-      uses: ./tag-and-deploy
+      uses: botpress/gh-actions/tag-and-deploy@v3
       with:
         service: ${{ inputs.service }}
         role-ecs-update: ${{ inputs.role-ecs-update }}
