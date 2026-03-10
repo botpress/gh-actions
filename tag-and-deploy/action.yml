@@ -205,6 +205,7 @@ runs:
       run: |
         TARGET="${{ inputs.target }}"
         SKIP_ECS_UPDATE="${{ inputs.skip-ecs-update }}"
+        # shellcheck disable=SC2153 # CLUSTER_ARNS is set via GITHUB_ENV in previous step
         IFS=',' read -r -a CLUSTER_ARN_LIST <<< "$CLUSTER_ARNS"
         IFS=',' read -r -a SERVICES <<< "${{ join(fromJson(env.CONFIG).services, ',') }}"
 
