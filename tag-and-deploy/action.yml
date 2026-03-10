@@ -1,4 +1,5 @@
 name: Tag and Deploy
+description: 'Tag and deploy a service to ECS'
 
 inputs:
   service:
