@@ -186,7 +186,7 @@ runs:
 
     - name: Deploy to ECS
       id: deploy
-      uses: botpress/gh-actions/tag-and-deploy@v3.5
+      uses: botpress/gh-actions/tag-and-deploy@v3
       with:
         service: ${{ inputs.service }}
         role-ecs-update: ${{ inputs.role-ecs-update }}
