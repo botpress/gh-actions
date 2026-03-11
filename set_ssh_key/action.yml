@@ -1,5 +1,5 @@
 name: 'set_ssh_key'
-description: 'Configure SSH for Github'
+description: 'Configure SSH for GitHub'
 inputs:
   ssh_key:
     description: 'Key to use'
