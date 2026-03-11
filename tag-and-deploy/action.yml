@@ -1,4 +1,5 @@
 name: Tag and Deploy
+description: 'Tag and deploy a service to ECS'
 
 inputs:
   service:
@@ -67,8 +68,19 @@ runs:
           exit 1
         fi
 
-        if [ -z "$(echo "$CONFIG" | jq -r '.cluster // empty')" ]; then
-          echo "Error: 'cluster' field missing in service configuration."
+        CLUSTER_TYPE=$(echo "$CONFIG" | jq -r '.cluster | type')
+        if [ "$CLUSTER_TYPE" = "array" ]; then
+          if [ "$(echo "$CONFIG" | jq '.cluster | length')" -eq 0 ]; then
+            echo "Error: 'cluster' array is empty in service configuration."
+            exit 1
+          fi
+        elif [ "$CLUSTER_TYPE" = "string" ]; then
+          if [ -z "$(echo "$CONFIG" | jq -r '.cluster // empty')" ]; then
+            echo "Error: 'cluster' field missing in service configuration."
+            exit 1
+          fi
+        else
+          echo "Error: 'cluster' field missing or invalid in service configuration."
           exit 1
         fi
 
@@ -157,22 +169,35 @@ runs:
         role-to-assume: ${{ inputs.environment == 'staging' && format('arn:aws:iam::236194216641:role/{0}', inputs.role-ecs-update) || format('arn:aws:iam::981662312449:role/{0}', inputs.role-ecs-update) }}
         aws-region: us-east-1
 
-    # This determines the full cluster ARN starting with the prefix since we use the same prefix in staging and prod
-    - name: Find Cluster by Prefix
+    # This determines the full cluster ARNs starting with the prefix since we use the same prefix in staging and prod
+    - name: Find Clusters by Prefix
       shell: bash
       id: cluster
       run: |
-        CLUSTER_ARN=$(aws ecs list-clusters \
-          --query "clusterArns[?contains(@, '${{ fromJson(env.CONFIG).cluster }}')]" \
-          --output text)
+        # Support both string and array for cluster field
+        CLUSTER_PREFIXES=$(echo "$CONFIG" | jq -r '
+          if (.cluster | type) == "array" then .cluster[]
+          else .cluster
+          end')
 
-        if [ -z "$CLUSTER_ARN" ]; then
-          echo "No cluster found matching prefix: ${{ fromJson(env.CONFIG).cluster }}"
-          exit 1
-        fi
+        ALL_CLUSTER_ARNS=()
+        while IFS= read -r PREFIX; do
+          ARN=$(aws ecs list-clusters \
+            --query "clusterArns[?contains(@, '$PREFIX')]" \
+            --output text)
 
-        echo "Cluster found: $CLUSTER_ARN"
-        echo "CLUSTER_ARN=$CLUSTER_ARN" >> "$GITHUB_ENV"
+          if [ -z "$ARN" ]; then
+            echo "No cluster found matching prefix: $PREFIX"
+            exit 1
+          fi
+
+          echo "Cluster found: $ARN"
+          ALL_CLUSTER_ARNS+=("$ARN")
+        done <<< "$CLUSTER_PREFIXES"
+
+        # Store as comma-separated for passing through env
+        CLUSTER_ARNS_CSV=$(IFS=','; echo "${ALL_CLUSTER_ARNS[*]}")
+        echo "CLUSTER_ARNS=$CLUSTER_ARNS_CSV" >> "$GITHUB_ENV"
 
     # Updates each services with the new image
     - name: Deploy Services
@@ -180,17 +205,41 @@ runs:
       run: |
         TARGET="${{ inputs.target }}"
         SKIP_ECS_UPDATE="${{ inputs.skip-ecs-update }}"
+        # shellcheck disable=SC2153 # CLUSTER_ARNS is set via GITHUB_ENV in previous step
+        IFS=',' read -r -a CLUSTER_ARN_LIST <<< "$CLUSTER_ARNS"
         IFS=',' read -r -a SERVICES <<< "${{ join(fromJson(env.CONFIG).services, ',') }}"
-        for SERVICE_PREFIX in "${SERVICES[@]}"; do
-          SERVICE_ARN=$(aws ecs list-services \
-            --cluster "$CLUSTER_ARN" \
-            --query "serviceArns[?contains(@, '$SERVICE_PREFIX')]" \
-            --output text)
 
-          if [ -z "$SERVICE_ARN" ]; then
-            echo "No service found for prefix: $SERVICE_PREFIX"
+        # Build service -> cluster mapping by searching each service across all clusters
+        declare -A SERVICE_CLUSTER_MAP
+        for SERVICE_PREFIX in "${SERVICES[@]}"; do
+          FOUND=false
+          for CLUSTER_ARN in "${CLUSTER_ARN_LIST[@]}"; do
+            SERVICE_ARN=$(aws ecs list-services \
+              --cluster "$CLUSTER_ARN" \
+              --query "serviceArns[?contains(@, '$SERVICE_PREFIX')]" \
+              --output text)
+
+            if [ -n "$SERVICE_ARN" ]; then
+              SERVICE_CLUSTER_MAP["$SERVICE_ARN"]="$CLUSTER_ARN"
+              FOUND=true
+              break
+            fi
+          done
+          if [ "$FOUND" = false ]; then
+            echo "No service found for prefix: $SERVICE_PREFIX in any cluster"
             exit 1
           fi
+        done
+
+        # Store the mapping for subsequent steps
+        MAPPING=""
+        for SERVICE_ARN in "${!SERVICE_CLUSTER_MAP[@]}"; do
+          MAPPING+="${SERVICE_ARN}=${SERVICE_CLUSTER_MAP[$SERVICE_ARN]};"
+        done
+        echo "SERVICE_CLUSTER_MAP=$MAPPING" >> "$GITHUB_ENV"
+
+        for SERVICE_ARN in "${!SERVICE_CLUSTER_MAP[@]}"; do
+          CLUSTER_ARN="${SERVICE_CLUSTER_MAP[$SERVICE_ARN]}"
 
           SHOULD_DEPLOY=false
           case "$TARGET" in
@@ -219,7 +268,7 @@ runs:
             continue
           fi
 
-          echo "Service to update: $SERVICE_ARN"
+          echo "Service to update: $SERVICE_ARN (cluster: $CLUSTER_ARN)"
 
           if [[ "$SKIP_ECS_UPDATE" != "true" ]]; then
             echo "::group::Updating service: $SERVICE_ARN"
@@ -238,18 +287,20 @@ runs:
       run: |
         set +e
         TARGET="${{ inputs.target }}"
-        IFS=',' read -r -a SERVICES <<< "${{ join(fromJson(env.CONFIG).services, ',') }}"
+
+        # Rebuild service -> cluster mapping from env
+        declare -A SVC_CLUSTER
+        IFS=';' read -r -a PAIRS <<< "$SERVICE_CLUSTER_MAP"
+        for PAIR in "${PAIRS[@]}"; do
+          [ -z "$PAIR" ] && continue
+          SVC_ARN="${PAIR%%=*}"
+          CLU_ARN="${PAIR#*=}"
+          SVC_CLUSTER["$SVC_ARN"]="$CLU_ARN"
+        done
+
+        # Filter services by target
         SERVICE_ARNS=()
-        for SERVICE_PREFIX in "${SERVICES[@]}"; do
-          SERVICE_ARN=$(aws ecs list-services \
-            --cluster "$CLUSTER_ARN" \
-            --query "serviceArns[?contains(@, '$SERVICE_PREFIX')]" \
-            --output text)
-          if [ -z "$SERVICE_ARN" ]; then
-            echo "No service found for prefix: $SERVICE_PREFIX"
-            exit 1
-          fi
-          
+        for SERVICE_ARN in "${!SVC_CLUSTER[@]}"; do
           SHOULD_WAIT=false
           case "$TARGET" in
             main)
@@ -277,12 +328,27 @@ runs:
           fi
         done
 
-        echo "Waiting for service(s) to stabilize: ${SERVICE_ARNS[*]}"
-        aws ecs wait services-stable \
-          --cluster "$CLUSTER_ARN" \
-          --services "${SERVICE_ARNS[@]}"
+        # Group services by cluster for wait calls
+        declare -A CLUSTER_SERVICES
+        for SERVICE_ARN in "${SERVICE_ARNS[@]}"; do
+          CLUSTER_ARN="${SVC_CLUSTER[$SERVICE_ARN]}"
+          CLUSTER_SERVICES["$CLUSTER_ARN"]+="$SERVICE_ARN "
+        done
 
-        WAIT_EXIT_CODE=$?
+        echo "Waiting for service(s) to stabilize: ${SERVICE_ARNS[*]}"
+        WAIT_EXIT_CODE=0
+        for CLUSTER_ARN in "${!CLUSTER_SERVICES[@]}"; do
+          read -r -a SVCS <<< "${CLUSTER_SERVICES[$CLUSTER_ARN]}"
+          echo "Waiting on cluster $CLUSTER_ARN for services: ${SVCS[*]}"
+          aws ecs wait services-stable \
+            --cluster "$CLUSTER_ARN" \
+            --services "${SVCS[@]}"
+          CODE=$?
+          if [ $CODE -ne 0 ]; then
+            WAIT_EXIT_CODE=$CODE
+          fi
+        done
+
         echo "ROLLED_BACK=false" >> "$GITHUB_OUTPUT"
 
         if [ $WAIT_EXIT_CODE -ne 0 ]; then
@@ -291,7 +357,7 @@ runs:
           STOPPED_COUNT=0
           for ARN in "${SERVICE_ARNS[@]}"; do
             RECENT_FAILURES=$(aws ecs list-tasks \
-              --cluster "$CLUSTER_ARN" \
+              --cluster "${SVC_CLUSTER[$ARN]}" \
               --service-name "$ARN" \
               --desired-status STOPPED \
               --max-items 10 \
@@ -315,7 +381,7 @@ runs:
             rollback_tag() {
               local TAG_NAME=$1
               local STABLE_TAG="${TAG_NAME}_stable"
-              
+
               if docker pull "$IMAGE_NAME:$STABLE_TAG" 2>/dev/null; then
                 echo "Rolling back $TAG_NAME to $STABLE_TAG"
                 docker tag "$IMAGE_NAME:$STABLE_TAG" "$IMAGE_NAME:$TAG_NAME"
@@ -345,7 +411,7 @@ runs:
             for ARN in "${SERVICE_ARNS[@]}"; do
               echo "Rolling back service: $ARN"
               aws ecs update-service \
-                --cluster "$CLUSTER_ARN" \
+                --cluster "${SVC_CLUSTER[$ARN]}" \
                 --service "$ARN" \
                 --force-new-deployment
             done
