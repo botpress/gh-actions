@@ -30,6 +30,11 @@ inputs:
     required: false
     type: string
     default: sso_infra_update
+  skip-tagging-stable:
+    description: 'Skip tagging previous image as stable'
+    required: false
+    type: boolean
+    default: false
 
 runs:
   using: composite
