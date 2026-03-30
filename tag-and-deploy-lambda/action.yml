@@ -75,23 +75,21 @@ runs:
             echo "No previous image found for environment ${ENVIRONMENT}, skipping stable tagging"
           else
             cat previous-image-manifest.json
-            PUT_OUTPUT=$(aws ecr put-image \
+            if PUT_OUTPUT=$(aws ecr put-image \
               --repository-name "$REPOSITORY" \
               --image-tag "${ENVIRONMENT}_stable" \
-              --image-manifest file://previous-image-manifest.json 2>&1) && {
+              --image-manifest file://previous-image-manifest.json 2>&1); then
               echo "::endgroup::"
               echo "Tagged previous image as stable: ${ENVIRONMENT}_stable"
-            } || {
-              if echo "$PUT_OUTPUT" | grep -q "ImageAlreadyExistsException"; then
-                echo "::endgroup::"
-                echo "Previous image already tagged as ${ENVIRONMENT}_stable, skipping"
-              else
-                echo "::endgroup::"
-                echo "$PUT_OUTPUT"
-                echo "Failed to tag previous image as stable"
-                exit 1
-              fi
-            }
+            elif echo "$PUT_OUTPUT" | grep -q "ImageAlreadyExistsException"; then
+              echo "::endgroup::"
+              echo "Previous image already tagged as ${ENVIRONMENT}_stable, skipping"
+            else
+              echo "::endgroup::"
+              echo "$PUT_OUTPUT"
+              echo "Failed to tag previous image as stable"
+              exit 1
+            fi
           fi
         fi
 
@@ -108,23 +106,21 @@ runs:
         fi
         cat image-manifest.json
 
-        PUT_OUTPUT=$(aws ecr put-image \
+        if PUT_OUTPUT=$(aws ecr put-image \
           --repository-name "$REPOSITORY" \
           --image-tag "$ENVIRONMENT" \
-          --image-manifest file://image-manifest.json 2>&1) && {
+          --image-manifest file://image-manifest.json 2>&1); then
           echo "::endgroup::"
           echo "Tagged image $IMAGE_TAG as $ENVIRONMENT"
-        } || {
-          if echo "$PUT_OUTPUT" | grep -q "ImageAlreadyExistsException"; then
-            echo "::endgroup::"
-            echo "Image $IMAGE_TAG is already tagged as $ENVIRONMENT, skipping"
-          else
-            echo "::endgroup::"
-            echo "$PUT_OUTPUT"
-            echo "Failed to tag image $IMAGE_TAG as $ENVIRONMENT"
-            exit 1
-          fi
-        }
+        elif echo "$PUT_OUTPUT" | grep -q "ImageAlreadyExistsException"; then
+          echo "::endgroup::"
+          echo "Image $IMAGE_TAG is already tagged as $ENVIRONMENT, skipping"
+        else
+          echo "::endgroup::"
+          echo "$PUT_OUTPUT"
+          echo "Failed to tag image $IMAGE_TAG as $ENVIRONMENT"
+          exit 1
+        fi
 
         echo "PREVIOUS_STABLE_TAG_${ENVIRONMENT}=${ENVIRONMENT}_stable" >> "$GITHUB_ENV"
         echo "TAG_NAME=$ENVIRONMENT" >> "$GITHUB_ENV"
