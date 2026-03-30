@@ -39,7 +39,6 @@ inputs:
 runs:
   using: composite
   steps:
-
     - name: Configure ECR credentials
       uses: aws-actions/configure-aws-credentials@v6
       with:
@@ -69,12 +68,28 @@ runs:
             echo "No previous image found for environment ${ENVIRONMENT}, skipping stable tagging"
           else
             cat previous-image-manifest.json
-            aws ecr put-image \
+            # Check if the stable tag already points to the same digest
+            PREV_DIGEST=$(aws ecr batch-get-image \
               --repository-name "$REPOSITORY" \
-              --image-tag "${ENVIRONMENT}_stable" \
-              --image-manifest file://previous-image-manifest.json
-            echo "::endgroup::"
-            echo "Tagged previous image as stable: ${ENVIRONMENT}_stable"
+              --image-ids imageTag="$ENVIRONMENT" \
+              --query 'images[0].imageId.imageDigest' \
+              --output text)
+            STABLE_DIGEST=$(aws ecr batch-get-image \
+              --repository-name "$REPOSITORY" \
+              --image-ids imageTag="${ENVIRONMENT}_stable" \
+              --query 'images[0].imageId.imageDigest' \
+              --output text 2>/dev/null || echo "None")
+            if [ "$PREV_DIGEST" = "$STABLE_DIGEST" ]; then
+              echo "::endgroup::"
+              echo "Previous image already tagged as ${ENVIRONMENT}_stable (same digest: $PREV_DIGEST), skipping"
+            else
+              aws ecr put-image \
+                --repository-name "$REPOSITORY" \
+                --image-tag "${ENVIRONMENT}_stable" \
+                --image-manifest file://previous-image-manifest.json
+              echo "::endgroup::"
+              echo "Tagged previous image as stable: ${ENVIRONMENT}_stable"
+            fi
           fi
         fi
 
@@ -90,12 +105,30 @@ runs:
           exit 1
         fi
         cat image-manifest.json
-        aws ecr put-image \
+
+        # Check if the image is already tagged for this environment (same digest = no-op)
+        CURRENT_DIGEST=$(aws ecr batch-get-image \
           --repository-name "$REPOSITORY" \
-          --image-tag "$ENVIRONMENT" \
-          --image-manifest file://image-manifest.json
-        echo "::endgroup::"
-        echo "Tagged image $IMAGE_TAG as $ENVIRONMENT"
+          --image-ids imageTag="$ENVIRONMENT" \
+          --query 'images[0].imageId.imageDigest' \
+          --output text 2>/dev/null || echo "None")
+        NEW_DIGEST=$(aws ecr batch-get-image \
+          --repository-name "$REPOSITORY" \
+          --image-ids imageTag="$IMAGE_TAG" \
+          --query 'images[0].imageId.imageDigest' \
+          --output text)
+
+        if [ "$CURRENT_DIGEST" = "$NEW_DIGEST" ]; then
+          echo "::endgroup::"
+          echo "Image $IMAGE_TAG is already tagged as $ENVIRONMENT (same digest: $NEW_DIGEST), skipping"
+        else
+          aws ecr put-image \
+            --repository-name "$REPOSITORY" \
+            --image-tag "$ENVIRONMENT" \
+            --image-manifest file://image-manifest.json
+          echo "::endgroup::"
+          echo "Tagged image $IMAGE_TAG as $ENVIRONMENT"
+        fi
 
         echo "PREVIOUS_STABLE_TAG_${ENVIRONMENT}=${ENVIRONMENT}_stable" >> "$GITHUB_ENV"
         echo "TAG_NAME=$ENVIRONMENT" >> "$GITHUB_ENV"
@@ -187,7 +220,7 @@ runs:
 
         echo "Need rolling back to previous stable image..."
         echo "need_rollback=true" >> "$GITHUB_ENV"
-      
+
     - name: Configure ECR credentials
       uses: aws-actions/configure-aws-credentials@v6
       with:
@@ -233,7 +266,7 @@ runs:
       shell: bash
       run: |
         LAMBDA_NAME="${{ steps.lambda.outputs.lambda_name }}"
-        
+
         echo "Reupdate lambda function code to use stable image"
         FUNCTION_IMAGE_URI="$(aws lambda get-function \
           --function-name "$LAMBDA_NAME" \
