@@ -9,6 +9,7 @@ fi
 source "$(dirname "$0")/common.sh"
 
 files="$(find "$ROOT_DIR" -type f -name action.yml | sed 's|^\./||')"
+files="$(filter_gitignored_files "$files")"
 errors_count=0
 
 for file in $files; do
