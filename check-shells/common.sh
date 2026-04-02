@@ -34,6 +34,20 @@ else
   }
 fi
 
+# Filter out files that are gitignored
+filter_gitignored_files() {
+  local files="$1"
+  local filtered=""
+  
+  for file in $files; do
+    if ! git check-ignore -q "$file" 2>/dev/null; then
+      filtered="$filtered $file"
+    fi
+  done
+  
+  echo "$filtered" | sed 's/^ //'
+}
+
 display_shellcheck_errors() {
   local errors="$1"
   local script="$2"
