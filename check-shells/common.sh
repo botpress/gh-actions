@@ -45,7 +45,7 @@ filter_gitignored_files() {
     fi
   done
   
-  echo "$filtered" | sed 's/^ //'
+  echo "${filtered# }"
 }
 
 display_shellcheck_errors() {
