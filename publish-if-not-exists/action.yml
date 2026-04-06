@@ -48,12 +48,13 @@ runs:
       shell: bash
       run: |
         current_npm=$(npm --version)
-        
+
         if [ "$(printf '%s\n' "11.5.1" "$current_npm" | sort -V | head -n1)" = "11.5.1" ]; then
           echo "npm $current_npm is sufficient"
         else
-          echo "npm $current_npm is below 11.5.1, upgrading"
-          npm install -g npm@^11.5.1
+          echo "npm $current_npm is below 11.5.1, upgrading via corepack"
+          corepack enable
+          corepack install -g npm@11.5.1
         fi
 
     - name: '[API Token] Login'
