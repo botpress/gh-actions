@@ -43,6 +43,12 @@ runs:
         node-version: '^22.9.0'
         registry-url: 'https://registry.npmjs.org'
 
+    - name: '[OIDC] Configure registry for OIDC auth'
+      if: inputs.token == '' && env.UPGRADE_NODE != 'true'
+      uses: actions/setup-node@v6
+      with:
+        registry-url: 'https://registry.npmjs.org'
+
     - name: '[OIDC] Ensure NPM 11.5.1+ is installed'
       if: inputs.token == ''
       shell: bash
