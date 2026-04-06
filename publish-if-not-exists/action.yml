@@ -75,6 +75,15 @@ runs:
         fi
 
 
+        echo "=== Debug: npm config ==="
+        npm config list
+        echo "=== Debug: .npmrc files ==="
+        cat "$GITHUB_WORKSPACE/.npmrc" 2>/dev/null || echo "No .npmrc at workspace root"
+        cat "${{ inputs.path }}/.npmrc" 2>/dev/null || echo "No .npmrc in package dir"
+        echo "=== Debug: NODE_AUTH_TOKEN set? ==="
+        [ -n "$NODE_AUTH_TOKEN" ] && echo "NODE_AUTH_TOKEN is set" || echo "NODE_AUTH_TOKEN is NOT set"
+        echo "=========================="
+
         echo "Publishing version $package_ref"
         echo "Using $package_manager as package manager"
 
