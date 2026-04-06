@@ -34,8 +34,15 @@ runs:
       if: inputs.token == ''
       shell: bash
       run: |
-        corepack enable
-        corepack install -g npm@11.5.1
+        current_npm=$(npm --version)
+        required="11.5.1"
+        if [ "$(printf '%s\n' "$required" "$current_npm" | sort -V | head -n1)" = "$required" ]; then
+          echo "npm $current_npm is already >= $required"
+        else
+          echo "npm $current_npm is below $required, upgrading via corepack"
+          corepack enable
+          corepack install -g npm@$required
+        fi
 
     - name: '[API Token] Login'
       if: inputs.token != ''
