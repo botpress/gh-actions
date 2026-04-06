@@ -88,7 +88,7 @@ runs:
         echo "Using $package_manager as package manager"
 
         cd "${{ inputs.path }}" || exit 1
-        cmd="$package_manager publish --access public --provenance"
+        cmd="$package_manager publish --access public"
 
         if [ "$package_manager" = "pnpm" ]; then
           cmd="$cmd --publish-branch ${{ github.ref_name }}"
