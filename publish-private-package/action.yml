@@ -7,9 +7,9 @@ inputs:
     required: true
     default: './'
   node-version:
-      description: Node.js version to use
-      required: false
-      default: '24'
+    description: Node.js version to use
+    required: false
+    default: '24'
   token:
     description: GitHub token for authentication (usually secrets.GITHUB_TOKEN)
     required: true
@@ -18,7 +18,7 @@ runs:
   steps:
     - uses: actions/setup-node@v6
       with:
-        node-version: ${{ inputs.node-version}}
+        node-version: ${{ inputs.node-version }}
 
     - uses: pnpm/action-setup@v5
     - name: Install dependencies
@@ -27,7 +27,7 @@ runs:
 
     - name: Build
       shell: bash
-      run: pnpm -C ${{ inputs.package-dir}} build
+      run: pnpm -C "${{ inputs.package-dir }}" build
 
     - name: Check if version already exists
       id: check
@@ -60,9 +60,13 @@ runs:
     - name: Summary
       shell: bash
       if: always()
+      env:
+        EXISTS: ${{ steps.check.outputs.exists }}
+        PACKAGE_NAME: ${{ steps.check.outputs.name }}
+        PACKAGE_VERSION: ${{ steps.check.outputs.version }}
       run: |
-        if [[ "${{ steps.check.outputs.exists }}" == "true" ]]; then
-          echo "### ${{ steps.check.outputs.name }}@${{ steps.check.outputs.version }} — already published" >> "$GITHUB_STEP_SUMMARY"
+        if [[ "$EXISTS" == "true" ]]; then
+          echo "### ${PACKAGE_NAME}@${PACKAGE_VERSION} — already published" >> "$GITHUB_STEP_SUMMARY"
         else
-          echo "### ${{ steps.check.outputs.name }}@${{ steps.check.outputs.version }} — published" >> "$GITHUB_STEP_SUMMARY"
+          echo "### ${PACKAGE_NAME}@${PACKAGE_VERSION} — published" >> "$GITHUB_STEP_SUMMARY"
         fi
