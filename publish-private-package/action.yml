@@ -1,0 +1,68 @@
+name: Publish Private Package
+description: Builds and publishes an npm package to GitHub Packages (@botpress scope)
+
+inputs:
+  package-dir:
+    description: Package's directory
+    required: true
+    default: './'
+  node-version:
+      description: Node.js version to use
+      required: false
+      default: '24'
+  token:
+    description: GitHub token for authentication (usually secrets.GITHUB_TOKEN)
+    required: true
+runs:
+  using: 'composite'
+  steps:
+    - uses: actions/setup-node@v6
+      with:
+        node-version: ${{ inputs.node-version}}
+
+    - uses: pnpm/action-setup@v5
+    - name: Install dependencies
+      shell: bash
+      run: pnpm install --frozen-lockfile
+
+    - name: Build
+      shell: bash
+      run: pnpm -C ${{ inputs.package-dir}} build
+
+    - name: Check if version already exists
+      id: check
+      shell: bash
+      working-directory: ${{ inputs.package-dir }}
+      run: |
+        PACKAGE_NAME=$(node -p "require('./package.json').name")
+        PACKAGE_VERSION=$(node -p "require('./package.json').version")
+        echo "name=$PACKAGE_NAME" >> "$GITHUB_OUTPUT"
+        echo "version=$PACKAGE_VERSION" >> "$GITHUB_OUTPUT"
+        # Configure auth temporarily just for the npm view check
+        echo "//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}" >> ~/.npmrc
+        if npm view "${PACKAGE_NAME}@${PACKAGE_VERSION}" version --registry=https://npm.pkg.github.com 2>/dev/null; then
+          echo "exists=true" >> "$GITHUB_OUTPUT"
+          echo "::notice::${PACKAGE_NAME}@${PACKAGE_VERSION} already published, skipping."
+        else
+          echo "exists=false" >> "$GITHUB_OUTPUT"
+        fi
+      env:
+        NODE_AUTH_TOKEN: ${{ inputs.token }}
+
+    - name: Publish to GitHub Packages
+      if: steps.check.outputs.exists == 'false'
+      shell: bash
+      working-directory: ${{ inputs.package-dir }}
+      run: pnpm publish --no-git-checks
+      env:
+        NODE_AUTH_TOKEN: ${{ inputs.token }}
+
+    - name: Summary
+      shell: bash
+      if: always()
+      run: |
+        if [[ "${{ steps.check.outputs.exists }}" == "true" ]]; then
+          echo "### ${{ steps.check.outputs.name }}@${{ steps.check.outputs.version }} — already published" >> "$GITHUB_STEP_SUMMARY"
+        else
+          echo "### ${{ steps.check.outputs.name }}@${{ steps.check.outputs.version }} — published" >> "$GITHUB_STEP_SUMMARY"
+        fi
