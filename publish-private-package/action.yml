@@ -44,7 +44,7 @@ runs:
       if: steps.check.outputs.exists == 'false'
       shell: bash
       working-directory: ${{ inputs.package-dir }}
-      run: pnpm publish --no-git-checks --registry=https://npm.pkg.github.com
+      run: pnpm publish --no-git-checks
       env:
         NODE_AUTH_TOKEN: ${{ inputs.token }}
 
