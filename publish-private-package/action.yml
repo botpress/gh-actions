@@ -13,6 +13,10 @@ inputs:
 runs:
   using: 'composite'
   steps:
+    - uses: actions/setup-node@v6
+      with:
+        node-version: '24'
+
     - name: Check if version already exists
       id: check
       shell: bash
@@ -37,7 +41,7 @@ runs:
       if: steps.check.outputs.exists == 'false'
       shell: bash
       working-directory: ${{ inputs.package-dir }}
-      run: pnpm publish --no-git-checks
+      run: npm publish
       env:
         NODE_AUTH_TOKEN: ${{ inputs.token }}
 
