@@ -1,25 +1,18 @@
 name: Publish Private Package
-description: Builds and publishes an npm package to GitHub Packages (@botpress scope)
+description: Publishes an npm package to GitHub Packages (@botpress scope)
 
 inputs:
   package-dir:
     description: Package's directory
     required: true
     default: './'
-  node-version:
-    description: Node.js version to use
-    required: false
-    default: '24'
   token:
     description: GitHub token for authentication (usually secrets.GITHUB_TOKEN)
     required: true
+
 runs:
   using: 'composite'
   steps:
-    - uses: actions/setup-node@v6
-      with:
-        node-version: ${{ inputs.node-version }}
-
     - name: Check if version already exists
       id: check
       shell: bash
