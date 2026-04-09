@@ -16,6 +16,7 @@ runs:
     - uses: actions/setup-node@v6
       with:
         node-version: '24'
+    - uses: pnpm/action-setup@v5
 
     - name: Check if version already exists
       id: check
@@ -26,8 +27,10 @@ runs:
         PACKAGE_VERSION=$(node -p "require('./package.json').version")
         echo "name=$PACKAGE_NAME" >> "$GITHUB_OUTPUT"
         echo "version=$PACKAGE_VERSION" >> "$GITHUB_OUTPUT"
+
         # Configure auth temporarily just for the npm view check
         echo "//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}" >> ~/.npmrc
+
         if npm view "${PACKAGE_NAME}@${PACKAGE_VERSION}" version --registry=https://npm.pkg.github.com 2>/dev/null; then
           echo "exists=true" >> "$GITHUB_OUTPUT"
           echo "::notice::${PACKAGE_NAME}@${PACKAGE_VERSION} already published, skipping."
@@ -41,7 +44,7 @@ runs:
       if: steps.check.outputs.exists == 'false'
       shell: bash
       working-directory: ${{ inputs.package-dir }}
-      run: npm publish
+      run: pnpm publish --no-git-checks --registry=https://npm.pkg.github.com
       env:
         NODE_AUTH_TOKEN: ${{ inputs.token }}
 
