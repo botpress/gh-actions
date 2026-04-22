@@ -130,7 +130,7 @@ runs:
         ENDPOINT_KIND: ${{ inputs.endpoint }}
       run: |
         set -euo pipefail
-        read WRITER READER PORT < <(
+        read -r WRITER READER PORT < <(
           aws rds describe-db-clusters \
             --db-cluster-identifier "$CLUSTER_ID" \
             --query 'DBClusters[0].[Endpoint,ReaderEndpoint,Port]' \
@@ -205,9 +205,11 @@ runs:
           --parameters "$PARAMS" \
           >"$OUT" 2>"$ERR" &
         SSM_PID=$!
-        echo "SSM_PID=$SSM_PID"   >> "$GITHUB_ENV"
-        echo "DB_TUNNEL_OUT=$OUT" >> "$GITHUB_ENV"
-        echo "DB_TUNNEL_ERR=$ERR" >> "$GITHUB_ENV"
+        {
+          echo "SSM_PID=$SSM_PID"
+          echo "DB_TUNNEL_OUT=$OUT"
+          echo "DB_TUNNEL_ERR=$ERR"
+        } >> "$GITHUB_ENV"
 
         READY_LINE="Port $LOCAL_PORT opened for sessionId"
         for i in $(seq 1 120); do
