@@ -282,3 +282,46 @@ runs:
           printf '%s\n' "$URL"
           printf '__DB_TUNNEL_EOF__\n'
         } >> "$GITHUB_OUTPUT"
+
+    - name: Write tunnel summary
+      if: always() && steps.resolve.outcome != 'skipped'
+      shell: bash
+      env:
+        ENVIRONMENT: ${{ inputs.environment }}
+        DATABASE: ${{ inputs.database }}
+        ROLE_ARN: ${{ steps.resolve.outputs.role-arn }}
+        CLUSTER_ID: ${{ steps.resolve.outputs.cluster-id }}
+        SECRET_ID: ${{ steps.resolve.outputs.secret-id }}
+        USERNAME: ${{ steps.resolve.outputs.username }}
+        AWS_REGION_INPUT: ${{ inputs.aws-region }}
+        ENDPOINT_KIND: ${{ inputs.endpoint }}
+        HOST: ${{ steps.rds.outputs.host }}
+        LOCAL_PORT: ${{ steps.tunnel.outputs.local-port }}
+        TUNNEL_OUTCOME: ${{ steps.tunnel.outcome }}
+        BUILD_URL_OUTCOME: ${{ steps.build-url.outcome }}
+      run: |
+        set -u
+        if [[ "$TUNNEL_OUTCOME" == "success" && "$BUILD_URL_OUTCOME" == "success" ]]; then
+          icon="✅"; status="ready"
+        elif [[ "$TUNNEL_OUTCOME" == "success" ]]; then
+          icon="⚠️"; status="tunnel opened, URL build ${BUILD_URL_OUTCOME:-skipped}"
+        else
+          icon="❌"; status="failed (${TUNNEL_OUTCOME:-not reached})"
+        fi
+        {
+          echo "## ${icon} DB Tunnel — \`${ENVIRONMENT}/${DATABASE}\`"
+          echo ""
+          echo "| Field | Value |"
+          echo "|-------|-------|"
+          echo "| Environment | \`${ENVIRONMENT}\` |"
+          echo "| Database | \`${DATABASE}\` |"
+          echo "| Username | \`${USERNAME:-—}\` |"
+          echo "| Cluster | \`${CLUSTER_ID:-—}\` |"
+          echo "| Endpoint | \`${ENDPOINT_KIND}\` → \`${HOST:-not resolved}\` |"
+          echo "| Local port | \`${LOCAL_PORT:-—}\` |"
+          echo "| Region | \`${AWS_REGION_INPUT}\` |"
+          echo "| Secret | \`${SECRET_ID:-—}\` |"
+          echo "| Role | \`${ROLE_ARN:-—}\` |"
+          echo "| Status | ${status} |"
+          echo ""
+        } >> "$GITHUB_STEP_SUMMARY"
