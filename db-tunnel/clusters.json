@@ -1,0 +1,68 @@
+{
+  "staging": {
+    "desk": {
+      "role-arn": "arn:aws:iam::236194216641:role/desk-db-tunnel",
+      "cluster-id": "cloud-desk-deskpostgresclusterdbclusterb94ffa12-uzkmmtjyd8d3",
+      "secret-id": "deskPostgresDBRolePasswordS-UZMEqeTqHz9T",
+      "username": "desk"
+    },
+    "vortex-api": {
+      "cluster-id": "cloud-vortexapi-vortexapipostgresclusterdbcluster2-m6jbivmzktn3",
+      "secret-id": "PostgresDBRolePasswordSecre-8IGfAMaxmP48",
+      "username": "vortex-api"
+    },
+    "bridge-live": {
+      "cluster-id": "cloud-database-postgresdbdbclusterb3fd976e-z1q3od8rovu1",
+      "secret-id": "bridgelivePostgresDBRolePas-c49lN8IHqctZ",
+      "username": "bridge-live"
+    },
+    "files-api": {
+      "cluster-id": "cloud-database-postgresdbdbclusterb3fd976e-z1q3od8rovu1",
+      "secret-id": "PostgresDBRolePasswordSecre-48BVgBekj9zC",
+      "username": "files-api"
+    },
+    "smaug": {
+      "cluster-id": "cloud-smaug-smaugpostgresclusterdbcluster9380f505-kzd6d3fisrnm",
+      "secret-id": "PostgresDBRolePasswordSecre-pm5CUWkkcivg",
+      "username": "smaug"
+    },
+    "slab": {
+      "cluster-id": "cloud-slab-slabpostgresclusterdbcluster590d9ed7-nacbymffqqv5",
+      "secret-id": "slabRolePasswordOnlyE2C19CB-XQerJ3fQt3dB",
+      "username": "slab"
+    }
+  },
+  "production": {
+    "desk": {
+      "role-arn": "arn:aws:iam::981662312449:role/desk-db-tunnel",
+      "cluster-id": "cloud-desk-deskpostgresclusterdbclusterb94ffa12-du9b5bss9pbl",
+      "secret-id": "deskPostgresDBRolePasswordS-6iRv3FTPYJRL",
+      "username": "desk"
+    },
+    "vortex-api": {
+      "cluster-id": "cloud-vortexapi-vortexapipostgresclusterdbcluster2-ftbvani7ktyg",
+      "secret-id": "PostgresDBRolePasswordSecre-pjLQLbMKBwCv",
+      "username": "vortex-api"
+    },
+    "bridge-live": {
+      "cluster-id": "cloud-bridge-bridgelivepostgresclusterdbcluster362-p7ituiucappe",
+      "secret-id": "bridgelivePostgresDBRolePas-PN5LulW50CYM",
+      "username": "bridge-live"
+    },
+    "files-api": {
+      "cluster-id": "cloud-filesapi-filesapipostgresclusterdbclusterb5c-qy0xrhlqpg6o",
+      "secret-id": "PostgresDBRolePasswordSecre-aEwST6sC9aBA",
+      "username": "files-api"
+    },
+    "smaug": {
+      "cluster-id": "cloud-smaug-smaugpostgresclusterdbcluster9380f505-er8j5o18br1r",
+      "secret-id": "PostgresDBRolePasswordSecre-8JPaC5DtS09T",
+      "username": "smaug"
+    },
+    "slab": {
+      "cluster-id": "cloud-slab-slabpostgresclusterdbcluster590d9ed7-t6cbq6n1ndk4",
+      "secret-id": "slabRolePasswordOnlyE2C19CB-ztI2KkCmdYxo",
+      "username": "slab"
+    }
+  }
+}

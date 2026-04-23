@@ -1,0 +1,329 @@
+name: DB Tunnel
+description: 'Opens an SSM port-forward to a private RDS cluster and outputs a masked postgres URL. Resolves cluster/secret/role from clusters.json by environment+database. Registers its own post-job cleanup.'
+
+inputs:
+  environment:
+    description: 'Environment key in clusters.json (e.g. `staging`, `production`). Used to resolve role-arn/cluster-id/secret-id/username.'
+    required: true
+  database:
+    description: 'Database/service key (e.g. `desk`, `vortex`). Used as the second-level lookup in clusters.json AND as the DB name in the postgres URL.'
+    required: true
+  aws-region:
+    description: AWS region
+    required: false
+    default: us-east-1
+  role-arn:
+    description: 'Override for AWS IAM role ARN. Falls back to clusters.json[environment][database].role-arn.'
+    required: false
+    default: ''
+  cluster-id:
+    description: 'Override for RDS DB cluster identifier. Falls back to clusters.json.'
+    required: false
+    default: ''
+  secret-id:
+    description: 'Override for Secrets Manager secret id (PLAIN STRING password). Falls back to clusters.json. JSON master secrets are rejected.'
+    required: false
+    default: ''
+  username:
+    description: 'Override for DB user. Falls back to clusters.json.'
+    required: false
+    default: ''
+  endpoint:
+    description: Which cluster endpoint to connect to - writer or reader
+    required: false
+    default: writer
+  local-port:
+    description: Local port to bind. If empty, a random free high port is picked.
+    required: false
+    default: ''
+  extra-params:
+    description: Extra querystring params appended to the connection URL
+    required: false
+    default: connection_limit=1&pool_timeout=0
+
+outputs:
+  database-url:
+    description: postgresql:// URL pointing at 127.0.0.1:<local-port> (masked)
+    value: ${{ steps.build-url.outputs.database-url }}
+  local-port:
+    description: Local port the tunnel is bound to
+    value: ${{ steps.tunnel.outputs.local-port }}
+
+runs:
+  using: composite
+  steps:
+    - name: Resolve cluster config
+      id: resolve
+      shell: bash
+      env:
+        ENVIRONMENT: ${{ inputs.environment }}
+        DATABASE: ${{ inputs.database }}
+        INPUT_ROLE_ARN: ${{ inputs.role-arn }}
+        INPUT_CLUSTER_ID: ${{ inputs.cluster-id }}
+        INPUT_SECRET_ID: ${{ inputs.secret-id }}
+        INPUT_USERNAME: ${{ inputs.username }}
+        CLUSTERS_FILE: ${{ github.action_path }}/clusters.json
+      run: |
+        set -euo pipefail
+
+        if [[ ! -f "$CLUSTERS_FILE" ]]; then
+          echo "clusters.json not found at $CLUSTERS_FILE" >&2
+          exit 1
+        fi
+
+        if ! jq -e --arg env "$ENVIRONMENT" --arg db "$DATABASE" \
+             '.[$env][$db]' "$CLUSTERS_FILE" >/dev/null 2>&1; then
+          echo "No entry for environment='$ENVIRONMENT' database='$DATABASE' in clusters.json" >&2
+          echo "Known keys:" >&2
+          jq -r 'to_entries[] | "  \(.key): \(.value | keys | join(", "))"' "$CLUSTERS_FILE" >&2
+          exit 1
+        fi
+
+        lookup() {
+          jq -r --arg env "$ENVIRONMENT" --arg db "$DATABASE" --arg f "$1" \
+            '.[$env][$db][$f] // empty' "$CLUSTERS_FILE"
+        }
+
+        ROLE_ARN="${INPUT_ROLE_ARN:-$(lookup role-arn)}"
+        CLUSTER_ID="${INPUT_CLUSTER_ID:-$(lookup cluster-id)}"
+        SECRET_ID="${INPUT_SECRET_ID:-$(lookup secret-id)}"
+        USERNAME="${INPUT_USERNAME:-$(lookup username)}"
+
+        for name in ROLE_ARN CLUSTER_ID SECRET_ID USERNAME; do
+          if [[ -z "${!name}" ]]; then
+            echo "Could not resolve $name for environment='$ENVIRONMENT' database='$DATABASE' (provide via input or clusters.json)" >&2
+            exit 1
+          fi
+        done
+
+        {
+          echo "role-arn=$ROLE_ARN"
+          echo "cluster-id=$CLUSTER_ID"
+          echo "secret-id=$SECRET_ID"
+          echo "username=$USERNAME"
+        } >> "$GITHUB_OUTPUT"
+
+    - name: Configure AWS credentials (OIDC)
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ steps.resolve.outputs.role-arn }}
+        aws-region: ${{ inputs.aws-region }}
+        role-session-name: db-tunnel-${{ github.run_id }}-${{ github.run_attempt }}
+
+    - name: Install SSM Session Manager plugin
+      shell: bash
+      run: |
+        set -euo pipefail
+        if command -v session-manager-plugin >/dev/null 2>&1; then
+          echo "session-manager-plugin already installed"
+          exit 0
+        fi
+        curl -sSLo /tmp/ssm.deb https://s3.amazonaws.com/session-manager-downloads/plugin/latest/ubuntu_64bit/session-manager-plugin.deb
+        sudo dpkg -i /tmp/ssm.deb
+        session-manager-plugin --version || true
+
+    - name: Discover RDS cluster endpoints
+      id: rds
+      shell: bash
+      env:
+        CLUSTER_ID: ${{ steps.resolve.outputs.cluster-id }}
+        ENDPOINT_KIND: ${{ inputs.endpoint }}
+      run: |
+        set -euo pipefail
+        read -r WRITER READER PORT < <(
+          aws rds describe-db-clusters \
+            --db-cluster-identifier "$CLUSTER_ID" \
+            --query 'DBClusters[0].[Endpoint,ReaderEndpoint,Port]' \
+            --output text
+        )
+        if [[ -z "$WRITER" || "$WRITER" == "None" ]]; then
+          echo "Failed to resolve writer endpoint for cluster $CLUSTER_ID" >&2
+          exit 1
+        fi
+        case "$ENDPOINT_KIND" in
+          writer) HOST="$WRITER" ;;
+          reader) HOST="$READER" ;;
+          *) echo "Invalid endpoint '$ENDPOINT_KIND' (expected writer|reader)" >&2; exit 1 ;;
+        esac
+        echo "host=$HOST" >> "$GITHUB_OUTPUT"
+        echo "port=$PORT" >> "$GITHUB_OUTPUT"
+
+    - name: Discover bastion instance
+      id: bastion
+      shell: bash
+      run: |
+        set -euo pipefail
+        INSTANCE_IDS=$(
+          aws ec2 describe-instances \
+            --filters \
+              'Name=tag:Name,Values=BastionHost' \
+              'Name=instance-state-name,Values=running' \
+            --query 'Reservations[].Instances[].InstanceId' \
+            --output text
+        )
+        COUNT=$(echo "$INSTANCE_IDS" | wc -w | tr -d ' ')
+        if [[ "$COUNT" != "1" ]]; then
+          echo "Expected exactly 1 running BastionHost instance, found $COUNT: $INSTANCE_IDS" >&2
+          exit 1
+        fi
+        echo "instance-id=$INSTANCE_IDS" >> "$GITHUB_OUTPUT"
+
+    - name: Open SSM port-forwarding tunnel
+      id: tunnel
+      shell: bash
+      env:
+        INSTANCE_ID: ${{ steps.bastion.outputs.instance-id }}
+        HOST: ${{ steps.rds.outputs.host }}
+        REMOTE_PORT: ${{ steps.rds.outputs.port }}
+        LOCAL_PORT_INPUT: ${{ inputs.local-port }}
+      run: |
+        set -euo pipefail
+
+        if [[ -n "$LOCAL_PORT_INPUT" ]]; then
+          LOCAL_PORT="$LOCAL_PORT_INPUT"
+        else
+          LOCAL_PORT=$(python3 -c 'import socket; s=socket.socket(); s.bind(("",0)); print(s.getsockname()[1]); s.close()')
+        fi
+        echo "Local port: $LOCAL_PORT"
+
+        TUNNEL_DIR="${RUNNER_TEMP:-/tmp}/db-tunnel"
+        mkdir -p "$TUNNEL_DIR"
+        OUT="$TUNNEL_DIR/tunnel.out"
+        ERR="$TUNNEL_DIR/tunnel.err"
+        : > "$OUT"
+        : > "$ERR"
+
+        PARAMS=$(jq -cn \
+          --arg host "$HOST" \
+          --arg rport "$REMOTE_PORT" \
+          --arg lport "$LOCAL_PORT" \
+          '{host:[$host], portNumber:[$rport], localPortNumber:[$lport]}')
+
+        nohup aws ssm start-session \
+          --target "$INSTANCE_ID" \
+          --document-name AWS-StartPortForwardingSessionToRemoteHost \
+          --parameters "$PARAMS" \
+          >"$OUT" 2>"$ERR" &
+        SSM_PID=$!
+        {
+          echo "SSM_PID=$SSM_PID"
+          echo "DB_TUNNEL_OUT=$OUT"
+          echo "DB_TUNNEL_ERR=$ERR"
+        } >> "$GITHUB_ENV"
+
+        READY_LINE="Port $LOCAL_PORT opened for sessionId"
+        for i in $(seq 1 120); do
+          if grep -qF "$READY_LINE" "$OUT" 2>/dev/null; then
+            echo "Tunnel ready after $((i * 500))ms"
+            break
+          fi
+          if ! kill -0 "$SSM_PID" 2>/dev/null; then
+            echo "SSM session process exited prematurely" >&2
+            echo "--- stdout ---" >&2; cat "$OUT" >&2 || true
+            echo "--- stderr ---" >&2; cat "$ERR" >&2 || true
+            exit 1
+          fi
+          sleep 0.5
+        done
+        if ! grep -qF "$READY_LINE" "$OUT" 2>/dev/null; then
+          echo "Timed out waiting for SSM port-forward to open on $LOCAL_PORT" >&2
+          echo "--- stdout ---" >&2; cat "$OUT" >&2 || true
+          echo "--- stderr ---" >&2; cat "$ERR" >&2 || true
+          exit 1
+        fi
+
+        echo "local-port=$LOCAL_PORT" >> "$GITHUB_OUTPUT"
+
+    # webiny/action-post-run hands `run:` to @actions/exec (no shell), so the
+    # first token must be a real executable. We invoke `bash <cleanup.sh>`.
+    - name: Register tunnel cleanup (post-job)
+      uses: webiny/action-post-run@3.1.0
+      with:
+        run: bash ${{ github.action_path }}/cleanup.sh
+
+    - name: Fetch credentials and build connection URL
+      id: build-url
+      shell: bash
+      env:
+        SECRET_ID: ${{ steps.resolve.outputs.secret-id }}
+        USERNAME: ${{ steps.resolve.outputs.username }}
+        DATABASE: ${{ inputs.database }}
+        LOCAL_PORT: ${{ steps.tunnel.outputs.local-port }}
+        EXTRA_PARAMS: ${{ inputs.extra-params }}
+      run: |
+        set -euo pipefail
+
+        PASSWORD=$(aws secretsmanager get-secret-value \
+          --secret-id "$SECRET_ID" \
+          --query SecretString \
+          --output text)
+
+        # Reject JSON-shaped secrets - those are master-style credentials and
+        # using them here would silently grant cluster-wide privileges.
+        if printf '%s' "$PASSWORD" | jq -e 'type == "object"' >/dev/null 2>&1; then
+          echo "Secret $SECRET_ID is JSON-shaped (master-style). This action only accepts plain-string password secrets (e.g. DatabasePostgres.rolePasswordSecret)." >&2
+          exit 1
+        fi
+
+        if [[ -z "$PASSWORD" ]]; then
+          echo "Secret $SECRET_ID is empty." >&2
+          exit 1
+        fi
+
+        echo "::add-mask::$PASSWORD"
+
+        ENC_USER=$(jq -rn --arg v "$USERNAME" '$v|@uri')
+        ENC_PASS=$(jq -rn --arg v "$PASSWORD" '$v|@uri')
+        echo "::add-mask::$ENC_PASS"
+
+        URL="postgresql://${ENC_USER}:${ENC_PASS}@127.0.0.1:${LOCAL_PORT}/${DATABASE}?${EXTRA_PARAMS}"
+        echo "::add-mask::$URL"
+
+        {
+          printf 'database-url<<__DB_TUNNEL_EOF__\n'
+          printf '%s\n' "$URL"
+          printf '__DB_TUNNEL_EOF__\n'
+        } >> "$GITHUB_OUTPUT"
+
+    - name: Write tunnel summary
+      if: always() && steps.resolve.outcome != 'skipped'
+      shell: bash
+      env:
+        ENVIRONMENT: ${{ inputs.environment }}
+        DATABASE: ${{ inputs.database }}
+        ROLE_ARN: ${{ steps.resolve.outputs.role-arn }}
+        CLUSTER_ID: ${{ steps.resolve.outputs.cluster-id }}
+        SECRET_ID: ${{ steps.resolve.outputs.secret-id }}
+        USERNAME: ${{ steps.resolve.outputs.username }}
+        AWS_REGION_INPUT: ${{ inputs.aws-region }}
+        ENDPOINT_KIND: ${{ inputs.endpoint }}
+        HOST: ${{ steps.rds.outputs.host }}
+        LOCAL_PORT: ${{ steps.tunnel.outputs.local-port }}
+        TUNNEL_OUTCOME: ${{ steps.tunnel.outcome }}
+        BUILD_URL_OUTCOME: ${{ steps.build-url.outcome }}
+      run: |
+        set -u
+        if [[ "$TUNNEL_OUTCOME" == "success" && "$BUILD_URL_OUTCOME" == "success" ]]; then
+          icon="✅"; status="ready"
+        elif [[ "$TUNNEL_OUTCOME" == "success" ]]; then
+          icon="⚠️"; status="tunnel opened, URL build ${BUILD_URL_OUTCOME:-skipped}"
+        else
+          icon="❌"; status="failed (${TUNNEL_OUTCOME:-not reached})"
+        fi
+        {
+          echo "## ${icon} DB Tunnel — \`${ENVIRONMENT}/${DATABASE}\`"
+          echo ""
+          echo "| Field | Value |"
+          echo "|-------|-------|"
+          echo "| Environment | \`${ENVIRONMENT}\` |"
+          echo "| Database | \`${DATABASE}\` |"
+          echo "| Username | \`${USERNAME:-—}\` |"
+          echo "| Cluster | \`${CLUSTER_ID:-—}\` |"
+          echo "| Endpoint | \`${ENDPOINT_KIND}\` → \`${HOST:-not resolved}\` |"
+          echo "| Local port | \`${LOCAL_PORT:-—}\` |"
+          echo "| Region | \`${AWS_REGION_INPUT}\` |"
+          echo "| Secret | \`${SECRET_ID:-—}\` |"
+          echo "| Role | \`${ROLE_ARN:-—}\` |"
+          echo "| Status | ${status} |"
+          echo ""
+        } >> "$GITHUB_STEP_SUMMARY"
