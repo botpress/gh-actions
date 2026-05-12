@@ -1,0 +1,61 @@
+name: Check Version Bump
+description: Verify that package version was bumped when files in the package were modified
+
+inputs:
+  package-path:
+    description: 'Path to the package directory'
+    required: true
+  base-ref:
+    description: 'Base branch reference'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Fetch base ref
+      shell: bash
+      env:
+        BASE_REF: ${{ inputs.base-ref }}
+      run: git fetch --no-tags --depth=1 origin "$BASE_REF"
+
+    - name: Read base version
+      id: base-version
+      shell: bash
+      env:
+        BASE_REF: ${{ inputs.base-ref }}
+        PACKAGE_PATH: ${{ inputs.package-path }}
+      run: |
+        set -euo pipefail
+        BASE_VERSION=$(git show "origin/${BASE_REF}:${PACKAGE_PATH}/package.json" | jq -r .version)
+        echo "version=$BASE_VERSION" >> "$GITHUB_OUTPUT"
+        echo "Base version: $BASE_VERSION"
+
+    - name: Read PR version
+      id: pr-version
+      shell: bash
+      env:
+        PACKAGE_PATH: ${{ inputs.package-path }}
+      run: |
+        set -euo pipefail
+        PR_VERSION=$(jq -r .version "${PACKAGE_PATH}/package.json")
+        echo "version=$PR_VERSION" >> "$GITHUB_OUTPUT"
+        echo "PR version: $PR_VERSION"
+
+    - name: Verify version bump
+      shell: bash
+      env:
+        BASE_REF: ${{ inputs.base-ref }}
+        PACKAGE_PATH: ${{ inputs.package-path }}
+        BASE_VERSION: ${{ steps.base-version.outputs.version }}
+        PR_VERSION: ${{ steps.pr-version.outputs.version }}
+      run: |
+        set -euo pipefail
+        if git diff --quiet "origin/${BASE_REF}...HEAD" -- "$PACKAGE_PATH"; then
+          echo "No changes in $PACKAGE_PATH; nothing to verify."
+          exit 0
+        fi
+        if [ "$BASE_VERSION" = "$PR_VERSION" ]; then
+          echo "::error::Changes detected in $PACKAGE_PATH but version was not bumped (still $PR_VERSION). Please update $PACKAGE_PATH/package.json."
+          exit 1
+        fi
+        echo "Version bump detected: $BASE_VERSION -> $PR_VERSION"
