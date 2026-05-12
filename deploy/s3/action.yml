@@ -29,7 +29,7 @@ inputs:
 runs:
   using: 'composite'
   steps:
-    - uses: aws-actions/configure-aws-credentials@v1
+    - uses: aws-actions/configure-aws-credentials@v1-node16
       with:
         role-session-name: s3_upload
         role-to-assume: ${{ inputs.aws-role }}
