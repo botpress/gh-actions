@@ -16,19 +16,10 @@ runs:
       shell: bash
       env:
         BASE_REF: ${{ inputs.base-ref }}
-      run: git fetch --no-tags --depth=1 origin "$BASE_REF"
-
-    - name: Read base version
-      id: base-version
-      shell: bash
-      env:
-        BASE_REF: ${{ inputs.base-ref }}
-        PACKAGE_PATH: ${{ inputs.package-path }}
       run: |
         set -euo pipefail
-        BASE_VERSION=$(git show "origin/${BASE_REF}:${PACKAGE_PATH}/package.json" | jq -r .version)
-        echo "version=$BASE_VERSION" >> "$GITHUB_OUTPUT"
-        echo "Base version: $BASE_VERSION"
+        git fetch --no-tags --unshallow origin "$BASE_REF" 2>/dev/null \
+          || git fetch --no-tags origin "$BASE_REF"
 
     - name: Read PR version
       id: pr-version
@@ -46,16 +37,23 @@ runs:
       env:
         BASE_REF: ${{ inputs.base-ref }}
         PACKAGE_PATH: ${{ inputs.package-path }}
-        BASE_VERSION: ${{ steps.base-version.outputs.version }}
         PR_VERSION: ${{ steps.pr-version.outputs.version }}
       run: |
         set -euo pipefail
-        if git diff --quiet "origin/${BASE_REF}...HEAD" -- "$PACKAGE_PATH"; then
+        MERGE_BASE=$(git merge-base "origin/${BASE_REF}" HEAD)
+        if git diff --quiet "$MERGE_BASE" HEAD -- "$PACKAGE_PATH"; then
           echo "No changes in $PACKAGE_PATH; nothing to verify."
           exit 0
         fi
+        BASE_VERSION=$(git show "$MERGE_BASE:${PACKAGE_PATH}/package.json" | jq -r .version)
+        echo "Base version: $BASE_VERSION"
         if [ "$BASE_VERSION" = "$PR_VERSION" ]; then
           echo "::error::Changes detected in $PACKAGE_PATH but version was not bumped (still $PR_VERSION). Please update $PACKAGE_PATH/package.json."
+          exit 1
+        fi
+        LOWER=$(printf '%s\n%s\n' "$BASE_VERSION" "$PR_VERSION" | sort -V | head -n1)
+        if [ "$LOWER" != "$BASE_VERSION" ]; then
+          echo "::error::Version in ${PACKAGE_PATH}/package.json must be strictly higher than base ($BASE_VERSION). Got $PR_VERSION."
           exit 1
         fi
         echo "Version bump detected: $BASE_VERSION -> $PR_VERSION"
