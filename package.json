@@ -1,27 +1,22 @@
 {
   "name": "@botpress/gh-actions",
   "version": "2.0.0",
+  "private": true,
   "description": "Botpress Github Actions repo",
-  "author": "Botpress, Inc.",
   "license": "AGPL-3.0",
+  "author": "Botpress, Inc.",
   "scripts": {
-    "eslint": "eslint '**/*.ts' --ext .ts",
-    "prettier": "prettier --check '**/*.ts' '!**/*.d.ts'",
-    "postinstall": "husky install"
+    "check:format": "oxfmt --check .",
+    "fix:format": "oxfmt --write .",
+    "check": "pnpm check:format",
+    "fix": "pnpm fix:format"
   },
   "devDependencies": {
-    "@typescript-eslint/eslint-plugin": "^5.16.0",
-    "@typescript-eslint/parser": "^5.16.0",
-    "eslint": "^8.11.0",
-    "eslint-config-prettier": "^8.5.0",
-    "eslint-import-resolver-node": "^0.3.6",
-    "eslint-plugin-import": "^2.25.4",
-    "eslint-plugin-jsdoc": "38.0.6",
-    "husky": "^7.0.4",
-    "pinst": "^3.0.0",
-    "prettier": "^2.6.0"
+    "oxfmt": "^0.35.0",
+    "typescript": "^5.9.3"
   },
   "engines": {
-    "node": "18.x"
-  }
+    "node": "22.x"
+  },
+  "packageManager": "pnpm@10.29.3"
 }

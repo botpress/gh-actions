@@ -13,8 +13,8 @@ steps:
   - uses: botpress/gh-actions/db-tunnel@v3
     id: tunnel
     with:
-      environment: staging   # or: production
-      database: desk         # key in clusters.json
+      environment: staging # or: production
+      database: desk # key in clusters.json
 
   - env:
       DATABASE_URL: ${{ steps.tunnel.outputs.database-url }}

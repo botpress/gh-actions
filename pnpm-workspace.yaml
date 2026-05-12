@@ -1,0 +1,10 @@
+packages: []
+
+useNodeVersion: 22.15.0
+
+minimumReleaseAge: 1440
+minimumReleaseAgeExclude:
+  - '@botpress/*'
+  - '@bpinternal/*'
+
+trustPolicy: no-downgrade
