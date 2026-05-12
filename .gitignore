@@ -1,5 +1,6 @@
 coverage
 *.log
+.DS_STORE
 
 .yarn-integrity
 node_modules
@@ -13,3 +14,4 @@ yarn-error.log
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+
