@@ -25,6 +25,9 @@ inputs:
     default: 'false'
   cloudfront-distribution:
     description: 'cloudfront distribution id (required for the input invalidate-cloudfront)'
+  cache-control:
+    description: 'JSON map of paths relative to source to Cache-Control header values (e.g. {"index.html":"no-cache","assets":"public, max-age=31536000, immutable"})'
+    default: ''
 
 runs:
   using: 'composite'
@@ -35,8 +38,48 @@ runs:
         role-to-assume: ${{ inputs.aws-role }}
         aws-region: ${{ inputs.aws-region }}
     - name: Deploy files to S3 bucket
+      env:
+        CACHE_CONTROL_MAP: ${{ inputs.cache-control }}
       shell: bash
-      run: aws s3 sync "${{ inputs.source }}" "s3://${{ inputs.bucket }}/${{ inputs.prefix }}" --delete
+      run: |
+        source="${{ inputs.source }}"
+        source="${source%/}"
+        exclude_args=()
+        if [ -n "$CACHE_CONTROL_MAP" ]; then
+          while IFS= read -r rel; do
+            rel="${rel#/}"; rel="${rel%/}"
+            if [ -d "$source/$rel" ]; then
+              exclude_args+=(--exclude "$rel/*")
+            else
+              exclude_args+=(--exclude "$rel")
+            fi
+          done < <(printf '%s' "$CACHE_CONTROL_MAP" | jq -r 'keys[]')
+        fi
+        aws s3 sync "$source" "s3://${{ inputs.bucket }}/${{ inputs.prefix }}" --delete "${exclude_args[@]}"
+    - name: Deploy files to S3 bucket with cache control headers
+      if: ${{ inputs.cache-control != '' }}
+      env:
+        CACHE_CONTROL_MAP: ${{ inputs.cache-control }}
+      shell: bash
+      run: |
+        source="${{ inputs.source }}"
+        source="${source%/}"
+        prefix="${{ inputs.prefix }}"
+        prefix="${prefix%/}"
+        while IFS= read -r key; do
+          cache_value=$(printf '%s' "$CACHE_CONTROL_MAP" | jq -r --arg p "$key" '.[$p]')
+          rel="${key#/}"; rel="${rel%/}"
+          if [ -n "$prefix" ]; then
+            dest="s3://${{ inputs.bucket }}/$prefix/$rel"
+          else
+            dest="s3://${{ inputs.bucket }}/$rel"
+          fi
+          if [ -d "$source/$rel" ]; then
+            aws s3 cp "$source/$rel" "$dest" --recursive --cache-control "$cache_value"
+          else
+            aws s3 cp "$source/$rel" "$dest" --cache-control "$cache_value"
+          fi
+        done < <(printf '%s' "$CACHE_CONTROL_MAP" | jq -r 'keys[]')
     - name: Invalidate Cloudfront
       if: ${{ inputs.invalidate-cloudfront == 'true' }}
       shell: bash
