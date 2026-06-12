@@ -141,7 +141,7 @@ runs:
     - name: Build and Push Image (Docker)
       if: ${{ inputs.builder == 'docker' }}
       id: build-docker
-      uses: botpress/gh-actions/build/docker@v3.11
+      uses: botpress/gh-actions/build/docker@v3.12
       with:
         dockerfile: ${{ inputs.dockerfile }}
         repository: ${{ inputs.repository }}
@@ -155,7 +155,7 @@ runs:
     - name: Build and Push Image (Depot)
       if: ${{ inputs.builder == 'depot' }}
       id: build-depot
-      uses: botpress/gh-actions/build/depot@v3.11
+      uses: botpress/gh-actions/build/depot@v3.12
       with:
         dockerfile: ${{ inputs.dockerfile }}
         repository: ${{ inputs.repository }}
