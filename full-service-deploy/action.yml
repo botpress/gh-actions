@@ -30,6 +30,10 @@ inputs:
   sentry-auth-token:
     description: 'Sentry auth token (optional)'
     required: false
+  node-auth-token:
+    description: 'GitHub Packages token for resolving @botpress-private/* during the build (optional)'
+    required: false
+    default: ''
   force-build:
     description: 'Whether to force the build if the image already exists'
     type: boolean
@@ -145,6 +149,7 @@ runs:
         tag: ${{ steps.commit.outputs.sha }}
         force: ${{ inputs.force-build }}
         sentry-auth-token: ${{ inputs.sentry-auth-token }}
+        node-auth-token: ${{ inputs.node-auth-token }}
         push: true
 
     - name: Build and Push Image (Depot)
@@ -158,6 +163,7 @@ runs:
         tag: ${{ steps.commit.outputs.sha }}
         force: ${{ inputs.force-build }}
         sentry-auth-token: ${{ inputs.sentry-auth-token }}
+        node-auth-token: ${{ inputs.node-auth-token }}
         depot-project: ${{ inputs.depot-project }}
         push: true
 
