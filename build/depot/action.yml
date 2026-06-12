@@ -34,6 +34,10 @@ inputs:
     description: 'Whether to minify the build'
     required: false
     default: true
+  node-auth-token:
+    description: 'GitHub Packages token for resolving @botpress-private/* during the build (optional)'
+    required: false
+    default: ''
 
   # Deploy
   repository:
@@ -129,6 +133,8 @@ runs:
           MINIFY=${{ inputs.minify }}
           DOCKER_TAG=${{ inputs.tag }}
           BUILD_DATE=${{ steps.meta_date.outputs.timestamp }}
+        secrets: |
+          node_auth_token=${{ inputs.node-auth-token }}
         file: ${{ inputs.dockerfile }}
         context: ${{ inputs.context }}
         push: ${{ inputs.push }}
