@@ -1,0 +1,29 @@
+name: Check branch is up to date
+description: Fails when the checked-out ref does not include the latest master commit.
+
+runs:
+  using: composite
+  steps:
+    - name: Check branch is up to date with master
+      shell: bash
+      run: |
+        git fetch --no-tags origin +refs/heads/master:refs/remotes/origin/master
+
+        if [ "$(git rev-parse --is-shallow-repository)" = "true" ]; then
+          git fetch --no-tags --unshallow origin
+          git fetch --no-tags origin +refs/heads/master:refs/remotes/origin/master
+        fi
+
+        if ! git rev-parse --verify origin/master >/dev/null; then
+          echo "Failed to fetch origin/master. Cannot verify branch freshness."
+          exit 1
+        fi
+
+        if ! git merge-base --is-ancestor origin/master HEAD; then
+          echo "This branch is not up to date with master. Rebase or merge master before deploying."
+          echo "Current HEAD: $(git rev-parse HEAD)"
+          echo "Latest master: $(git rev-parse origin/master)"
+          exit 1
+        fi
+
+        echo "Branch is up to date with master."
