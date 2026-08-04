@@ -7,14 +7,10 @@ inputs:
     required: false
     default: ''
     description: 'Git ref to checkout (branch, commit, tag). default is the current SHA'
-  check-branch-up-to-date:
-    description: 'Fail when the checked-out ref does not include the latest base branch commit'
+  required-ancestor-ref:
+    description: 'If present, ensures that the checked-out ref includes this ref before deploying'
     required: false
-    default: 'false'
-  base-branch:
-    description: 'Base branch used by check-branch-up-to-date'
-    required: false
-    default: 'master'
+    default: ''
 
   # Build
   dockerfile:
@@ -85,8 +81,7 @@ runs:
         echo "::group::Inputs"
         echo "ref=${{ inputs.ref }}"
         echo "resolvedRef=${{ inputs.ref != '' && inputs.ref || github.sha }}"
-        echo "check-branch-up-to-date=${{ inputs['check-branch-up-to-date'] }}"
-        echo "base-branch=${{ inputs['base-branch'] }}"
+        echo "required-ancestor-ref=${{ inputs['required-ancestor-ref'] }}"
         echo "dockerfile=${{ inputs.dockerfile }}"
         echo "context=${{ inputs.context }}"
         echo "repository=${{ inputs.repository }}"
@@ -105,11 +100,11 @@ runs:
       with:
         ref: ${{ inputs.ref != '' && inputs.ref || github.sha }}
 
-    - name: Check branch is up to date
-      if: ${{ inputs['check-branch-up-to-date'] == 'true' }}
-      uses: botpress/gh-actions/check-branch-up-to-date@v3
+    - name: Check required ancestor ref
+      if: ${{ inputs['required-ancestor-ref'] != '' }}
+      uses: botpress/gh-actions/check-required-ancestor-ref@v3
       with:
-        base-branch: ${{ inputs['base-branch'] }}
+        required-ancestor-ref: ${{ inputs['required-ancestor-ref'] }}
 
     - name: Get checked out commit SHA
       id: commit
