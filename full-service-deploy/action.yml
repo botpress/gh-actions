@@ -7,6 +7,10 @@ inputs:
     required: false
     default: ''
     description: 'Git ref to checkout (branch, commit, tag). default is the current SHA'
+  required-ancestor-ref:
+    description: 'If present, ensures that the checked-out ref includes this ref before deploying'
+    required: false
+    default: ''
 
   # Build
   dockerfile:
@@ -77,6 +81,7 @@ runs:
         echo "::group::Inputs"
         echo "ref=${{ inputs.ref }}"
         echo "resolvedRef=${{ inputs.ref != '' && inputs.ref || github.sha }}"
+        echo "required-ancestor-ref=${{ inputs['required-ancestor-ref'] }}"
         echo "dockerfile=${{ inputs.dockerfile }}"
         echo "context=${{ inputs.context }}"
         echo "repository=${{ inputs.repository }}"
@@ -94,6 +99,12 @@ runs:
     - uses: actions/checkout@v4
       with:
         ref: ${{ inputs.ref != '' && inputs.ref || github.sha }}
+
+    - name: Check required ancestor ref
+      if: ${{ inputs['required-ancestor-ref'] != '' }}
+      uses: botpress/gh-actions/check-required-ancestor-ref@v3
+      with:
+        required-ancestor-ref: ${{ inputs['required-ancestor-ref'] }}
 
     - name: Get checked out commit SHA
       id: commit
