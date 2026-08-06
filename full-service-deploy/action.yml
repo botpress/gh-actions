@@ -102,7 +102,7 @@ runs:
 
     - name: Check required ancestor ref
       if: ${{ inputs['required-ancestor-ref'] != '' }}
-      uses: botpress/gh-actions/check-required-ancestor-ref@v3
+      uses: botpress/gh-actions/check-required-ancestor-ref@v3.14
       with:
         required-ancestor-ref: ${{ inputs['required-ancestor-ref'] }}
 
