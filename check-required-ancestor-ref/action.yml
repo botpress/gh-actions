@@ -11,30 +11,50 @@ runs:
   steps:
     - name: Check required ancestor ref
       shell: bash
+      env:
+        REQUIRED_ANCESTOR_REF: ${{ inputs['required-ancestor-ref'] }}
       run: |
-        REQUIRED_ANCESTOR_REF="${{ inputs['required-ancestor-ref'] }}"
         if [ -z "$REQUIRED_ANCESTOR_REF" ]; then
           echo "required-ancestor-ref input cannot be empty."
           exit 1
         fi
 
-        git fetch --no-tags origin "$REQUIRED_ANCESTOR_REF"
-
-        if [ "$(git rev-parse --is-shallow-repository)" = "true" ]; then
-          git fetch --no-tags --unshallow origin
-          git fetch --no-tags origin "$REQUIRED_ANCESTOR_REF"
+        HEAD_SHA=$(git rev-parse HEAD)
+        HEAD_FETCH_REF="$(git branch --show-current)"
+        if [ -z "$HEAD_FETCH_REF" ]; then
+          HEAD_FETCH_REF="${GITHUB_REF:-}"
         fi
 
-        if ! git rev-parse --verify FETCH_HEAD >/dev/null; then
+        git fetch --no-tags --filter=blob:none --depth=1 origin "$REQUIRED_ANCESTOR_REF"
+
+        if ! REQUIRED_ANCESTOR_SHA=$(git rev-parse --verify 'FETCH_HEAD^{commit}'); then
           echo "Failed to fetch $REQUIRED_ANCESTOR_REF. Cannot verify branch freshness."
           exit 1
         fi
 
-        if ! git merge-base --is-ancestor FETCH_HEAD HEAD; then
-          echo "This branch does not include $REQUIRED_ANCESTOR_REF. Rebase or merge it before deploying."
-          echo "Current HEAD: $(git rev-parse HEAD)"
-          echo "Required ancestor: $(git rev-parse FETCH_HEAD)"
-          exit 1
+        if git merge-base --is-ancestor "$REQUIRED_ANCESTOR_SHA" HEAD; then
+          echo "Branch includes $REQUIRED_ANCESTOR_REF."
+          exit 0
         fi
 
-        echo "Branch includes $REQUIRED_ANCESTOR_REF."
+        if [ "$(git rev-parse --is-shallow-repository)" = "true" ]; then
+          if [ -z "$HEAD_FETCH_REF" ]; then
+            echo "Cannot infer checked-out ref to fetch more history. Cannot verify branch freshness."
+            exit 1
+          fi
+
+          if ! git fetch --no-tags --filter=blob:none --unshallow origin "$HEAD_FETCH_REF"; then
+            echo "Failed to fetch checked-out ref $HEAD_FETCH_REF. Cannot verify branch freshness."
+            exit 1
+          fi
+
+          if git merge-base --is-ancestor "$REQUIRED_ANCESTOR_SHA" HEAD; then
+            echo "Branch includes $REQUIRED_ANCESTOR_REF."
+            exit 0
+          fi
+        fi
+
+        echo "This branch does not include $REQUIRED_ANCESTOR_REF. Rebase or merge it before deploying."
+        echo "Current HEAD: $HEAD_SHA"
+        echo "Required ancestor: $REQUIRED_ANCESTOR_SHA"
+        exit 1
