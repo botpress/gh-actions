@@ -5,6 +5,10 @@ inputs:
   required-ancestor-ref:
     description: 'Ref that HEAD must include'
     required: true
+  ref:
+    description: 'Checked-out ref to fetch when more history is needed'
+    required: false
+    default: ''
 
 runs:
   using: composite
@@ -13,6 +17,7 @@ runs:
       shell: bash
       env:
         REQUIRED_ANCESTOR_REF: ${{ inputs['required-ancestor-ref'] }}
+        REF: ${{ inputs.ref }}
       run: |
         if [ -z "$REQUIRED_ANCESTOR_REF" ]; then
           echo "required-ancestor-ref input cannot be empty."
@@ -20,7 +25,10 @@ runs:
         fi
 
         HEAD_SHA=$(git rev-parse HEAD)
-        HEAD_FETCH_REF="$(git branch --show-current)"
+        HEAD_FETCH_REF="$REF"
+        if [ -z "$HEAD_FETCH_REF" ]; then
+          HEAD_FETCH_REF="$(git branch --show-current)"
+        fi
         if [ -z "$HEAD_FETCH_REF" ]; then
           HEAD_FETCH_REF="${GITHUB_REF:-}"
         fi

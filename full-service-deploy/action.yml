@@ -105,6 +105,7 @@ runs:
       uses: botpress/gh-actions/check-required-ancestor-ref@v3.14
       with:
         required-ancestor-ref: ${{ inputs['required-ancestor-ref'] }}
+        ref: ${{ inputs.ref }}
 
     - name: Get checked out commit SHA
       id: commit
