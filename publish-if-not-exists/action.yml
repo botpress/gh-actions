@@ -16,6 +16,16 @@ inputs:
     required: false
     default: 'npm'
 
+  provenance:
+    description: |
+      Set to 'false' to publish without a provenance attestation, or 'true' to publish
+      with one. Leave empty to let the package manager decide, which it does from the
+      repository visibility and the CI environment. The NPM_CONFIG_PROVENANCE and
+      PNPM_CONFIG_PROVENANCE environment variables are honoured the same way, and
+      'false' wins whenever both preferences are given.
+    required: false
+    default: ''
+
 runs:
   using: 'composite'
   steps:
@@ -49,6 +59,29 @@ runs:
       shell: bash
       run: |
         echo "//registry.npmjs.org/:_authToken=${{ inputs.token }}" > ~/.npmrc
+
+    # npm reads NPM_CONFIG_PROVENANCE and pnpm 11 reads only PNPM_CONFIG_PROVENANCE,
+    # so a preference given through any of the three is applied to both, and callers
+    # get the same behaviour whichever package manager they publish with.
+    - name: Resolve provenance
+      shell: bash
+      env:
+        PROVENANCE_INPUT: ${{ inputs.provenance }}
+      run: |
+        if [[ "$PROVENANCE_INPUT" == "false" || "${NPM_CONFIG_PROVENANCE:-}" == "false" || "${PNPM_CONFIG_PROVENANCE:-}" == "false" ]]; then
+          provenance=false
+        elif [[ "$PROVENANCE_INPUT" == "true" || "${NPM_CONFIG_PROVENANCE:-}" == "true" || "${PNPM_CONFIG_PROVENANCE:-}" == "true" ]]; then
+          provenance=true
+        else
+          echo "No provenance preference given, leaving it to the package manager"
+          exit 0
+        fi
+
+        echo "Publishing with provenance=$provenance"
+        {
+          echo "NPM_CONFIG_PROVENANCE=$provenance"
+          echo "PNPM_CONFIG_PROVENANCE=$provenance"
+        } >> "$GITHUB_ENV"
 
     - name: Publish
       shell: bash
