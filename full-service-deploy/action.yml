@@ -44,7 +44,7 @@ inputs:
     default: false
 
   builder:
-    description: 'Name of the builder to use: docker (default), depot'
+    description: 'Name of the builder to use: docker (default), depot, blacksmith'
     required: false
     default: 'docker'
   depot-project:
@@ -176,6 +176,20 @@ runs:
         sentry-auth-token: ${{ inputs.sentry-auth-token }}
         node-auth-token: ${{ inputs.node-auth-token }}
         depot-project: ${{ inputs.depot-project }}
+        push: true
+
+    - name: Build and Push Image (Blacksmith)
+      if: ${{ inputs.builder == 'blacksmith' }}
+      id: build-blacksmith
+      uses: botpress/gh-actions/build/blacksmith@v3
+      with:
+        dockerfile: ${{ inputs.dockerfile }}
+        repository: ${{ inputs.repository }}
+        context: ${{ inputs.context }}
+        tag: ${{ steps.commit.outputs.sha }}
+        force: ${{ inputs.force-build }}
+        sentry-auth-token: ${{ inputs.sentry-auth-token }}
+        node-auth-token: ${{ inputs.node-auth-token }}
         push: true
 
     - name: Build Summary

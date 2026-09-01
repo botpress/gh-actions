@@ -1,0 +1,141 @@
+name: Docker Build using Blacksmith
+description: Build and push Docker image to ECR using Blacksmith
+
+inputs:
+  # Build
+  context:
+    description: 'Docker context for the build'
+    required: false
+    default: '.'
+  dockerfile:
+    description: 'Path to Dockerfile'
+    required: false
+  push:
+    description: 'Whether to push the image to the registry'
+    required: true
+    default: 'true'
+  tag:
+    description: 'Optional Docker tag'
+    required: false
+    default: ''
+  provenance:
+    description: 'Enable/disable provenance attestation'
+    required: false
+  force:
+    description: 'Whether to force the build if it exists'
+    type: boolean
+    default: false
+
+  # Custom variables
+  sentry-auth-token:
+    description: 'Auth token for sentry (optional)'
+    required: false
+  minify:
+    description: 'Whether to minify the build'
+    required: false
+    default: true
+  node-auth-token:
+    description: 'GitHub Packages token for resolving @botpress-private/* during the build (optional)'
+    required: false
+    default: ''
+
+  # Deploy
+  repository:
+    description: 'Name of the ECR repository'
+    required: true
+  aws-role:
+    description: 'AWS Role to assume'
+    required: true
+    default: arn:aws:iam::986677156374:role/actions/build/container_pusher
+  aws-region:
+    description: 'AWS Region'
+    required: true
+    default: us-east-1
+
+runs:
+  using: 'composite'
+  steps:
+    - uses: aws-actions/configure-aws-credentials@v3
+      with:
+        role-session-name: container_pusher
+        role-to-assume: ${{ inputs.aws-role }}
+        aws-region: ${{ inputs.aws-region }}
+
+    - name: Check if image already exists
+      id: check
+      if: ${{ inputs.force == 'false' }}
+      shell: bash
+      env:
+        ECR_REGISTRY: ${{ steps.ecr.outputs.registry }}
+        ECR_REPOSITORY: ${{ inputs.repository }}
+        DOCKER_TAG: ${{ inputs.tag }}
+      run: |
+        if aws ecr describe-images --repository-name "$ECR_REPOSITORY" --image-ids imageTag="$DOCKER_TAG" &> /dev/null; then
+          echo "Image already exists, skipping build and push steps."
+          echo "exists=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "Image does not exist, proceeding with build and push steps."
+        fi
+
+    - uses: aws-actions/amazon-ecr-login@v1
+      id: ecr
+      if: ${{ steps.check.outputs.exists != 'true' }}
+      with:
+        mask-password: true
+
+    - uses: docker/metadata-action@v4
+      id: meta
+      if: ${{ steps.check.outputs.exists != 'true' }}
+      with:
+        images: ${{ steps.ecr.outputs.registry }}/${{ inputs.repository }}
+        flavor: |
+          latest=false
+        tags: |
+          type=raw,enable=${{ inputs.tag != '' }},value=${{ inputs.tag }}
+          type=semver,pattern={{version}}
+          type=sha,enable=${{ !startsWith(github.ref, 'refs/tags') }},prefix=,format=long
+
+    - name: Set BUILD_DATE
+      id: meta_date
+      if: ${{ steps.check.outputs.exists != 'true' }}
+      shell: bash
+      run: |
+        export TZ=America/Toronto
+        echo "timestamp=$(date +"%Y-%m-%d %H:%M:%S")" >> "$GITHUB_OUTPUT"
+
+    - name: Create ECR Registry
+      if: ${{ steps.check.outputs.exists != 'true' }}
+      shell: bash
+      env:
+        ECR_REPOSITORY: ${{ inputs.repository }}
+        ECR_REGISTRY: ${{ steps.ecr.outputs.registry }}
+      run: |
+        aws --version
+        aws ecr create-repository --repository-name "$ECR_REPOSITORY" || true
+        aws ssm get-parameter --name '/cloud/container-registry/ecr-policy-document' --query 'Parameter.Value' | jq -r > repository-policy.json
+        aws ecr set-repository-policy --repository-name "$ECR_REPOSITORY" --policy-text file://repository-policy.json &> /dev/null
+
+    - name: Set up Blacksmith Docker builder
+      if: ${{ steps.check.outputs.exists != 'true' }}
+      uses: useblacksmith/setup-docker-builder@v2
+      with:
+        cache-key: ${{ inputs.repository }}
+
+    - uses: useblacksmith/build-push-action@v2
+      if: ${{ steps.check.outputs.exists != 'true' }}
+      with:
+        build-args: |
+          SENTRY_AUTH_TOKEN=${{ inputs.sentry-auth-token }}
+          SENTRY_ORGANIZATION_SLUG=botpress-rm
+          SENTRY_RELEASE=${{ github.sha }}
+          MINIFY=${{ inputs.minify }}
+          DOCKER_TAG=${{ inputs.tag }}
+          BUILD_DATE=${{ steps.meta_date.outputs.timestamp }}
+        secrets: |
+          node_auth_token=${{ inputs.node-auth-token }}
+        file: ${{ inputs.dockerfile }}
+        context: ${{ inputs.context }}
+        push: ${{ inputs.push }}
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        provenance: ${{ inputs.provenance }}
