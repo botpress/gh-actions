@@ -38,7 +38,7 @@ runs:
           echo "exists=false" >> "$GITHUB_OUTPUT"
         fi
       env:
-        NODE_AUTH_TOKEN: ${{ inputs.token }}
+        NODE_AUTH_TOKEN: ${{ secrets.PRIVATE_NPM_TOKEN }}
 
     - name: Publish to GitHub Packages
       if: steps.check.outputs.exists == 'false'
@@ -46,7 +46,7 @@ runs:
       working-directory: ${{ inputs.package-dir }}
       run: pnpm publish --no-git-checks
       env:
-        NODE_AUTH_TOKEN: ${{ inputs.token }}
+        NODE_AUTH_TOKEN: ${{ secrets.PRIVATE_NPM_TOKEN }}
 
     - name: Summary
       shell: bash
