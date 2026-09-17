@@ -35,7 +35,7 @@ inputs:
     required: false
     default: true
   node-auth-token:
-    description: 'GitHub Packages token for resolving @botpress-private/* during the build (optional)'
+    description: 'GitHub Packages token for @botpress-private packages (optional). Dockerfiles read it through the `node_auth_token` build secret, or mount the `npmrc` build secret at /root/.npmrc.'
     required: false
     default: ''
 
@@ -106,6 +106,23 @@ runs:
         export TZ=America/Toronto
         echo "timestamp=$(date +"%Y-%m-%d %H:%M:%S")" >> "$GITHUB_OUTPUT"
 
+    # `secret-files` fails the build when the file is missing, so an empty file
+    # is written when there is no token:
+    - name: Prepare the npmrc build secret
+      id: npmrc
+      if: ${{ steps.check.outputs.exists != 'true' }}
+      shell: bash
+      env:
+        NODE_AUTH_TOKEN: ${{ inputs.node-auth-token }}
+      run: |
+        NPMRC_PATH="$RUNNER_TEMP/npmrc"
+        if [[ -n "$NODE_AUTH_TOKEN" ]]; then
+          printf '@botpress-private:registry=https://npm.pkg.github.com/\n//npm.pkg.github.com/:_authToken=%s\n' "$NODE_AUTH_TOKEN" > "$NPMRC_PATH"
+        else
+          : > "$NPMRC_PATH"
+        fi
+        echo "path=$NPMRC_PATH" >> "$GITHUB_OUTPUT"
+
     - name: Create ECR Registry
       if: ${{ steps.check.outputs.exists != 'true' }}
       shell: bash
@@ -132,6 +149,8 @@ runs:
           BUILD_DATE=${{ steps.meta_date.outputs.timestamp }}
         secrets: |
           node_auth_token=${{ inputs.node-auth-token }}
+        secret-files: |
+          npmrc=${{ steps.npmrc.outputs.path }}
         file: ${{ inputs.dockerfile }}
         context: ${{ inputs.context }}
         push: ${{ inputs.push }}
