@@ -1,0 +1,131 @@
+name: Import GitHub secrets to Infisical
+description: >
+  Dumps the GitHub secrets visible to the current workflow scope into an
+  Infisical raw folder. Run once per scope:
+
+    - no environment           -> /raw/repo       (repo + org-level secrets only)
+    - environment: staging     -> /raw/staging    (incl. staging env-scoped overrides)
+    - environment: production  -> /raw/prod       (incl. prod env-scoped overrides)
+
+  No name rewriting, no routing -- values land verbatim. After importing, copy
+  the ones you actually want into the target Infisical env/path manually.
+
+  The caller MUST pass ALL_SECRETS equal to toJSON(secrets) as env on the step
+  (or the job). That is the only way to read GitHub secrets from a workflow.
+
+inputs:
+  project-id:
+    description: 'Infisical Project ID'
+    required: true
+  identity-id:
+    description: 'Infisical Machine Identity ID (OIDC)'
+    required: true
+  environment:
+    description: >
+      GitHub environment name. Maps to the source folder under /raw:
+      empty -> "repo", "staging" -> "staging", "production" -> "prod".
+      Any other value is lowercased and used as-is.
+    required: false
+    default: ''
+  raw-env:
+    description: 'Infisical environment that holds the raw dump (one place, regardless of source GH env)'
+    required: false
+    default: 'dev'
+  raw-root:
+    description: 'Parent folder under which per-scope folders live'
+    required: false
+    default: '/raw'
+  audience:
+    description: 'OIDC audience (your GitHub org URL)'
+    required: false
+    default: 'https://github.com/botpress'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Install Infisical CLI
+      shell: bash
+      run: |
+        curl -1sLf 'https://artifacts-cli.infisical.com/setup.deb.sh' | sudo -E bash
+        sudo apt-get update && sudo apt-get install -y infisical
+
+    - name: Authenticate with Infisical (OIDC)
+      shell: bash
+      run: |
+        OIDC_JWT=$(curl -sS -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+          "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=${{ inputs.audience }}" | jq -r '.value')
+        echo "::add-mask::$OIDC_JWT"
+
+        INFISICAL_TOKEN=$(infisical login \
+          --method=oidc-auth \
+          --machine-identity-id="${{ inputs.identity-id }}" \
+          --jwt="$OIDC_JWT" \
+          --plain --silent)
+        echo "::add-mask::$INFISICAL_TOKEN"
+        echo "INFISICAL_TOKEN=$INFISICAL_TOKEN" >> "$GITHUB_ENV"
+
+    - name: Import secrets into raw folder
+      shell: bash
+      env:
+        GH_ENV: ${{ inputs.environment }}
+        PROJECT_ID: ${{ inputs.project-id }}
+        RAW_ENV: ${{ inputs.raw-env }}
+        RAW_ROOT: ${{ inputs.raw-root }}
+      run: |
+        set -euo pipefail
+
+        if [ -z "${ALL_SECRETS:-}" ]; then
+          echo "::error::ALL_SECRETS is empty. Pass env.ALL_SECRETS equal to toJSON(secrets) on the step or job."
+          exit 1
+        fi
+
+        # Map GH environment -> folder name under /raw
+        if [ -z "$GH_ENV" ]; then
+          FOLDER="repo"
+        else
+          FOLDER=$(echo "$GH_ENV" | tr '[:upper:]' '[:lower:]')
+          case "$FOLDER" in
+            production) FOLDER="prod" ;;
+          esac
+        fi
+        TARGET_PATH="${RAW_ROOT}/${FOLDER}"
+
+        echo "Target: ${RAW_ENV}:${TARGET_PATH}"
+
+        # Ensure folders exist (idempotent - swallow "already exists" failures)
+        infisical secrets folders create \
+          --projectId "$PROJECT_ID" --env "$RAW_ENV" \
+          --path "/" --name "$(basename "$RAW_ROOT")" \
+          --silent >/dev/null 2>&1 || true
+        infisical secrets folders create \
+          --projectId "$PROJECT_ID" --env "$RAW_ENV" \
+          --path "$RAW_ROOT" --name "$FOLDER" \
+          --silent >/dev/null 2>&1 || true
+
+        # Iterate on KEY NAMES only (GH rules: no newlines/equals in names) and
+        # fetch each value via jq. This sidesteps all the escaping quirks that
+        # bite a "KEY=VAL" line-based loop when values contain newlines, quotes,
+        # or other shell metachars.
+        KEYS=$(printf '%s' "$ALL_SECRETS" | jq -r 'to_entries[] | select(.key != "github_token") | .key')
+        TOTAL=$(echo "$KEYS" | grep -c . || true)
+
+        if [ "$TOTAL" -eq 0 ]; then
+          echo "No secrets in scope - nothing to import."
+          exit 0
+        fi
+
+        echo "Pushing $TOTAL secrets..."
+        i=0
+        while IFS= read -r key; do
+          [ -z "$key" ] && continue
+          i=$((i + 1))
+          value=$(printf '%s' "$ALL_SECRETS" | jq -r --arg k "$key" '.[$k]')
+          printf '  [%d/%d] %s\n' "$i" "$TOTAL" "$key"
+          infisical secrets set \
+            --projectId "$PROJECT_ID" \
+            --env "$RAW_ENV" \
+            --path "$TARGET_PATH" \
+            --silent \
+            "$key=$value" >/dev/null
+        done <<< "$KEYS"
+        echo "Done."
