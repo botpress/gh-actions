@@ -12,7 +12,7 @@
     "fix": "pnpm fix:format"
   },
   "devDependencies": {
-    "oxfmt": "^0.35.0",
+    "oxfmt": "^0.74.0",
     "typescript": "^5.9.3"
   },
   "engines": {
